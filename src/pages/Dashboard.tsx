@@ -75,7 +75,14 @@ const Dashboard = () => {
       <div className="border-b border-career-text/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <h1 className="text-2xl font-bold text-career-text">Praeviderant</h1>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/lovable-uploads/3b71e4b0-2a43-465e-81b3-e0dfd99f8b33.png" 
+                alt="Praeviderant Logo" 
+                className="h-8 w-auto"
+              />
+              <h1 className="text-2xl font-bold text-career-text">Praeviderant</h1>
+            </div>
             <Button
               onClick={handleSignOut}
               variant="outline"
