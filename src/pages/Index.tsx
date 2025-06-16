@@ -92,7 +92,7 @@ const Index = () => {
             {/* Value Proposition */}
             <div>
               <h2 className={`text-2xl md:text-3xl font-bold mb-6 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                Why CareerOS is Different
+                Why Praeviderant is Different
               </h2>
               <div className="space-y-4">
                 <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-career-panel-dark' : 'bg-career-panel-light'} border border-opacity-20`}>
@@ -119,13 +119,13 @@ const Index = () => {
             {/* Comparison */}
             <div>
               <h2 className={`text-2xl md:text-3xl font-bold mb-6 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                CareerOS vs. Traditional Tools
+                Praeviderant vs. Traditional Tools
               </h2>
               <div className={`${theme === 'dark' ? 'bg-career-panel-dark' : 'bg-career-panel-light'} p-6 rounded-lg border border-opacity-20`}>
                 <div className="space-y-4">
                   <div className="flex justify-between items-start">
                     <div className="flex-1 pr-4">
-                      <h4 className="font-semibold text-career-accent mb-1">CareerOS</h4>
+                      <h4 className="font-semibold text-career-accent mb-1">Praeviderant</h4>
                       <p className={`text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
                         Learns from your full story
                       </p>
@@ -172,7 +172,7 @@ const Index = () => {
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="mb-4 md:mb-0">
               <h3 className={`text-lg font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                CareerOS
+                Praeviderant
               </h3>
             </div>
             
@@ -191,7 +191,7 @@ const Index = () => {
           
           <div className="text-center pt-4 border-t border-opacity-20">
             <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} text-xs`}>
-              © 2024 CareerOS. Building the future of career development.
+              © 2024 Praeviderant. Building the future of career development.
             </p>
           </div>
         </footer>

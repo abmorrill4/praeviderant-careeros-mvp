@@ -6,15 +6,15 @@ const ComparisonTable = () => {
 
   const comparisons = [
     {
-      careerOS: "Learns from your full story",
+      praeviderant: "Learns from your full story",
       traditional: "Static form input"
     },
     {
-      careerOS: "Resume updates in real time",
+      praeviderant: "Resume updates in real time",
       traditional: "No visibility until export"
     },
     {
-      careerOS: "Interview-style experience",
+      praeviderant: "Interview-style experience",
       traditional: "Bland templates with filler text"
     }
   ];
@@ -24,13 +24,13 @@ const ComparisonTable = () => {
       <div className="grid grid-cols-2 gap-8">
         <div>
           <h3 className={`text-xl font-semibold mb-6 text-career-accent`}>
-            CareerOS
+            Praeviderant
           </h3>
           <div className="space-y-4">
             {comparisons.map((item, index) => (
               <div key={index} className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}>
                 <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                  {item.careerOS}
+                  {item.praeviderant}
                 </p>
               </div>
             ))}

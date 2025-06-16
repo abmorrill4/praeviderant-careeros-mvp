@@ -72,7 +72,7 @@ const Login = () => {
         } else {
           toast({
             title: "Account created successfully!",
-            description: "You can now access CareerOS.",
+            description: "You can now access Praeviderant.",
           });
           // User will be automatically redirected by the useEffect above
         }
@@ -136,7 +136,7 @@ const Login = () => {
                 {isSignUp ? "Create Account" : "Welcome Back"}
               </h1>
               <p className="text-career-text-muted">
-                {isSignUp ? "Join CareerOS today" : "Sign in to your CareerOS account"}
+                {isSignUp ? "Join Praeviderant today" : "Sign in to your Praeviderant account"}
               </p>
             </div>
 
