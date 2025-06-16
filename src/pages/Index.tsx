@@ -1,11 +1,130 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import WaveAnimation from "@/components/WaveAnimation";
 
 const Index = () => {
+  const [formData, setFormData] = useState({ name: "", email: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // For now, we'll simulate the API call since Supabase isn't connected yet
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log("Form submitted:", formData);
+      
+      toast({
+        title: "Interest registered!",
+        description: "Thanks for your interest in CareerOS. We'll be in touch soon.",
+      });
+      
+      setFormData({ name: "", email: "" });
+    } catch (error) {
+      toast({
+        title: "Something went wrong",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-career-dark flex flex-col">
+      {/* Background Wave Animation */}
+      <div className="fixed inset-0 opacity-20 pointer-events-none">
+        <WaveAnimation />
+      </div>
+
+      {/* Main Content */}
+      <div className="relative flex-1 flex items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-md">
+          {/* Main Panel */}
+          <div className="neumorphic-panel p-8 md:p-10">
+            {/* Header Section */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl md:text-4xl font-bold text-career-text mb-4">
+                CareerOS
+              </h1>
+              <p className="text-lg md:text-xl text-career-text-muted leading-relaxed">
+                The first resume builder that actually knows you.
+              </p>
+            </div>
+
+            {/* Register Interest Form */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name" className="text-career-text text-sm font-medium mb-2 block">
+                    Name
+                  </Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    placeholder="Enter your name"
+                    className="neumorphic-input text-career-text placeholder:text-career-text-muted h-12"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="email" className="text-career-text text-sm font-medium mb-2 block">
+                    Email
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    placeholder="Enter your email"
+                    className="neumorphic-input text-career-text placeholder:text-career-text-muted h-12"
+                    required
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full h-12 bg-career-mint hover:bg-career-mint-dark text-white font-semibold neumorphic-button border-0"
+              >
+                {isSubmitting ? "Registering..." : "Register Interest"}
+              </Button>
+            </form>
+
+            {/* Secondary Login CTA */}
+            <div className="text-center mt-8">
+              <a
+                href="/login"
+                className="text-career-text-muted hover:text-career-mint text-sm transition-colors duration-200"
+              >
+                Already have access? Log in here
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="relative text-center p-4">
+        <p className="text-career-text-muted text-xs">
+          © 2024 CareerOS. Building the future of career development.
+        </p>
       </div>
     </div>
   );

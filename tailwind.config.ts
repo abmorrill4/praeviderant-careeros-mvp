@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,12 +62,26 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// CareerOS custom colors
+				'career-dark': '#111111',
+				'career-panel': '#1a1a1a',
+				'career-mint': '#4ECDC4',
+				'career-mint-dark': '#3fb8b1',
+				'career-gray': '#2a2a2a',
+				'career-text': '#e5e5e5',
+				'career-text-muted': '#a0a0a0'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			boxShadow: {
+				'neumorphic': '8px 8px 16px rgba(0, 0, 0, 0.4), -8px -8px 16px rgba(255, 255, 255, 0.02)',
+				'neumorphic-inset': 'inset 4px 4px 8px rgba(0, 0, 0, 0.4), inset -4px -4px 8px rgba(255, 255, 255, 0.02)',
+				'neumorphic-sm': '4px 4px 8px rgba(0, 0, 0, 0.3), -4px -4px 8px rgba(255, 255, 255, 0.02)',
+				'neumorphic-lg': '12px 12px 24px rgba(0, 0, 0, 0.5), -12px -12px 24px rgba(255, 255, 255, 0.03)'
 			},
 			keyframes: {
 				'accordion-down': {
@@ -84,11 +99,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'wave': {
+					'0%, 100%': { transform: 'scaleY(1)' },
+					'50%': { transform: 'scaleY(1.5)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'wave': 'wave 2s ease-in-out infinite'
 			}
 		}
 	},
