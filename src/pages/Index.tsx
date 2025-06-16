@@ -1,22 +1,15 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import WaveAnimation from "@/components/WaveAnimation";
 import ThemeToggle from "@/components/ThemeToggle";
-import ValueCard from "@/components/ValueCard";
-import ComparisonTable from "@/components/ComparisonTable";
+import InterestModal from "@/components/InterestModal";
 
 const Index = () => {
-  const [formData, setFormData] = useState({ name: "", email: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { user, loading } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -36,53 +29,6 @@ const Index = () => {
       </div>
     );
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const { error } = await supabase
-        .from('interest_registrations')
-        .insert([
-          {
-            name: formData.name,
-            email: formData.email,
-          }
-        ]);
-
-      if (error) {
-        if (error.code === '23505') { // Unique constraint violation
-          toast({
-            title: "Email already registered",
-            description: "This email has already been registered for early access.",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
-      } else {
-        toast({
-          title: "Interest registered!",
-          description: "Thanks for your interest in CareerOS. We'll be in touch soon.",
-        });
-        setFormData({ name: "", email: "" });
-      }
-    } catch (error) {
-      console.error('Error registering interest:', error);
-      toast({
-        title: "Something went wrong",
-        description: "Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
 
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} transition-colors duration-300 p-4 md:p-6`}>
@@ -108,59 +54,24 @@ const Index = () => {
               </p>
             </div>
 
-            {/* CTA Form */}
+            {/* CTA Section */}
             <div className="flex justify-center lg:justify-end">
               <div className={`neumorphic-panel ${theme} p-6 md:p-8 w-full max-w-md`}>
                 <div className="text-center mb-6">
                   <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
                     Get Early Access
                   </h2>
-                  <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                    Join the future of resume building
+                  <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-6`}>
+                    Join the future of resume building. Help us create the perfect tool for your career journey.
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="name" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-1 block`}>
-                        Name
-                      </Label>
-                      <Input
-                        id="name"
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => handleInputChange("name", e.target.value)}
-                        placeholder="Enter your name"
-                        className={`neumorphic-input ${theme} ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-10`}
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="email" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-1 block`}>
-                        Email
-                      </Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange("email", e.target.value)}
-                        placeholder="Enter your email"
-                        className={`neumorphic-input ${theme} ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-10`}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full h-10 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0`}
-                  >
-                    {isSubmitting ? "Registering..." : "Register Interest"}
-                  </Button>
-                </form>
+                <Button
+                  onClick={() => setIsModalOpen(true)}
+                  className={`w-full h-12 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-base`}
+                >
+                  Register Your Interest
+                </Button>
 
                 <div className="text-center mt-4">
                   <a
@@ -285,6 +196,12 @@ const Index = () => {
           </div>
         </footer>
       </div>
+
+      {/* Interest Registration Modal */}
+      <InterestModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   );
 };

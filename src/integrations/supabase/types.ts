@@ -54,6 +54,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_interest: {
+        Row: {
+          beta: boolean | null
+          challenge: string | null
+          created_at: string | null
+          email: string
+          id: string
+          industry: string | null
+          name: string
+          stage: string | null
+          status: string | null
+          title: string | null
+        }
+        Insert: {
+          beta?: boolean | null
+          challenge?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          industry?: string | null
+          name: string
+          stage?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Update: {
+          beta?: boolean | null
+          challenge?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          industry?: string | null
+          name?: string
+          stage?: string | null
+          status?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
