@@ -1,4 +1,5 @@
 
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -92,21 +93,45 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
   }
 }
 
 /* CareerOS Custom Styles */
 @layer components {
   .neumorphic-panel {
-    @apply bg-career-panel rounded-2xl shadow-neumorphic;
+    @apply rounded-2xl transition-all duration-300;
+  }
+  
+  .neumorphic-panel.dark {
+    @apply bg-career-panel-dark shadow-neumorphic-dark;
+  }
+  
+  .neumorphic-panel.light {
+    @apply bg-career-panel-light shadow-neumorphic-light;
   }
   
   .neumorphic-button {
-    @apply rounded-xl shadow-neumorphic-sm hover:shadow-neumorphic transition-all duration-200;
+    @apply rounded-xl transition-all duration-200;
+  }
+  
+  .neumorphic-button.dark {
+    @apply shadow-neumorphic-sm-dark hover:shadow-neumorphic-dark;
+  }
+  
+  .neumorphic-button.light {
+    @apply shadow-neumorphic-sm-light hover:shadow-neumorphic-light;
   }
   
   .neumorphic-input {
-    @apply bg-career-gray rounded-xl shadow-neumorphic-inset border-0 focus:shadow-neumorphic-sm transition-all duration-200;
+    @apply rounded-xl border-0 transition-all duration-200;
+  }
+  
+  .neumorphic-input.dark {
+    @apply bg-career-gray-dark shadow-neumorphic-inset-dark focus:shadow-neumorphic-sm-dark;
+  }
+  
+  .neumorphic-input.light {
+    @apply bg-career-gray-light shadow-neumorphic-inset-light focus:shadow-neumorphic-sm-light;
   }
 }
