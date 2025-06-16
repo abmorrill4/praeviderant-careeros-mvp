@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,10 +14,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface InterestModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface DomainValue {
+  id: string;
+  category: string;
+  value: string;
+  display_order: number;
 }
 
 const InterestModal = ({ isOpen, onClose }: InterestModalProps) => {
@@ -32,8 +46,35 @@ const InterestModal = ({ isOpen, onClose }: InterestModalProps) => {
     beta: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [domainValues, setDomainValues] = useState<DomainValue[]>([]);
   const { toast } = useToast();
   const { theme } = useTheme();
+
+  // Fetch domain values on component mount
+  useEffect(() => {
+    const fetchDomainValues = async () => {
+      const { data, error } = await supabase
+        .from('domain_values')
+        .select('*')
+        .eq('is_active', true)
+        .order('category, display_order');
+
+      if (error) {
+        console.error('Error fetching domain values:', error);
+      } else {
+        setDomainValues(data || []);
+      }
+    };
+
+    if (isOpen) {
+      fetchDomainValues();
+    }
+  }, [isOpen]);
+
+  // Helper function to get domain values by category
+  const getDomainValuesByCategory = (category: string) => {
+    return domainValues.filter(item => item.category === category);
+  };
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -151,14 +192,22 @@ const InterestModal = ({ isOpen, onClose }: InterestModalProps) => {
               <Label htmlFor="status" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-1 block`}>
                 Current Status
               </Label>
-              <Input
-                id="status"
-                type="text"
-                value={formData.status}
-                onChange={(e) => handleInputChange("status", e.target.value)}
-                placeholder="e.g., Actively job searching"
-                className={`neumorphic-input ${theme} ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'}`}
-              />
+              <Select value={formData.status} onValueChange={(value) => handleInputChange("status", value)}>
+                <SelectTrigger className={`neumorphic-input ${theme} ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                  <SelectValue placeholder="Select your current status" />
+                </SelectTrigger>
+                <SelectContent className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'} z-50`}>
+                  {getDomainValuesByCategory('current_status').map((item) => (
+                    <SelectItem 
+                      key={item.id} 
+                      value={item.value}
+                      className={`${theme === 'dark' ? 'text-career-text-dark hover:bg-career-gray-dark' : 'text-career-text-light hover:bg-career-gray-light'}`}
+                    >
+                      {item.value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -167,28 +216,44 @@ const InterestModal = ({ isOpen, onClose }: InterestModalProps) => {
               <Label htmlFor="industry" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-1 block`}>
                 Industry
               </Label>
-              <Input
-                id="industry"
-                type="text"
-                value={formData.industry}
-                onChange={(e) => handleInputChange("industry", e.target.value)}
-                placeholder="e.g., Technology, Finance"
-                className={`neumorphic-input ${theme} ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'}`}
-              />
+              <Select value={formData.industry} onValueChange={(value) => handleInputChange("industry", value)}>
+                <SelectTrigger className={`neumorphic-input ${theme} ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                  <SelectValue placeholder="Select your industry" />
+                </SelectTrigger>
+                <SelectContent className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'} z-50`}>
+                  {getDomainValuesByCategory('industry').map((item) => (
+                    <SelectItem 
+                      key={item.id} 
+                      value={item.value}
+                      className={`${theme === 'dark' ? 'text-career-text-dark hover:bg-career-gray-dark' : 'text-career-text-light hover:bg-career-gray-light'}`}
+                    >
+                      {item.value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div>
               <Label htmlFor="stage" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-1 block`}>
                 Career Stage
               </Label>
-              <Input
-                id="stage"
-                type="text"
-                value={formData.stage}
-                onChange={(e) => handleInputChange("stage", e.target.value)}
-                placeholder="e.g., Mid-career, Entry-level"
-                className={`neumorphic-input ${theme} ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'}`}
-              />
+              <Select value={formData.stage} onValueChange={(value) => handleInputChange("stage", value)}>
+                <SelectTrigger className={`neumorphic-input ${theme} ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                  <SelectValue placeholder="Select your career stage" />
+                </SelectTrigger>
+                <SelectContent className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'} z-50`}>
+                  {getDomainValuesByCategory('career_stage').map((item) => (
+                    <SelectItem 
+                      key={item.id} 
+                      value={item.value}
+                      className={`${theme === 'dark' ? 'text-career-text-dark hover:bg-career-gray-dark' : 'text-career-text-light hover:bg-career-gray-light'}`}
+                    >
+                      {item.value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
