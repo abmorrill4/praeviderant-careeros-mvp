@@ -55,6 +55,15 @@ const Dashboard = () => {
     }
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('Dashboard logo failed to load:', e);
+    console.log('Attempted to load:', e.currentTarget.src);
+  };
+
+  const handleImageLoad = () => {
+    console.log('Dashboard logo loaded successfully');
+  };
+
   // Show loading while checking auth state
   if (loading || loadingProfile) {
     return (
@@ -80,6 +89,8 @@ const Dashboard = () => {
                 src="/lovable-uploads/3b71e4b0-2a43-465e-81b3-e0dfd99f8b33.png" 
                 alt="Praeviderant Logo" 
                 className="h-8 w-auto"
+                onError={handleImageError}
+                onLoad={handleImageLoad}
               />
               <h1 className="text-2xl font-bold text-career-text">Praeviderant</h1>
             </div>

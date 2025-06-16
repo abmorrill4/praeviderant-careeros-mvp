@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,6 +29,15 @@ const Index = () => {
     );
   }
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error('Logo failed to load:', e);
+    console.log('Attempted to load:', e.currentTarget.src);
+  };
+
+  const handleImageLoad = () => {
+    console.log('Logo loaded successfully');
+  };
+
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} transition-colors duration-300 p-4 md:p-6`}>
       <ThemeToggle />
@@ -52,6 +60,8 @@ const Index = () => {
                   src="/lovable-uploads/3b71e4b0-2a43-465e-81b3-e0dfd99f8b33.png" 
                   alt="Praeviderant Logo" 
                   className="h-16 w-auto"
+                  onError={handleImageError}
+                  onLoad={handleImageLoad}
                 />
               </div>
               
