@@ -1,33 +1,70 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import WaveAnimation from "@/components/WaveAnimation";
 
 const Index = () => {
   const [formData, setFormData] = useState({ name: "", email: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect authenticated users to dashboard
+    if (!loading && user) {
+      navigate('/dashboard');
+    }
+  }, [user, loading, navigate]);
+
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-career-dark flex items-center justify-center">
+        <div className="text-career-text">Loading...</div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // For now, we'll simulate the API call since Supabase isn't connected yet
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log("Form submitted:", formData);
-      
-      toast({
-        title: "Interest registered!",
-        description: "Thanks for your interest in CareerOS. We'll be in touch soon.",
-      });
-      
-      setFormData({ name: "", email: "" });
+      const { error } = await supabase
+        .from('interest_registrations')
+        .insert([
+          {
+            name: formData.name,
+            email: formData.email,
+          }
+        ]);
+
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          toast({
+            title: "Email already registered",
+            description: "This email has already been registered for early access.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: "Interest registered!",
+          description: "Thanks for your interest in CareerOS. We'll be in touch soon.",
+        });
+        setFormData({ name: "", email: "" });
+      }
     } catch (error) {
+      console.error('Error registering interest:', error);
       toast({
         title: "Something went wrong",
         description: "Please try again later.",
