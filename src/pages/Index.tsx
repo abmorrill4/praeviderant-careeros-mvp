@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,7 +118,7 @@ const Index = () => {
 
             {/* CTA Section - Fixed Height Container */}
             <div className="flex justify-center lg:justify-end">
-              <div className={`neumorphic-panel ${theme} p-6 md:p-8 w-full max-w-md h-[420px] flex flex-col transition-all duration-500 ${isTransitioning ? 'scale-95 opacity-70' : 'scale-100 opacity-100'}`}>
+              <div className={`neumorphic-panel ${theme} p-6 md:p-8 w-full max-w-md h-[360px] flex flex-col transition-all duration-500 ${isTransitioning ? 'scale-95 opacity-70' : 'scale-100 opacity-100'}`}>
                 {/* Form Toggle Indicator */}
                 <div className="relative mb-6 flex-shrink-0">
                   <div className={`absolute top-0 left-0 h-1 bg-career-accent rounded-full transition-all duration-500 ease-out ${showLoginForm ? 'w-1/2 translate-x-full' : 'w-1/2 translate-x-0'}`}></div>
@@ -162,52 +161,46 @@ const Index = () => {
                     </div>
                   ) : (
                     <div className="animate-fade-in flex flex-col h-full">
-                      <div className="text-center mb-6 flex-shrink-0">
+                      <div className="text-center mb-4 flex-shrink-0">
                         <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 transform transition-all duration-300`}>
                           Welcome Back
                         </h2>
-                        <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-6 transform transition-all duration-300 delay-75`}>
+                        <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-4 transform transition-all duration-300 delay-75`}>
                           Sign in to your Praeviderant account
                         </p>
                       </div>
 
-                      <form onSubmit={handleLogin} className="flex-grow flex flex-col justify-center space-y-4">
+                      <form onSubmit={handleLogin} className="flex-grow flex flex-col justify-center space-y-3">
                         <div className="transform transition-all duration-300 delay-100">
-                          <Label htmlFor="email" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-2 block transition-colors duration-200`}>
-                            Email
-                          </Label>
                           <Input
                             id="email"
                             type="email"
                             value={loginData.email}
                             onChange={(e) => handleLoginInputChange("email", e.target.value)}
-                            placeholder="Enter your email"
-                            className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg`}
+                            placeholder="Email address"
+                            className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-11 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg`}
                             required
                           />
                         </div>
                         
                         <div className="transform transition-all duration-300 delay-150">
-                          <Label htmlFor="password" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-2 block transition-colors duration-200`}>
-                            Password
-                          </Label>
                           <Input
                             id="password"
                             type="password"
                             value={loginData.password}
                             onChange={(e) => handleLoginInputChange("password", e.target.value)}
-                            placeholder="Enter your password"
-                            className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg`}
+                            placeholder="Password"
+                            className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-11 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg`}
                             required
                             minLength={6}
                           />
                         </div>
 
-                        <div className="transform transition-all duration-300 delay-200">
+                        <div className="pt-2 transform transition-all duration-300 delay-200">
                           <Button
                             type="submit"
                             disabled={isSubmitting}
-                            className={`w-full h-12 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-base transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 disabled:hover:scale-100 disabled:opacity-50`}
+                            className={`w-full h-11 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-base transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95 disabled:hover:scale-100 disabled:opacity-50`}
                           >
                             <span className={`transition-all duration-200 ${isSubmitting ? 'opacity-0' : 'opacity-100'}`}>
                               Sign In
@@ -221,7 +214,7 @@ const Index = () => {
                         </div>
                       </form>
 
-                      <div className="text-center mt-4 flex-shrink-0 transform transition-all duration-300 delay-250">
+                      <div className="text-center pt-3 flex-shrink-0 transform transition-all duration-300 delay-250">
                         <button
                           onClick={() => handleFormToggle(false)}
                           className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-accent' : 'text-career-text-muted-light hover:text-career-accent'} text-xs transition-all duration-300 underline hover:scale-105 relative overflow-hidden group`}
