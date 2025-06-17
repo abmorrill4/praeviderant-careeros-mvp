@@ -33,28 +33,42 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending confirmation email to: ${email} for user: ${name}`);
 
     const emailResponse = await resend.emails.send({
-      from: "Praeviderant <onboarding@resend.dev>",
+      from: "Praeviderant <noreply@yourdomain.com>", // You'll need to replace 'yourdomain.com' with your actual verified domain
       to: [email],
       subject: "Welcome to Praeviderant Early Access!",
       html: `
-        <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: auto; padding: 24px; color: #111827; background: #ffffff;">
-          <h1 style="color: #2563eb; font-size: 24px; margin-bottom: 12px;">Thanks for Registering, ${name}!</h1>
+        <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: auto; padding: 32px; color: #1f2937; background: #ffffff;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="color: #2563eb; font-size: 32px; margin: 0; font-weight: bold;">Praeviderant</h1>
+          </div>
 
-          <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
-            We're glad you're interested in what we're building. You're officially on the early access list.
+          <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 16px; font-weight: 600;">Welcome ${name}!</h2>
+
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px; color: #374151;">
+            Thank you for joining our early access program. We're excited to have you on board as we build the future of career intelligence.
           </p>
 
-          <p style="font-size: 16px; line-height: 1.5; margin-bottom: 20px;">
-            We'll follow up when access becomes available — and you'll be among the first to try it out.
+          <div style="background: #f9fafb; border-left: 4px solid #2563eb; padding: 16px; margin: 24px 0;">
+            <p style="margin: 0; color: #374151; font-size: 14px;">
+              <strong>What's next?</strong> We'll notify you as soon as early access becomes available. You'll be among the first to experience our AI-powered career platform.
+            </p>
+          </div>
+
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px; color: #374151;">
+            In the meantime, feel free to reply to this email if you have any questions or feedback. We'd love to hear from you!
           </p>
 
-          <p style="font-size: 14px; line-height: 1.5; color: #6b7280;">
-            Until then, keep an eye on your inbox. If you have any questions, just reply to this email.
-          </p>
+          <div style="text-align: center; margin: 32px 0;">
+            <div style="background: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; display: inline-block; font-weight: 600;">
+              Early Access Reserved ✓
+            </div>
+          </div>
 
-          <p style="font-size: 12px; color: #9ca3af; margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 12px;">
-            © 2024 Praeviderant – Building the future of career development.
-          </p>
+          <div style="border-top: 1px solid #e5e7eb; padding-top: 24px; margin-top: 32px; text-align: center;">
+            <p style="font-size: 12px; color: #6b7280; margin: 0;">
+              © 2024 Praeviderant – Building the future of career development
+            </p>
+          </div>
         </div>
       `,
     });
