@@ -23,6 +23,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
   const audioContextRef = useRef<AudioContext | null>(null);
   const { toast } = useToast();
 
+  // Use the full WebSocket URL for the Supabase Edge Function
   const wsUrl = `wss://deofbwuazrvpocyybjpl.functions.supabase.co/realtime-interview`;
   const { connect, disconnect, sendMessage, lastMessage, status } = useRealtimeInterviewSocket(wsUrl);
   
@@ -38,10 +39,14 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
     if (!lastMessage) return;
 
     try {
-      console.log('Received message:', lastMessage.type);
+      console.log('Processing message:', lastMessage.type);
 
       if (lastMessage.type === 'session.created') {
         console.log('Session created successfully');
+        toast({
+          title: "Connection Established",
+          description: "AI interview session is ready",
+        });
       } else if (lastMessage.type === 'session.updated') {
         console.log('Session configured successfully');
       } else if (lastMessage.type === 'response.audio.delta') {
@@ -85,6 +90,8 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
 
   const startInterview = async () => {
     try {
+      console.log('Starting interview...');
+      
       // Initialize audio context
       audioContextRef.current = new AudioContext({ sampleRate: 24000 });
       
@@ -107,6 +114,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
 
   const startRecording = async () => {
     try {
+      console.log('Starting audio recording...');
       audioRecorderRef.current = new AudioRecorder((audioData) => {
         if (status === ConnectionStatus.Open) {
           const encodedAudio = encodeAudioForAPI(audioData);
@@ -120,7 +128,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
       await audioRecorderRef.current.start();
       setIsRecording(true);
       
-      console.log('Audio recording started');
+      console.log('Audio recording started successfully');
     } catch (error) {
       console.error('Error starting recording:', error);
       toast({
@@ -132,6 +140,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
   };
 
   const endInterview = () => {
+    console.log('Ending interview...');
     if (audioRecorderRef.current) {
       audioRecorderRef.current.stop();
       audioRecorderRef.current = null;
