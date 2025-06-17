@@ -7,6 +7,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { LogOut, User, Mic, FileText, Lightbulb, Users } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import OnboardingCardFlow from "@/components/onboarding/OnboardingCardFlow";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingData } from "@/components/onboarding/types";
 import {
   SidebarProvider,
   Sidebar,
@@ -28,6 +31,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const { completeOnboarding, loading: onboardingLoading } = useOnboarding();
 
   useEffect(() => {
     // Redirect unauthenticated users to login
@@ -63,6 +67,21 @@ const Dashboard = () => {
     fetchProfile();
   }, [user]);
 
+  const handleOnboardingComplete = async (data: OnboardingData) => {
+    try {
+      await completeOnboarding(data);
+      // Refresh profile to reflect onboarding completion
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user!.id)
+        .single();
+      setProfile(updatedProfile);
+    } catch (error) {
+      console.error('Failed to complete onboarding:', error);
+    }
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -84,6 +103,18 @@ const Dashboard = () => {
   // Don't render anything if user is not authenticated (redirect will happen)
   if (!user) {
     return null;
+  }
+
+  // Show onboarding flow if not completed
+  if (!profile?.onboarding_completed) {
+    return (
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} transition-colors duration-300`}>
+        <ThemeToggle />
+        <div className="flex items-center justify-center min-h-screen">
+          <OnboardingCardFlow onComplete={handleOnboardingComplete} />
+        </div>
+      </div>
+    );
   }
 
   return (
