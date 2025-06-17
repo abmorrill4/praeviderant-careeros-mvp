@@ -57,11 +57,48 @@ export type Database = {
         }
         Relationships: []
       }
+      invitations: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          invited_by: string
+          invited_email: string | null
+          status: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          invited_email?: string | null
+          status?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          invited_email?: string | null
+          status?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           email: string | null
           id: string
+          invitation_code: string | null
           name: string | null
           updated_at: string
         }
@@ -69,6 +106,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id: string
+          invitation_code?: string | null
           name?: string | null
           updated_at?: string
         }
@@ -76,10 +114,19 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          invitation_code?: string | null
           name?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_invitation_code_fkey"
+            columns: ["invitation_code"]
+            isOneToOne: false
+            referencedRelation: "invitations"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       user_interest: {
         Row: {
@@ -125,7 +172,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_invitation_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      mark_expired_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

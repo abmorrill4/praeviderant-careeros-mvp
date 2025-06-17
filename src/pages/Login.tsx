@@ -7,13 +7,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import InvitationInput from "@/components/InvitationInput";
+import { useInvitations } from "@/hooks/useInvitations";
 
 const Login = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [validInvitationCode, setValidInvitationCode] = useState<string | null>(null);
   const { toast } = useToast();
   const { user, loading, signIn, signUp } = useAuth();
+  const { markInvitationAsUsed } = useInvitations();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,6 +42,16 @@ const Login = () => {
 
     try {
       if (isSignUp) {
+        // Check for valid invitation code
+        if (!validInvitationCode) {
+          toast({
+            title: "Invitation code required",
+            description: "Please enter and verify a valid invitation code to create an account.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         // Sign up flow
         if (formData.password !== formData.confirmPassword) {
           toast({
@@ -57,7 +71,7 @@ const Login = () => {
           return;
         }
 
-        const { error } = await signUp(formData.email, formData.password, formData.name);
+        const { user: newUser, error } = await signUp(formData.email, formData.password, formData.name);
         
         if (error) {
           if (error.message.includes('already registered')) {
@@ -69,7 +83,10 @@ const Login = () => {
           } else {
             throw error;
           }
-        } else {
+        } else if (newUser) {
+          // Mark invitation as used
+          await markInvitationAsUsed(validInvitationCode, newUser.id);
+          
           toast({
             title: "Account created successfully!",
             description: "You can now access Praeviderant.",
@@ -114,6 +131,12 @@ const Login = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleModeToggle = () => {
+    setIsSignUp(!isSignUp);
+    setValidInvitationCode(null);
+    setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+  };
+
   return (
     <div className="min-h-screen bg-career-dark flex flex-col">
       <div className="relative flex-1 flex items-center justify-center p-4 md:p-8">
@@ -136,12 +159,19 @@ const Login = () => {
                 {isSignUp ? "Create Account" : "Welcome Back"}
               </h1>
               <p className="text-career-text-muted">
-                {isSignUp ? "Join Praeviderant today" : "Sign in to your Praeviderant account"}
+                {isSignUp ? "Join Praeviderant with an invitation code" : "Sign in to your Praeviderant account"}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
+                {isSignUp && (
+                  <InvitationInput
+                    onValidCode={setValidInvitationCode}
+                    className="mb-4"
+                  />
+                )}
+
                 {isSignUp && (
                   <div>
                     <Label htmlFor="name" className="text-career-text text-sm font-medium mb-2 block">
@@ -211,7 +241,7 @@ const Login = () => {
 
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || (isSignUp && !validInvitationCode)}
                 className="w-full h-12 bg-career-mint hover:bg-career-mint-dark text-white font-semibold neumorphic-button border-0"
               >
                 {isSubmitting 
@@ -226,7 +256,7 @@ const Login = () => {
                 {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
                 <button
                   type="button"
-                  onClick={() => setIsSignUp(!isSignUp)}
+                  onClick={handleModeToggle}
                   className="text-career-mint hover:text-career-mint-dark transition-colors duration-200"
                 >
                   {isSignUp ? "Sign in here" : "Create one here"}
