@@ -104,19 +104,19 @@ const Index = () => {
                 <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-career-panel-dark' : 'bg-career-panel-light'} border border-opacity-20`}>
                   <h3 className={`font-semibold mb-2 text-career-accent`}>Deep Context</h3>
                   <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                    We extract your full story—not just job titles.
+                    We extract your full story—not just resume bullets.
                   </p>
                 </div>
                 <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-career-panel-dark' : 'bg-career-panel-light'} border border-opacity-20`}>
                   <h3 className={`font-semibold mb-2 text-career-accent`}>Real AI, Real Results</h3>
                   <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                    Every resume is built from an interview, not a form.
+                    Every resume is built from the entire context of your career.
                   </p>
                 </div>
                 <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-career-panel-dark' : 'bg-career-panel-light'} border border-opacity-20`}>
                   <h3 className={`font-semibold mb-2 text-career-accent`}>Your Voice</h3>
                   <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                    Styled and phrased to sound like you—not generic AI.
+                    Your interviews power not just your career context - but your personal style guide, so your resume still sounds like you.
                   </p>
                 </div>
               </div>
