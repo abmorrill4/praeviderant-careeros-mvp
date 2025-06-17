@@ -10,6 +10,12 @@ export enum ConnectionStatus {
   Closed = 'closed',
 }
 
+// Define message type interface
+interface WebSocketMessage {
+  type: string;
+  [key: string]: any;
+}
+
 // Configuration for the websocket
 const webSocketOptions: Options = {
   maxReconnectionDelay: 10000, // 10 seconds
@@ -90,7 +96,7 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
     setStatus(ConnectionStatus.Closed);
   }, []);
 
-  const sendMessage = useCallback((data: object) => {
+  const sendMessage = useCallback((data: WebSocketMessage) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       const message = JSON.stringify(data);
       console.log('Sending message:', data.type || 'unknown', data);
