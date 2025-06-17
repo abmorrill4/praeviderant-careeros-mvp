@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ReconnectingWebSocket, { Options } from 'reconnecting-websocket';
 
@@ -17,15 +18,15 @@ interface WebSocketMessage {
 
 // Configuration for the websocket
 const webSocketOptions: Options = {
-  maxReconnectionDelay: 10000, // 10 seconds
-  minReconnectionDelay: 1500,  // 1.5 seconds
+  maxReconnectionDelay: 10000,
+  minReconnectionDelay: 2000,
   reconnectionDelayGrowFactor: 1.3,
-  maxRetries: 3, // Reduced retries to avoid infinite loops
-  connectionTimeout: 8000, // 8 second timeout
-  debug: true, // Enable debug logging
+  maxRetries: 2, // Reduce retries to avoid infinite loops
+  connectionTimeout: 10000,
+  debug: false, // Disable debug to reduce console spam
 };
 
-const PING_INTERVAL_MS = 25000; // 25 seconds
+const PING_INTERVAL_MS = 30000; // 30 seconds
 
 export const useRealtimeInterviewSocket = (url: string | null) => {
   const [status, setStatus] = useState<ConnectionStatus>(ConnectionStatus.Closed);
@@ -34,11 +35,17 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
   const wsRef = useRef<ReconnectingWebSocket | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isConnectingRef = useRef<boolean>(false);
+  const mountedRef = useRef<boolean>(true);
 
   const connect = useCallback(() => {
     if (!url) {
       console.log('No URL provided for WebSocket connection');
       setError('No connection URL provided');
+      return;
+    }
+
+    if (!mountedRef.current) {
+      console.log('Component unmounted, skipping connection');
       return;
     }
 
@@ -52,7 +59,7 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
     setError(null);
     setStatus(ConnectionStatus.Connecting);
 
-    // Close any existing interval
+    // Clear any existing interval
     if (pingIntervalRef.current) {
       clearInterval(pingIntervalRef.current);
       pingIntervalRef.current = null;
@@ -62,6 +69,8 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
       const ws = new ReconnectingWebSocket(url, [], webSocketOptions);
 
       ws.onopen = () => {
+        if (!mountedRef.current) return;
+        
         console.log('WebSocket connection established successfully');
         isConnectingRef.current = false;
         setStatus(ConnectionStatus.Open);
@@ -69,7 +78,7 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
         
         // Start sending pings to keep the connection alive
         pingIntervalRef.current = setInterval(() => {
-          if (ws.readyState === WebSocket.OPEN) {
+          if (ws.readyState === WebSocket.OPEN && mountedRef.current) {
             console.log('Sending ping');
             ws.send('ping');
           }
@@ -77,22 +86,34 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
       };
 
       ws.onclose = (event) => {
+        if (!mountedRef.current) return;
+        
         console.log('WebSocket connection closed:', event.code, event.reason);
         isConnectingRef.current = false;
         setStatus(ConnectionStatus.Closed);
+        
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = null;
         }
+        
+        // Set error message for unexpected closures
+        if (event.code !== 1000 && event.code !== 1001) {
+          setError(`Connection closed unexpectedly (${event.code})`);
+        }
       };
 
       ws.onerror = (error) => {
+        if (!mountedRef.current) return;
+        
         console.error('WebSocket error:', error);
         isConnectingRef.current = false;
-        setError('Connection failed. Please check your internet connection and try again.');
+        setError('Failed to connect to interview service. Please try again.');
       };
 
       ws.onmessage = (event) => {
+        if (!mountedRef.current) return;
+        
         console.log('WebSocket message received:', event.data);
         if (event.data === 'pong') {
           console.log('Received pong response');
@@ -148,8 +169,11 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
   }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
+    
     // Cleanup on unmount
     return () => {
+      mountedRef.current = false;
       disconnect();
     };
   }, [disconnect]);
