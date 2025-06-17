@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,8 +46,15 @@ const InterestModal = ({ isOpen, onClose }: InterestModalProps) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [domainValues, setDomainValues] = useState<DomainValue[]>([]);
+  const [emailError, setEmailError] = useState("");
   const { toast } = useToast();
   const { theme } = useTheme();
+
+  // Email validation function
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   // Fetch domain values on component mount
   useEffect(() => {
@@ -78,10 +84,35 @@ const InterestModal = ({ isOpen, onClose }: InterestModalProps) => {
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear email error when user starts typing
+    if (field === 'email' && emailError) {
+      setEmailError("");
+    }
+  };
+
+  const handleEmailBlur = () => {
+    if (formData.email && !isValidEmail(formData.email)) {
+      setEmailError("Please enter a valid email address");
+    } else {
+      setEmailError("");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate email before submission
+    if (!formData.email) {
+      setEmailError("Email is required");
+      return;
+    }
+    
+    if (!isValidEmail(formData.email)) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -93,10 +124,21 @@ const InterestModal = ({ isOpen, onClose }: InterestModalProps) => {
       if (dbError) {
         if (dbError.code === '23505') { // Unique constraint violation
           toast({
-            title: "Email already registered",
-            description: "This email has already been registered for early access.",
-            variant: "destructive",
+            title: "Already registered!",
+            description: "Great news - we already have you down for early access! We'll be in touch as soon as it's ready.",
           });
+          // Reset form and close modal even for duplicates
+          setFormData({
+            name: "",
+            email: "",
+            title: "",
+            status: "",
+            industry: "",
+            challenge: "",
+            stage: "",
+            beta: false,
+          });
+          onClose();
           return;
         } else {
           throw dbError;
@@ -198,10 +240,14 @@ const InterestModal = ({ isOpen, onClose }: InterestModalProps) => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
+                onBlur={handleEmailBlur}
                 placeholder="your.email@company.com"
-                className={`neumorphic-input ${theme} ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'}`}
+                className={`neumorphic-input ${theme} ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} ${emailError ? 'border-red-500' : ''}`}
                 required
               />
+              {emailError && (
+                <p className="text-red-500 text-xs mt-1">{emailError}</p>
+              )}
             </div>
           </div>
 
@@ -326,7 +372,7 @@ const InterestModal = ({ isOpen, onClose }: InterestModalProps) => {
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !formData.name || !formData.email}
+              disabled={isSubmitting || !formData.name || !formData.email || !!emailError}
               className="flex-1 bg-career-accent hover:bg-career-accent-dark text-white font-semibold"
             >
               {isSubmitting ? "Registering..." : "Get Early Access"}
