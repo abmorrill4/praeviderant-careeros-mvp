@@ -133,7 +133,7 @@ const Index = () => {
                   {!showLoginForm ? (
                     <div className="flex flex-col h-full">
                       <div className="text-center mb-6 flex-shrink-0">
-                        <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 transition-all duration-500 animate-pulse`}>
+                        <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 transition-all duration-500`}>
                           Get Early Access
                         </h2>
                         <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-6 transition-all duration-600`}>
@@ -166,7 +166,7 @@ const Index = () => {
                   ) : (
                     <div className="flex flex-col h-full">
                       <div className="text-center mb-4 flex-shrink-0">
-                        <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 transition-all duration-500 animate-pulse`}>
+                        <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 transition-all duration-500`}>
                           Welcome Back
                         </h2>
                         <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-4 transition-all duration-600`}>
