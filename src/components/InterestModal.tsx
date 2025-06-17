@@ -85,37 +85,69 @@ const InterestModal = ({ isOpen, onClose }: InterestModalProps) => {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase
+      // First, save to database
+      const { error: dbError } = await supabase
         .from('user_interest')
         .insert([formData]);
 
-      if (error) {
-        if (error.code === '23505') { // Unique constraint violation
+      if (dbError) {
+        if (dbError.code === '23505') { // Unique constraint violation
           toast({
             title: "Email already registered",
             description: "This email has already been registered for early access.",
             variant: "destructive",
           });
+          return;
         } else {
-          throw error;
+          throw dbError;
         }
-      } else {
-        toast({
-          title: "Interest registered!",
-          description: "Thanks for your detailed information. We'll be in touch soon with early access.",
-        });
-        setFormData({
-          name: "",
-          email: "",
-          title: "",
-          status: "",
-          industry: "",
-          challenge: "",
-          stage: "",
-          beta: false,
-        });
-        onClose();
       }
+
+      // If database save successful, send confirmation email
+      try {
+        console.log('Calling send-interest-confirmation function with:', formData);
+        
+        const { data: emailData, error: emailError } = await supabase.functions.invoke('send-interest-confirmation', {
+          body: formData
+        });
+
+        console.log('Email function response:', emailData, emailError);
+
+        if (emailError) {
+          console.error('Error sending confirmation email:', emailError);
+          // Don't fail the whole process if email fails
+          toast({
+            title: "Registration successful!",
+            description: "Your interest has been registered, but we couldn't send a confirmation email. We'll be in touch soon!",
+          });
+        } else {
+          toast({
+            title: "Interest registered!",
+            description: "Thanks for your detailed information. Check your email for confirmation. We'll be in touch soon with early access.",
+          });
+        }
+      } catch (emailError) {
+        console.error('Error calling email function:', emailError);
+        // Don't fail the whole process if email fails
+        toast({
+          title: "Registration successful!",
+          description: "Your interest has been registered, but we couldn't send a confirmation email. We'll be in touch soon!",
+        });
+      }
+
+      // Reset form and close modal
+      setFormData({
+        name: "",
+        email: "",
+        title: "",
+        status: "",
+        industry: "",
+        challenge: "",
+        stage: "",
+        beta: false,
+      });
+      onClose();
+
     } catch (error) {
       console.error('Error registering interest:', error);
       toast({
