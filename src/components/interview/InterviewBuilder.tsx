@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,9 +37,7 @@ const InterviewBuilder = () => {
   const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [transcript, setTranscript] = useState("");
   const [extractedData, setExtractedData] = useState<any>({});
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
   useEffect(() => {
     fetchInterviewTypes();
@@ -76,84 +75,41 @@ const InterviewBuilder = () => {
 
       if (error) throw error;
       
-      // Type cast the status field to match our interface
       const interviewData: Interview = {
         ...data,
         status: data.status as 'not_started' | 'in_progress' | 'completed' | 'failed'
       };
       
       setCurrentInterview(interviewData);
-      
-      // Start voice recording
-      await startRecording();
+      console.log('Interview started:', interviewData);
     } catch (error) {
       console.error('Error starting interview:', error);
     }
   };
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          // In a real implementation, you'd send this to a transcription service
-          console.log('Audio data received:', event.data);
-        }
-      };
-
-      recorder.start(1000); // Capture every second
-      setMediaRecorder(recorder);
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error starting recording:', error);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorder) {
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(track => track.stop());
-      setMediaRecorder(null);
-    }
-    setIsRecording(false);
-  };
-
-  const completeCurrentSection = async () => {
+  const completeCurrentSection = async (newExtractedData: any) => {
     if (!currentInterview) return;
 
     setIsProcessing(true);
-    stopRecording();
 
     try {
-      // In a real implementation, you'd process the audio/transcript with AI
-      const mockExtractedData = {
-        [interviewTypes[currentTypeIndex].name]: {
-          summary: `Summary for ${interviewTypes[currentTypeIndex].title}`,
-          keyPoints: [`Key point 1`, `Key point 2`],
-          transcript: transcript || "Mock transcript content"
-        }
-      };
+      const updatedExtractedData = { ...extractedData, ...newExtractedData };
 
       const { error } = await supabase
         .from('interviews')
         .update({
-          transcript: transcript,
-          extracted_context: { ...extractedData, ...mockExtractedData },
+          extracted_context: updatedExtractedData,
           updated_at: new Date().toISOString()
         })
         .eq('id', currentInterview.id);
 
       if (error) throw error;
 
-      setExtractedData(prev => ({ ...prev, ...mockExtractedData }));
+      setExtractedData(updatedExtractedData);
 
       // Move to next section or complete interview
       if (currentTypeIndex < interviewTypes.length - 1) {
         setCurrentTypeIndex(currentTypeIndex + 1);
-        setTranscript("");
-        await startRecording(); // Start next section
       } else {
         // Complete entire interview
         await supabase
@@ -163,6 +119,8 @@ const InterviewBuilder = () => {
             completed_at: new Date().toISOString()
           })
           .eq('id', currentInterview.id);
+        
+        console.log('Interview completed successfully');
       }
     } catch (error) {
       console.error('Error completing section:', error);
@@ -183,7 +141,7 @@ const InterviewBuilder = () => {
           AI Career Interview
         </h2>
         <p className={`text-lg ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-          Let's build your resume together through an intelligent conversation
+          Speak naturally - our AI will transcribe and extract key information for your resume
         </p>
       </div>
 
@@ -217,13 +175,13 @@ const InterviewBuilder = () => {
             <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
               <CardHeader>
                 <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                  Ready to Begin?
+                  Ready to Begin Your AI-Powered Interview?
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                  We'll guide you through {interviewTypes.length} sections to build your comprehensive resume. 
-                  Each section will be recorded and processed to extract key information.
+                  We'll guide you through {interviewTypes.length} sections using advanced AI to transcribe your responses 
+                  and extract key information for your resume. Simply speak naturally and our AI will do the rest.
                 </p>
                 <div className="space-y-2">
                   {interviewTypes.map((type, index) => (
@@ -241,7 +199,7 @@ const InterviewBuilder = () => {
                   disabled={!user}
                 >
                   <Play className="w-4 h-4 mr-2" />
-                  Start Interview
+                  Start AI Interview
                 </Button>
               </CardContent>
             </Card>
@@ -255,8 +213,8 @@ const InterviewBuilder = () => {
               </CardHeader>
               <CardContent>
                 <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-4`}>
-                  Great job! Your resume has been generated based on our conversation. 
-                  You can review and edit it anytime.
+                  Excellent work! Our AI has processed your responses and generated a comprehensive resume. 
+                  You can review, edit, and download it anytime.
                 </p>
                 <Button 
                   onClick={() => window.location.reload()}
