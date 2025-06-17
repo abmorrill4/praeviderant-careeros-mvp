@@ -29,15 +29,6 @@ const Index = () => {
     );
   }
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error('Logo failed to load:', e);
-    console.log('Attempted to load:', e.currentTarget.src);
-  };
-
-  const handleImageLoad = () => {
-    console.log('Logo loaded successfully');
-  };
-
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} transition-colors duration-300 p-4 md:p-6`}>
       <ThemeToggle />
@@ -54,20 +45,16 @@ const Index = () => {
           <div className="relative w-full grid lg:grid-cols-2 gap-8 items-center">
             {/* Hero Content */}
             <div className="text-center lg:text-left">
-              {/* Logo */}
+              {/* Text-based Logo */}
               <div className="flex justify-center lg:justify-start mb-6">
-                <img 
-                  src="/lovable-uploads/3b71e4b0-2a43-465e-81b3-e0dfd99f8b33.png" 
-                  alt="Praeviderant Logo" 
-                  className="h-16 w-auto"
-                  onError={handleImageError}
-                  onLoad={handleImageLoad}
-                />
+                <h1 className={`text-4xl font-bold ${theme === 'dark' ? 'text-career-accent' : 'text-career-accent'}`}>
+                  Praeviderant
+                </h1>
               </div>
               
-              <h1 className={`text-3xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+              <h2 className={`text-3xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
                 The first resume builder that actually knows you.
-              </h1>
+              </h2>
               <p className={`text-lg md:text-xl leading-relaxed mb-6 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
                 AI that listens, learns, and writes like you. Built for real people—not templates.
               </p>
