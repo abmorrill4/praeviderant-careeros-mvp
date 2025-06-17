@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff } from "lucide-react";
+import { Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff, AlertCircle } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { AudioRecorder, encodeAudioForAPI, playAudioData } from "@/utils/RealtimeAudio";
 import { useRealtimeInterviewSocket, ConnectionStatus } from "@/hooks/useRealtimeInterviewSocket";
@@ -23,17 +23,28 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
   const audioContextRef = useRef<AudioContext | null>(null);
   const { toast } = useToast();
 
-  // Use the full WebSocket URL for the Supabase Edge Function
-  const wsUrl = `wss://deofbwuazrvpocyybjpl.functions.supabase.co/realtime-interview`;
-  const { connect, disconnect, sendMessage, lastMessage, status } = useRealtimeInterviewSocket(wsUrl);
+  const { connect, disconnect, sendMessage, lastMessage, status, error } = useRealtimeInterviewSocket();
   
   const isConnected = status === ConnectionStatus.Open;
+  const isConnecting = status === ConnectionStatus.Connecting;
+
+  // Show error messages
+  useEffect(() => {
+    if (error) {
+      console.error('WebSocket error:', error);
+      toast({
+        title: "Connection Error",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   useEffect(() => {
     return () => {
       disconnect();
     };
-  }, []);
+  }, [disconnect]);
 
   useEffect(() => {
     if (!lastMessage) return;
@@ -81,7 +92,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
     } catch (error) {
       console.error('Error processing message:', error);
       toast({
-        title: "Connection Error",
+        title: "Message Processing Error",
         description: "Error processing message from server",
         variant: "destructive",
       });
@@ -98,12 +109,9 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
       // Connect to WebSocket
       connect();
       
-      toast({
-        title: "Connecting",
-        description: "Establishing connection to AI interview service",
-      });
+      console.log('Interview start initiated');
     } catch (error) {
-      console.error('Error connecting:', error);
+      console.error('Error starting interview:', error);
       toast({
         title: "Connection Error",
         description: "Failed to initialize the interview",
@@ -184,6 +192,8 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
         <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center space-x-2`}>
           {isConnected ? (
             <Phone className="w-5 h-5 text-green-500" />
+          ) : isConnecting ? (
+            <div className="w-5 h-5 border-2 border-career-accent border-t-transparent rounded-full animate-spin" />
           ) : (
             <PhoneOff className="w-5 h-5 text-gray-400" />
           )}
@@ -204,6 +214,8 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
         <div className={`p-4 rounded-lg border ${
           isConnected 
             ? theme === 'dark' ? 'bg-green-900/10 border-green-500/20' : 'bg-green-50 border-green-200'
+            : error
+            ? theme === 'dark' ? 'bg-red-900/10 border-red-500/20' : 'bg-red-50 border-red-200'
             : theme === 'dark' ? 'bg-gray-900/10 border-gray-500/20' : 'bg-gray-50 border-gray-200'
         }`}>
           <div className="flex items-center space-x-2 mb-2">
@@ -214,15 +226,35 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
                   Connected - Interview in progress
                 </span>
               </>
+            ) : isConnecting ? (
+              <>
+                <div className="w-3 h-3 border-2 border-career-accent border-t-transparent rounded-full animate-spin" />
+                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-career-accent' : 'text-career-accent'}`}>
+                  Connecting to AI service...
+                </span>
+              </>
+            ) : error ? (
+              <>
+                <AlertCircle className="w-3 h-3 text-red-500" />
+                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
+                  Connection failed
+                </span>
+              </>
             ) : (
               <>
                 <div className={`w-3 h-3 rounded-full ${theme === 'dark' ? 'bg-gray-500' : 'bg-gray-400'}`} />
-                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} capitalize`}>
-                  {status === ConnectionStatus.Connecting ? 'Connecting...' : 'Ready to connect'}
+                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Ready to connect
                 </span>
               </>
             )}
           </div>
+          
+          {error && (
+            <p className={`text-xs mt-2 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
+              {error}
+            </p>
+          )}
           
           <div className="flex items-center space-x-4">
             {isRecording && (
@@ -264,13 +296,22 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
 
         {/* Control Buttons */}
         <div className="flex space-x-3">
-          {!isConnected && status !== ConnectionStatus.Connecting ? (
+          {!isConnected && !isConnecting ? (
             <Button
               onClick={startInterview}
               className="flex-1 bg-career-accent hover:bg-career-accent-dark text-white"
+              disabled={false}
             >
               <Phone className="w-4 h-4 mr-2" />
               Start Interview
+            </Button>
+          ) : isConnecting ? (
+            <Button
+              disabled
+              className="flex-1 bg-gray-400 text-white cursor-not-allowed"
+            >
+              <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Connecting...
             </Button>
           ) : (
             <>
