@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,8 +23,8 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
   const audioContextRef = useRef<AudioContext | null>(null);
   const { toast } = useToast();
 
-  // Use the correct WebSocket URL for the Supabase Edge Function
-  const websocketUrl = "wss://mcqzigbgzqhkfaobuxaq.supabase.co/functions/v1/realtime-interview";
+  // Use the correct WebSocket URL format for Supabase Edge Functions
+  const websocketUrl = "wss://deofbwuazrvpocyybjpl.supabase.co/functions/v1/realtime-interview";
   const { connect, disconnect, sendMessage, lastMessage, status, error } = useRealtimeInterviewSocket(websocketUrl);
   
   const isConnected = status === ConnectionStatus.Open;
