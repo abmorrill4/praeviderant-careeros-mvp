@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -127,11 +128,11 @@ const Dashboard = () => {
           <SidebarHeader className="p-4">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-career-accent rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">CO</span>
+                <span className="text-white font-bold text-sm">P</span>
               </div>
               <div>
                 <h2 className={`font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                  CareerOS
+                  Praeviderant
                 </h2>
                 <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
                   Beta
