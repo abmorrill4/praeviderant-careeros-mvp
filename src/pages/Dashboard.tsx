@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { LogOut, User, Mic, FileText, Lightbulb, Users } from "lucide-react";
+import { LogOut, User, Mic, FileText, Lightbulb, Users, CheckCircle } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import OnboardingCardFlow from "@/components/onboarding/OnboardingCardFlow";
 import { useOnboarding } from "@/hooks/useOnboarding";
@@ -105,18 +105,6 @@ const Dashboard = () => {
     return null;
   }
 
-  // Show onboarding flow if not completed
-  if (!profile?.onboarding_completed) {
-    return (
-      <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} transition-colors duration-300`}>
-        <ThemeToggle />
-        <div className="flex items-center justify-center min-h-screen">
-          <OnboardingCardFlow onComplete={handleOnboardingComplete} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <SidebarProvider defaultOpen={true}>
       <div className={`min-h-screen flex w-full ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} transition-colors duration-300`}>
@@ -204,91 +192,114 @@ const Dashboard = () => {
                     Welcome, {profile?.name || user.email}!
                   </h2>
                   <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                    Ready to build your career with AI-powered insights?
+                    {!profile?.onboarding_completed 
+                      ? "Let's get started by setting up your profile"
+                      : "Ready to build your career with AI-powered insights?"
+                    }
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-career-gray-dark shadow-neumorphic-sm-dark' : 'bg-career-gray-light shadow-neumorphic-sm-light'} transition-all duration-300`}>
-                  <h3 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
-                    AI Interview
-                  </h3>
-                  <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} text-sm mb-4`}>
-                    Start your personalized AI-powered career interview
+              {/* Onboarding Section */}
+              {!profile?.onboarding_completed ? (
+                <div className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'} mb-6`}>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-8 h-8 bg-career-accent rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                      Complete Your Profile Setup
+                    </h3>
+                  </div>
+                  <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-6`}>
+                    Help us understand your background and goals to provide personalized career insights.
                   </p>
-                  <Button 
-                    className="w-full bg-career-accent hover:bg-career-accent-dark text-white transition-all duration-200"
-                    disabled
-                  >
-                    Coming Soon
-                  </Button>
+                  <OnboardingCardFlow onComplete={handleOnboardingComplete} />
                 </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-career-gray-dark shadow-neumorphic-sm-dark' : 'bg-career-gray-light shadow-neumorphic-sm-light'} transition-all duration-300`}>
+                    <h3 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                      AI Interview
+                    </h3>
+                    <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} text-sm mb-4`}>
+                      Start your personalized AI-powered career interview
+                    </p>
+                    <Button 
+                      className="w-full bg-career-accent hover:bg-career-accent-dark text-white transition-all duration-200"
+                      disabled
+                    >
+                      Coming Soon
+                    </Button>
+                  </div>
 
-                <div className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-career-gray-dark shadow-neumorphic-sm-dark' : 'bg-career-gray-light shadow-neumorphic-sm-light'} transition-all duration-300`}>
-                  <h3 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
-                    Resume Builder
-                  </h3>
-                  <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} text-sm mb-4`}>
-                    Generate your resume with deep context understanding
-                  </p>
-                  <Button 
-                    className="w-full bg-career-accent hover:bg-career-accent-dark text-white transition-all duration-200"
-                    disabled
-                  >
-                    Coming Soon
-                  </Button>
-                </div>
+                  <div className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-career-gray-dark shadow-neumorphic-sm-dark' : 'bg-career-gray-light shadow-neumorphic-sm-light'} transition-all duration-300`}>
+                    <h3 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                      Resume Builder
+                    </h3>
+                    <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} text-sm mb-4`}>
+                      Generate your resume with deep context understanding
+                    </p>
+                    <Button 
+                      className="w-full bg-career-accent hover:bg-career-accent-dark text-white transition-all duration-200"
+                      disabled
+                    >
+                      Coming Soon
+                    </Button>
+                  </div>
 
-                <div className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-career-gray-dark shadow-neumorphic-sm-dark' : 'bg-career-gray-light shadow-neumorphic-sm-light'} transition-all duration-300`}>
-                  <h3 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
-                    Career Insights
-                  </h3>
-                  <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} text-sm mb-4`}>
-                    Get personalized career recommendations
-                  </p>
-                  <Button 
-                    className="w-full bg-career-accent hover:bg-career-accent-dark text-white transition-all duration-200"
-                    disabled
-                  >
-                    Coming Soon
-                  </Button>
+                  <div className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-career-gray-dark shadow-neumorphic-sm-dark' : 'bg-career-gray-light shadow-neumorphic-sm-light'} transition-all duration-300`}>
+                    <h3 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                      Career Insights
+                    </h3>
+                    <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} text-sm mb-4`}>
+                      Get personalized career recommendations
+                    </p>
+                    <Button 
+                      className="w-full bg-career-accent hover:bg-career-accent-dark text-white transition-all duration-200"
+                      disabled
+                    >
+                      Coming Soon
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Profile Section */}
-            <div className={`p-8 rounded-2xl ${theme === 'dark' ? 'bg-career-panel-dark shadow-neumorphic-dark' : 'bg-career-panel-light shadow-neumorphic-light'} transition-all duration-300`}>
-              <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-6`}>
-                Your Profile
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                    Name
-                  </label>
-                  <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                    {profile?.name || 'Not provided'}
-                  </p>
-                </div>
-                <div>
-                  <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                    Email
-                  </label>
-                  <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                    {user.email}
-                  </p>
-                </div>
-                <div>
-                  <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                    Member Since
-                  </label>
-                  <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </p>
+            {/* Profile Section - only show after onboarding is complete */}
+            {profile?.onboarding_completed && (
+              <div className={`p-8 rounded-2xl ${theme === 'dark' ? 'bg-career-panel-dark shadow-neumorphic-dark' : 'bg-career-panel-light shadow-neumorphic-light'} transition-all duration-300`}>
+                <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-6`}>
+                  Your Profile
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                      Name
+                    </label>
+                    <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      {profile?.name || 'Not provided'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                      Email
+                    </label>
+                    <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      {user.email}
+                    </p>
+                  </div>
+                  <div>
+                    <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                      Member Since
+                    </label>
+                    <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </SidebarInset>
       </div>
