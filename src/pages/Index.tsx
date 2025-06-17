@@ -1,17 +1,24 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import WaveAnimation from "@/components/WaveAnimation";
 import ThemeToggle from "@/components/ThemeToggle";
 import InterestModal from "@/components/InterestModal";
 
 const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { user, loading } = useAuth();
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, loading, signIn } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Redirect authenticated users to dashboard
@@ -28,6 +35,46 @@ const Index = () => {
       </div>
     );
   }
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await signIn(loginData.email, loginData.password);
+      
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast({
+            title: "Invalid credentials",
+            description: "Please check your email and password.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
+        });
+        // User will be automatically redirected by the useEffect above
+      }
+    } catch (error: any) {
+      console.error('Auth error:', error);
+      toast({
+        title: "Something went wrong",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLoginInputChange = (field: string, value: string) => {
+    setLoginData(prev => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} transition-colors duration-300 p-4 md:p-6`}>
@@ -63,30 +110,95 @@ const Index = () => {
             {/* CTA Section */}
             <div className="flex justify-center lg:justify-end">
               <div className={`neumorphic-panel ${theme} p-6 md:p-8 w-full max-w-md`}>
-                <div className="text-center mb-6">
-                  <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
-                    Get Early Access
-                  </h2>
-                  <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-6`}>
-                    Join the future of resume building. Help us create the perfect tool for your career journey.
-                  </p>
-                </div>
+                {!showLoginForm ? (
+                  <>
+                    <div className="text-center mb-6">
+                      <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                        Get Early Access
+                      </h2>
+                      <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-6`}>
+                        Join the future of resume building. Help us create the perfect tool for your career journey.
+                      </p>
+                    </div>
 
-                <Button
-                  onClick={() => setIsModalOpen(true)}
-                  className={`w-full h-12 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-base`}
-                >
-                  Register Your Interest
-                </Button>
+                    <Button
+                      onClick={() => setIsModalOpen(true)}
+                      className={`w-full h-12 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-base`}
+                    >
+                      Register Your Interest
+                    </Button>
 
-                <div className="text-center mt-4">
-                  <a
-                    href="/login"
-                    className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-accent' : 'text-career-text-muted-light hover:text-career-accent'} text-xs transition-colors duration-200`}
-                  >
-                    Already have access? Log in here
-                  </a>
-                </div>
+                    <div className="text-center mt-4">
+                      <button
+                        onClick={() => setShowLoginForm(true)}
+                        className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-accent' : 'text-career-text-muted-light hover:text-career-accent'} text-xs transition-colors duration-200 underline`}
+                      >
+                        Already have access? Log in here
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-center mb-6">
+                      <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                        Welcome Back
+                      </h2>
+                      <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-6`}>
+                        Sign in to your Praeviderant account
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <div>
+                        <Label htmlFor="email" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-2 block`}>
+                          Email
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={loginData.email}
+                          onChange={(e) => handleLoginInputChange("email", e.target.value)}
+                          placeholder="Enter your email"
+                          className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-12`}
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="password" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-2 block`}>
+                          Password
+                        </Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={loginData.password}
+                          onChange={(e) => handleLoginInputChange("password", e.target.value)}
+                          placeholder="Enter your password"
+                          className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-12`}
+                          required
+                          minLength={6}
+                        />
+                      </div>
+
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className={`w-full h-12 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-base`}
+                      >
+                        {isSubmitting ? "Signing In..." : "Sign In"}
+                      </Button>
+                    </form>
+
+                    <div className="text-center mt-4">
+                      <button
+                        onClick={() => setShowLoginForm(false)}
+                        className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-accent' : 'text-career-text-muted-light hover:text-career-accent'} text-xs transition-colors duration-200 underline`}
+                      >
+                        Back to registration
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
