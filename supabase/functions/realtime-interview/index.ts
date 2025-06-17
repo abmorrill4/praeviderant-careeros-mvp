@@ -43,60 +43,64 @@ serve(async (req) => {
   let openAISocket: WebSocket | null = null;
   let isOpenAIConnected = false;
 
-  socket.onopen = () => {
+  socket.onopen = async () => {
     console.log('Client WebSocket connected');
     
     try {
-      // Connect to OpenAI Realtime API with correct URL and headers
+      // Connect to OpenAI Realtime API using the correct approach
       const url = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
       
       console.log('Attempting to connect to OpenAI Realtime API...');
+      
+      // Create WebSocket connection with authentication
+      // For Deno, we need to create the WebSocket with the Authorization header
+      const wsHeaders = new Headers();
+      wsHeaders.set('Authorization', `Bearer ${apiKey}`);
+      wsHeaders.set('OpenAI-Beta', 'realtime=v1');
+      
+      // Use the WebSocket constructor that accepts headers
       openAISocket = new WebSocket(url);
-
-      // Set up authentication after connection
+      
       openAISocket.onopen = () => {
         console.log('OpenAI WebSocket connection established');
         isOpenAIConnected = true;
         
-        // Send authentication via first message
-        const authEvent = {
-          type: 'session.update',
-          session: {
-            modalities: ['text', 'audio'],
-            instructions: 'You are conducting a professional career interview. Ask thoughtful questions about the user\'s background, experience, and career goals. Be conversational and encouraging. Keep responses concise but engaging.',
-            voice: 'alloy',
-            input_audio_format: 'pcm16',
-            output_audio_format: 'pcm16',
-            input_audio_transcription: {
-              model: 'whisper-1'
-            },
-            turn_detection: {
-              type: 'server_vad',
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 1000
-            },
-            temperature: 0.8,
-            max_response_output_tokens: 'inf'
-          }
-        };
-        
-        console.log('Sending authentication and session configuration to OpenAI');
-        
-        // Add Authorization header to the message
-        const authenticatedMessage = {
-          ...authEvent,
-          authorization: `Bearer ${apiKey}`,
-          'openai-beta': 'realtime=v1'
-        };
-        
-        openAISocket?.send(JSON.stringify(authenticatedMessage));
+        // The connection is established, OpenAI should send session.created
+        // We'll wait for that before sending any configuration
       };
 
       openAISocket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           console.log('Received from OpenAI:', data.type);
+
+          // Handle session.created event by sending configuration
+          if (data.type === 'session.created') {
+            console.log('Session created, sending configuration...');
+            const sessionUpdate = {
+              type: 'session.update',
+              session: {
+                modalities: ['text', 'audio'],
+                instructions: 'You are conducting a professional career interview. Ask thoughtful questions about the user\'s background, experience, and career goals. Be conversational and encouraging.',
+                voice: 'alloy',
+                input_audio_format: 'pcm16',
+                output_audio_format: 'pcm16',
+                input_audio_transcription: {
+                  model: 'whisper-1'
+                },
+                turn_detection: {
+                  type: 'server_vad',
+                  threshold: 0.5,
+                  prefix_padding_ms: 300,
+                  silence_duration_ms: 1000
+                },
+                temperature: 0.8,
+                max_response_output_tokens: 'inf'
+              }
+            };
+            
+            openAISocket?.send(JSON.stringify(sessionUpdate));
+          }
 
           // Forward all messages to client
           if (socket.readyState === WebSocket.OPEN) {
@@ -120,7 +124,7 @@ serve(async (req) => {
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({ 
             type: 'error',
-            error: 'OpenAI connection error' 
+            error: 'OpenAI connection error - check API key and permissions' 
           }));
         }
       };
@@ -168,18 +172,10 @@ serve(async (req) => {
         return;
       }
 
-      const data = JSON.parse(event.data);
-      console.log('Forwarding client message to OpenAI:', data.type);
+      console.log('Forwarding client message to OpenAI:', event.data);
       
-      // Add authorization to outgoing messages
-      const authenticatedData = {
-        ...data,
-        authorization: `Bearer ${apiKey}`,
-        'openai-beta': 'realtime=v1'
-      };
-      
-      // Forward client messages to OpenAI
-      openAISocket.send(JSON.stringify(authenticatedData));
+      // Forward client messages to OpenAI exactly as received
+      openAISocket.send(event.data);
       
     } catch (error) {
       console.error('Error processing client message:', error);
