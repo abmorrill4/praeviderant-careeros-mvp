@@ -130,27 +130,27 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
   };
 
   return (
-    <div className={`neumorphic-panel ${theme} p-6 md:p-8 w-full max-w-md`}>
-      <div className="text-center mb-6">
-        <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+    <div className={`neumorphic-panel ${theme} p-4 w-full max-w-md`}>
+      <div className="text-center mb-4">
+        <h2 className={`text-lg font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-1`}>
           {isSignUp ? "Create Account" : "Welcome Back"}
         </h2>
-        <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+        <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
           {isSignUp ? "Join Praeviderant with an invitation code" : "Sign in to your Praeviderant account"}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         {isSignUp && (
           <InvitationInput
             onValidCode={setValidInvitationCode}
-            className="mb-4"
+            className="mb-3"
           />
         )}
 
         {isSignUp && (
           <div>
-            <Label htmlFor="name" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-2 block`}>
+            <Label htmlFor="name" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-xs font-medium mb-1 block`}>
               Name
             </Label>
             <Input
@@ -159,14 +159,14 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               placeholder="Enter your full name"
-              className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-12`}
+              className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-9 text-sm`}
               required
             />
           </div>
         )}
         
         <div>
-          <Label htmlFor="email" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-2 block`}>
+          <Label htmlFor="email" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-xs font-medium mb-1 block`}>
             Email
           </Label>
           <Input
@@ -175,13 +175,13 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
             value={formData.email}
             onChange={(e) => handleInputChange("email", e.target.value)}
             placeholder="Enter your email"
-            className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-12`}
+            className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-9 text-sm`}
             required
           />
         </div>
         
         <div>
-          <Label htmlFor="password" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-2 block`}>
+          <Label htmlFor="password" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-xs font-medium mb-1 block`}>
             Password
           </Label>
           <Input
@@ -190,7 +190,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
             value={formData.password}
             onChange={(e) => handleInputChange("password", e.target.value)}
             placeholder="Enter your password"
-            className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-12`}
+            className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-9 text-sm`}
             required
             minLength={6}
           />
@@ -198,7 +198,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
 
         {isSignUp && (
           <div>
-            <Label htmlFor="confirmPassword" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-2 block`}>
+            <Label htmlFor="confirmPassword" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-xs font-medium mb-1 block`}>
               Confirm Password
             </Label>
             <Input
@@ -207,7 +207,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
               value={formData.confirmPassword}
               onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
               placeholder="Confirm your password"
-              className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-12`}
+              className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-9 text-sm`}
               required
               minLength={6}
             />
@@ -217,7 +217,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         <Button
           type="submit"
           disabled={isSubmitting || (isSignUp && !validInvitationCode)}
-          className={`w-full h-12 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0`}
+          className={`w-full h-10 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-sm mt-4`}
         >
           {isSubmitting 
             ? (isSignUp ? "Creating Account..." : "Signing In...") 
@@ -226,11 +226,11 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         </Button>
       </form>
 
-      <div className="text-center mt-4">
+      <div className="text-center mt-3">
         <button
           type="button"
           onClick={toggleMode}
-          className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-accent' : 'text-career-text-muted-light hover:text-career-accent'} text-sm transition-colors duration-200`}
+          className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-accent' : 'text-career-text-muted-light hover:text-career-accent'} text-xs transition-colors duration-200`}
         >
           {isSignUp ? "Already have an account? Sign in here" : "Need an account? Sign up here"}
         </button>
