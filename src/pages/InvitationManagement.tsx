@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,8 +37,8 @@ const InvitationManagement = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Access control - only allow specific user (replace with your email)
-  const ADMIN_EMAIL = 'your-email@example.com'; // Replace with your actual email
+  // Access control - only allow specific user
+  const ADMIN_EMAIL = 'abmorrill4@gmail.com';
 
   useEffect(() => {
     if (!authLoading && !user) {
