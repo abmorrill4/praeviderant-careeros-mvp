@@ -33,7 +33,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending confirmation email to: ${email} for user: ${name}`);
 
     const emailResponse = await resend.emails.send({
-      from: "Praeviderant <noreply@praeviderant.com>",
+      from: "Praeviderant <noreply@updates.praeviderant.com>",
       to: [email],
       subject: "Welcome to Praeviderant Early Access!",
       html: `
