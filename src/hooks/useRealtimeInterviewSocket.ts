@@ -2,9 +2,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import ReconnectingWebSocket from 'reconnecting-websocket';
 
+export enum ConnectionStatus {
+  Connecting = 'connecting',
+  Open = 'open',
+  Closing = 'closing',
+  Closed = 'closed'
+}
+
 interface Message {
   type: string;
   data?: any;
+  error?: string;
+  delta?: string;
+  [key: string]: any;
 }
 
 interface UseRealtimeInterviewSocketReturn {
@@ -12,20 +22,26 @@ interface UseRealtimeInterviewSocketReturn {
   isConnecting: boolean;
   error: string | null;
   messages: Message[];
+  lastMessage: Message | null;
+  status: ConnectionStatus;
   sendMessage: (message: any) => void;
+  connect: (url?: string) => void;
+  disconnect: () => void;
   startInterview: () => void;
   endInterview: () => void;
 }
 
-export const useRealtimeInterviewSocket = (): UseRealtimeInterviewSocketReturn => {
+export const useRealtimeInterviewSocket = (defaultUrl?: string): UseRealtimeInterviewSocketReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [lastMessage, setLastMessage] = useState<Message | null>(null);
+  const [status, setStatus] = useState<ConnectionStatus>(ConnectionStatus.Closed);
   const socketRef = useRef<ReconnectingWebSocket | null>(null);
 
-  // Using the CORRECT WebSocket URL format
-  const WEBSOCKET_URL = "wss://deofbwuazrvpocyybjpl.functions.supabase.co/realtime-interview";
+  // Use the CORRECT WebSocket URL format
+  const WEBSOCKET_URL = defaultUrl || "wss://deofbwuazrvpocyybjpl.functions.supabase.co/realtime-interview";
 
   const sendMessage = useCallback((message: any) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
@@ -37,19 +53,22 @@ export const useRealtimeInterviewSocket = (): UseRealtimeInterviewSocketReturn =
     }
   }, []);
 
-  const startInterview = useCallback(() => {
+  const connect = useCallback((url?: string) => {
+    const wsUrl = url || WEBSOCKET_URL;
+    
     if (socketRef.current) {
-      console.log('Interview already started');
-      return;
+      console.log('WebSocket already exists, disconnecting first...');
+      socketRef.current.close();
     }
 
-    console.log('Starting interview...');
-    console.log('Attempting to connect to:', WEBSOCKET_URL);
+    console.log('Connecting to WebSocket...');
+    console.log('Attempting to connect to:', wsUrl);
     setIsConnecting(true);
+    setStatus(ConnectionStatus.Connecting);
     setError(null);
 
     try {
-      socketRef.current = new ReconnectingWebSocket(WEBSOCKET_URL, [], {
+      socketRef.current = new ReconnectingWebSocket(wsUrl, [], {
         maxReconnectionDelay: 10000,
         minReconnectionDelay: 1000,
         reconnectionDelayGrowFactor: 1.3,
@@ -62,6 +81,7 @@ export const useRealtimeInterviewSocket = (): UseRealtimeInterviewSocketReturn =
         console.log('WebSocket connected successfully');
         setIsConnected(true);
         setIsConnecting(false);
+        setStatus(ConnectionStatus.Open);
         setError(null);
         
         // Send initial ping to test connection
@@ -83,10 +103,14 @@ export const useRealtimeInterviewSocket = (): UseRealtimeInterviewSocketReturn =
             const data = JSON.parse(event.data);
             console.log('Parsed message:', data);
             
-            setMessages(prev => [...prev, { 
+            const newMessage: Message = { 
               type: data.type || 'unknown', 
-              data: data 
-            }]);
+              data: data,
+              ...data // Spread all properties from data
+            };
+
+            setMessages(prev => [...prev, newMessage]);
+            setLastMessage(newMessage);
 
             // Handle specific message types
             if (data.type === 'session.created') {
@@ -122,6 +146,13 @@ export const useRealtimeInterviewSocket = (): UseRealtimeInterviewSocketReturn =
             }
           } catch (parseError) {
             console.log('Non-JSON message received:', event.data);
+            // Create a simple message for non-JSON responses
+            const simpleMessage: Message = {
+              type: 'text',
+              data: event.data
+            };
+            setMessages(prev => [...prev, simpleMessage]);
+            setLastMessage(simpleMessage);
           }
         } catch (error) {
           console.error('Error processing message:', error);
@@ -132,12 +163,14 @@ export const useRealtimeInterviewSocket = (): UseRealtimeInterviewSocketReturn =
         console.error('WebSocket error:', error);
         setError('Failed to connect to interview service. Please try again.');
         setIsConnecting(false);
+        setStatus(ConnectionStatus.Closed);
       };
 
       socketRef.current.onclose = (event) => {
         console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
         setIsConnected(false);
         setIsConnecting(false);
+        setStatus(ConnectionStatus.Closed);
         
         if (event.code !== 1000) {
           setError(`Connection closed unexpectedly: ${event.reason || 'Unknown reason'}`);
@@ -148,22 +181,34 @@ export const useRealtimeInterviewSocket = (): UseRealtimeInterviewSocketReturn =
       console.error('Error creating WebSocket:', error);
       setError('Failed to create WebSocket connection');
       setIsConnecting(false);
+      setStatus(ConnectionStatus.Closed);
     }
   }, [sendMessage, WEBSOCKET_URL]);
 
-  const endInterview = useCallback(() => {
-    console.log('Ending interview...');
+  const disconnect = useCallback(() => {
+    console.log('Disconnecting WebSocket...');
     
     if (socketRef.current) {
-      socketRef.current.close(1000, 'User ended interview');
+      setStatus(ConnectionStatus.Closing);
+      socketRef.current.close(1000, 'User disconnected');
       socketRef.current = null;
     }
     
     setIsConnected(false);
     setIsConnecting(false);
+    setStatus(ConnectionStatus.Closed);
     setError(null);
     setMessages([]);
+    setLastMessage(null);
   }, []);
+
+  const startInterview = useCallback(() => {
+    connect();
+  }, [connect]);
+
+  const endInterview = useCallback(() => {
+    disconnect();
+  }, [disconnect]);
 
   useEffect(() => {
     return () => {
@@ -178,7 +223,11 @@ export const useRealtimeInterviewSocket = (): UseRealtimeInterviewSocketReturn =
     isConnecting,
     error,
     messages,
+    lastMessage,
+    status,
     sendMessage,
+    connect,
+    disconnect,
     startInterview,
     endInterview
   };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +24,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
   const { toast } = useToast();
 
   const websocketUrl = "wss://deofbwuazrvpocyybjpl.supabase.co/functions/v1/realtime-interview";
-  const { connect, disconnect, sendMessage, lastMessage, status, error } = useRealtimeInterviewSocket(websocketUrl);
+  const { connect, disconnect, sendMessage, lastMessage, status, error } = useRealtimeInterviewSocket();
   
   const isConnected = status === ConnectionStatus.Open;
   const isConnecting = status === ConnectionStatus.Connecting;
@@ -117,7 +116,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
       audioContextRef.current = new AudioContext({ sampleRate: 24000 });
       
       // Connect to WebSocket
-      connect();
+      connect(websocketUrl);
       
       console.log('Interview start initiated');
     } catch (error) {
