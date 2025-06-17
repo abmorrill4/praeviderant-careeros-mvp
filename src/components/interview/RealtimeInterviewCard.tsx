@@ -18,6 +18,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [currentTranscript, setCurrentTranscript] = useState("");
+  const [sessionReady, setSessionReady] = useState(false);
   
   const audioRecorderRef = useRef<AudioRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -85,6 +86,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
         });
       } else if (lastMessage.type === 'session.updated') {
         console.log('Session configured successfully');
+        setSessionReady(true);
       } else if (lastMessage.type === 'response.audio.delta') {
         setIsSpeaking(true);
         
@@ -149,7 +151,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
     try {
       console.log('Starting audio recording...');
       audioRecorderRef.current = new AudioRecorder((audioData) => {
-        if (status === ConnectionStatus.Open) {
+        if (status === ConnectionStatus.Open && sessionReady) {
           const encodedAudio = encodeAudioForAPI(audioData);
           sendMessage({
             type: 'input_audio_buffer.append',
@@ -188,6 +190,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
     
     setIsRecording(false);
     setIsSpeaking(false);
+    setSessionReady(false);
   };
 
   const completeInterview = () => {
@@ -204,18 +207,18 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
     });
   };
 
-  // Auto-start recording when connected
+  // Auto-start recording when session is ready
   useEffect(() => {
-    if (isConnected && !isRecording) {
+    if (isConnected && sessionReady && !isRecording) {
       startRecording();
     }
-  }, [isConnected, isRecording]);
+  }, [isConnected, sessionReady, isRecording]);
 
   return (
     <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
       <CardHeader>
         <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center space-x-2`}>
-          {isConnected ? (
+          {isConnected && sessionReady ? (
             <Phone className="w-5 h-5 text-green-500" />
           ) : isConnecting ? (
             <div className="w-5 h-5 border-2 border-career-accent border-t-transparent rounded-full animate-spin" />
@@ -237,25 +240,25 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
 
         {/* Connection Status */}
         <div className={`p-4 rounded-lg border ${
-          isConnected 
+          isConnected && sessionReady
             ? theme === 'dark' ? 'bg-green-900/10 border-green-500/20' : 'bg-green-50 border-green-200'
             : error
             ? theme === 'dark' ? 'bg-red-900/10 border-red-500/20' : 'bg-red-50 border-red-200'
             : theme === 'dark' ? 'bg-gray-900/10 border-gray-500/20' : 'bg-gray-50 border-gray-200'
         }`}>
           <div className="flex items-center space-x-2 mb-2">
-            {isConnected ? (
+            {isConnected && sessionReady ? (
               <>
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
                 <span className={`text-sm font-medium ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
                   Connected - Interview in progress
                 </span>
               </>
-            ) : isConnecting ? (
+            ) : isConnecting || (isConnected && !sessionReady) ? (
               <>
                 <div className="w-3 h-3 border-2 border-career-accent border-t-transparent rounded-full animate-spin" />
                 <span className={`text-sm font-medium ${theme === 'dark' ? 'text-career-accent' : 'text-career-accent'}`}>
-                  Connecting to AI service...
+                  {isConnected ? 'Configuring session...' : 'Connecting to AI service...'}
                 </span>
               </>
             ) : error ? (
@@ -330,13 +333,13 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
               <Phone className="w-4 h-4 mr-2" />
               Start Interview
             </Button>
-          ) : isConnecting ? (
+          ) : isConnecting || (isConnected && !sessionReady) ? (
             <Button
               disabled
               className="flex-1 bg-gray-400 text-white cursor-not-allowed"
             >
               <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Connecting...
+              {isConnected ? 'Configuring...' : 'Connecting...'}
             </Button>
           ) : (
             <>
