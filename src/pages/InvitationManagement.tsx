@@ -7,17 +7,56 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useInvitations, type Invitation } from '@/hooks/useInvitations';
 import { useAuth } from '@/contexts/AuthContext';
-import { Copy, Plus, Calendar, Mail, User } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useNavigate } from 'react-router-dom';
+import { Copy, Plus, Calendar, Mail, User, LogOut, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import ThemeToggle from '@/components/ThemeToggle';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarSeparator,
+  SidebarTrigger,
+  SidebarInset,
+  SidebarRail,
+} from '@/components/ui/sidebar';
 
 const InvitationManagement = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [invitedEmail, setInvitedEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const { createInvitation, getMyInvitations } = useInvitations();
-  const { user } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { theme } = useTheme();
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Access control - only allow specific user (replace with your email)
+  const ADMIN_EMAIL = 'your-email@example.com'; // Replace with your actual email
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/');
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (user && user.email !== ADMIN_EMAIL) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to access this page.",
+        variant: "destructive",
+      });
+      navigate('/dashboard');
+    }
+  }, [user, navigate, toast]);
 
   const loadInvitations = async () => {
     setLoading(true);
@@ -29,7 +68,7 @@ const InvitationManagement = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && user.email === ADMIN_EMAIL) {
       loadInvitations();
     }
   }, [user]);
@@ -52,141 +91,220 @@ const InvitationManagement = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'used': return 'bg-green-100 text-green-800';
-      case 'expired': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'used': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'expired': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
 
-  if (!user) {
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-career-dark flex items-center justify-center">
-        <div className="text-career-text">Please sign in to manage invitations.</div>
+      <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} flex items-center justify-center transition-colors duration-300`}>
+        <div className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>Loading...</div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-career-dark p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-career-text mb-2">Invitation Management</h1>
-          <p className="text-career-text-muted">Create and manage invitation codes for new users.</p>
-        </div>
+  if (!user) {
+    return null;
+  }
 
-        {/* Create Invitation */}
-        <Card className="neumorphic-panel border-0 bg-career-panel mb-8">
-          <CardHeader>
-            <CardTitle className="text-career-text flex items-center gap-2">
-              <Plus className="w-5 h-5" />
-              Create New Invitation
-            </CardTitle>
-            <CardDescription className="text-career-text-muted">
-              Generate a new invitation code to give someone access to the platform.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="email" className="text-career-text text-sm font-medium mb-2 block">
-                Email (Optional)
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={invitedEmail}
-                onChange={(e) => setInvitedEmail(e.target.value)}
-                placeholder="Enter email address (optional)"
-                className="neumorphic-input text-career-text placeholder:text-career-text-muted h-12"
-              />
-              <p className="text-xs text-career-text-muted mt-1">
-                If provided, this invitation will be associated with the specific email address.
+  if (user.email !== ADMIN_EMAIL) {
+    return null;
+  }
+
+  return (
+    <SidebarProvider defaultOpen={true}>
+      <div className={`min-h-screen flex w-full ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} transition-colors duration-300`}>
+        <ThemeToggle />
+        
+        <Sidebar>
+          <SidebarHeader>
+            <div className="p-4">
+              <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                Praeviderant
+              </h1>
+              <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                Your Career AI
               </p>
             </div>
-            <Button
-              onClick={handleCreateInvitation}
-              className="bg-career-mint hover:bg-career-mint-dark text-white neumorphic-button border-0"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Invitation
-            </Button>
-          </CardContent>
-        </Card>
+          </SidebarHeader>
 
-        {/* Invitations List */}
-        <Card className="neumorphic-panel border-0 bg-career-panel">
-          <CardHeader>
-            <CardTitle className="text-career-text">Your Invitations</CardTitle>
-            <CardDescription className="text-career-text-muted">
-              All invitation codes you've created and their current status.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="text-career-text-muted">Loading invitations...</div>
+          <SidebarContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate('/dashboard')}>
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Dashboard</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarSeparator />
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton isActive>
+                  <User className="w-4 h-4" />
+                  <span>Invitation Management</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+
+          <SidebarFooter>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className={`w-full ${theme === 'dark' ? 'border-career-text-dark/20 text-career-text-dark hover:bg-career-text-dark/10' : 'border-career-text-light/20 text-career-text-light hover:bg-career-text-light/10'} transition-all duration-200`}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </SidebarFooter>
+
+          <SidebarRail />
+        </Sidebar>
+
+        <SidebarInset className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className={`border-b ${theme === 'dark' ? 'border-career-text-dark/10' : 'border-career-text-light/10'} mb-8`}>
+            <div className="flex items-center py-6">
+              <SidebarTrigger />
+              <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} ml-4`}>
+                Invitation Management
+              </h1>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="space-y-8">
+            {/* Create Invitation */}
+            <div className={`p-8 rounded-2xl ${theme === 'dark' ? 'bg-career-panel-dark shadow-neumorphic-dark' : 'bg-career-panel-light shadow-neumorphic-light'} transition-all duration-300`}>
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-career-accent rounded-full flex items-center justify-center">
+                  <Plus className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    Create New Invitation
+                  </h2>
+                  <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    Generate a new invitation code to give someone access to the platform.
+                  </p>
+                </div>
               </div>
-            ) : invitations.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-career-text-muted">No invitations created yet.</div>
-              </div>
-            ) : (
+
               <div className="space-y-4">
-                {invitations.map((invitation) => (
-                  <div
-                    key={invitation.id}
-                    className="neumorphic-panel-inset p-4 rounded-lg"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <code className="bg-career-gray-dark px-3 py-1 rounded text-career-mint font-mono text-lg">
-                            {invitation.code}
-                          </code>
-                          <Badge className={getStatusColor(invitation.status)}>
-                            {invitation.status}
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyToClipboard(invitation.code)}
-                            className="text-career-text-muted hover:text-career-text"
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-career-text-muted">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            <span>Created: {format(new Date(invitation.created_at), 'MMM d, yyyy')}</span>
+                <div>
+                  <Label htmlFor="email" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-2 block`}>
+                    Email (Optional)
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={invitedEmail}
+                    onChange={(e) => setInvitedEmail(e.target.value)}
+                    placeholder="Enter email address (optional)"
+                    className={`h-12 ${theme === 'dark' ? 'bg-career-gray-dark border-career-text-dark/20 text-career-text-dark placeholder:text-career-text-muted-dark' : 'bg-career-gray-light border-career-text-light/20 text-career-text-light placeholder:text-career-text-muted-light'} transition-all duration-200`}
+                  />
+                  <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mt-1`}>
+                    If provided, this invitation will be associated with the specific email address.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleCreateInvitation}
+                  className="bg-career-accent hover:bg-career-accent-dark text-white transition-all duration-200"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Invitation
+                </Button>
+              </div>
+            </div>
+
+            {/* Invitations List */}
+            <div className={`p-8 rounded-2xl ${theme === 'dark' ? 'bg-career-panel-dark shadow-neumorphic-dark' : 'bg-career-panel-light shadow-neumorphic-light'} transition-all duration-300`}>
+              <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-6`}>
+                Your Invitations
+              </h3>
+              <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-6`}>
+                All invitation codes you've created and their current status.
+              </p>
+
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>Loading invitations...</div>
+                </div>
+              ) : invitations.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>No invitations created yet.</div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {invitations.map((invitation) => (
+                    <div
+                      key={invitation.id}
+                      className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-career-gray-dark shadow-neumorphic-sm-dark' : 'bg-career-gray-light shadow-neumorphic-sm-light'} transition-all duration-300`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <code className={`${theme === 'dark' ? 'bg-career-dark text-career-accent' : 'bg-career-light text-career-accent'} px-3 py-1 rounded font-mono text-lg`}>
+                              {invitation.code}
+                            </code>
+                            <Badge className={getStatusColor(invitation.status)}>
+                              {invitation.status}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyToClipboard(invitation.code)}
+                              className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-text-dark' : 'text-career-text-muted-light hover:text-career-text-light'}`}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            <span>Expires: {format(new Date(invitation.expires_at), 'MMM d, yyyy')}</span>
+                          <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              <span>Created: {format(new Date(invitation.created_at), 'MMM d, yyyy')}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              <span>Expires: {format(new Date(invitation.expires_at), 'MMM d, yyyy')}</span>
+                            </div>
+                            {invitation.invited_email && (
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4" />
+                                <span>{invitation.invited_email}</span>
+                              </div>
+                            )}
+                            {invitation.used_at && (
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4" />
+                                <span>Used: {format(new Date(invitation.used_at), 'MMM d, yyyy')}</span>
+                              </div>
+                            )}
                           </div>
-                          {invitation.invited_email && (
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4" />
-                              <span>{invitation.invited_email}</span>
-                            </div>
-                          )}
-                          {invitation.used_at && (
-                            <div className="flex items-center gap-2">
-                              <User className="w-4 h-4" />
-                              <span>Used: {format(new Date(invitation.used_at), 'MMM d, yyyy')}</span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
