@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +22,9 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
   const audioContextRef = useRef<AudioContext | null>(null);
   const { toast } = useToast();
 
-  const { connect, disconnect, sendMessage, lastMessage, status, error } = useRealtimeInterviewSocket();
+  // Use the correct WebSocket URL for the Supabase Edge Function
+  const websocketUrl = "wss://mcqzigbgzqhkfaobuxaq.supabase.co/functions/v1/realtime-interview";
+  const { connect, disconnect, sendMessage, lastMessage, status, error } = useRealtimeInterviewSocket(websocketUrl);
   
   const isConnected = status === ConnectionStatus.Open;
   const isConnecting = status === ConnectionStatus.Connecting;
@@ -54,6 +55,29 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
 
       if (lastMessage.type === 'session.created') {
         console.log('Session created successfully');
+        // Send session update after session is created
+        sendMessage({
+          type: 'session.update',
+          session: {
+            modalities: ['text', 'audio'],
+            instructions: 'You are a professional career interviewer. Ask thoughtful questions about the user\'s background, experience, skills, and career goals. Be conversational and engaging.',
+            voice: 'alloy',
+            input_audio_format: 'pcm16',
+            output_audio_format: 'pcm16',
+            input_audio_transcription: {
+              model: 'whisper-1'
+            },
+            turn_detection: {
+              type: 'server_vad',
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 1000
+            },
+            temperature: 0.8,
+            max_response_output_tokens: 'inf'
+          }
+        });
+        
         toast({
           title: "Connection Established",
           description: "AI interview session is ready",
@@ -97,7 +121,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
         variant: "destructive",
       });
     }
-  }, [lastMessage, onTranscriptUpdate, toast, currentTranscript]);
+  }, [lastMessage, onTranscriptUpdate, toast, currentTranscript, sendMessage]);
 
   const startInterview = async () => {
     try {

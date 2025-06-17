@@ -29,6 +29,7 @@ const PING_INTERVAL_MS = 25000; // 25 seconds
 export const useRealtimeInterviewSocket = (url: string | null) => {
   const [status, setStatus] = useState<ConnectionStatus>(ConnectionStatus.Closed);
   const [lastMessage, setLastMessage] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<ReconnectingWebSocket | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -39,6 +40,7 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
     }
 
     console.log('Attempting to connect to:', url);
+    setError(null); // Clear previous errors
 
     // Close any existing interval
     if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
@@ -49,6 +51,7 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
     ws.onopen = () => {
       console.log('WebSocket connection established successfully');
       setStatus(ConnectionStatus.Open);
+      setError(null);
       // Start sending pings to keep the connection alive
       pingIntervalRef.current = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
@@ -66,6 +69,7 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
+      setError('Connection failed. Please try again.');
     };
 
     ws.onmessage = (event) => {
@@ -81,6 +85,7 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
         setLastMessage(parsedMessage);
       } catch (error) {
         console.error('Error parsing WebSocket message:', error, event.data);
+        setError('Error processing message from server');
       }
     };
 
@@ -93,6 +98,7 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
     wsRef.current?.close();
     wsRef.current = null;
     setStatus(ConnectionStatus.Closed);
+    setError(null);
   }, []);
 
   const sendMessage = useCallback((data: WebSocketMessage) => {
@@ -102,6 +108,7 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
       wsRef.current.send(message);
     } else {
       console.error('Cannot send message, WebSocket is not open. State:', wsRef.current?.readyState);
+      setError('Connection not available. Please try reconnecting.');
     }
   }, []);
 
@@ -112,5 +119,5 @@ export const useRealtimeInterviewSocket = (url: string | null) => {
     };
   }, [disconnect]);
 
-  return { connect, disconnect, sendMessage, lastMessage, status };
+  return { connect, disconnect, sendMessage, lastMessage, status, error };
 };
