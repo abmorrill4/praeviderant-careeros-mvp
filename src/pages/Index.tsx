@@ -1,26 +1,21 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import WaveAnimation from "@/components/WaveAnimation";
 import ThemeToggle from "@/components/ThemeToggle";
 import InterestModal from "@/components/InterestModal";
+import AuthForm from "@/components/auth/AuthForm";
 
 const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showLoginForm, setShowLoginForm] = useState(false);
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAuthForm, setShowAuthForm] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const { user, loading, signIn } = useAuth();
+  const { user, loading } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     // Redirect authenticated users to dashboard
@@ -38,52 +33,16 @@ const Index = () => {
     );
   }
 
-  const handleFormToggle = (toLogin: boolean) => {
+  const handleFormToggle = (toAuth: boolean) => {
     setIsTransitioning(true);
     setTimeout(() => {
-      setShowLoginForm(toLogin);
+      setShowAuthForm(toAuth);
       setIsTransitioning(false);
     }, 150);
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const { error } = await signIn(loginData.email, loginData.password);
-      
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          toast({
-            title: "Invalid credentials",
-            description: "Please check your email and password.",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
-      } else {
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully signed in.",
-        });
-        // User will be automatically redirected by the useEffect above
-      }
-    } catch (error: any) {
-      console.error('Auth error:', error);
-      toast({
-        title: "Something went wrong",
-        description: error.message || "Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleLoginInputChange = (field: string, value: string) => {
-    setLoginData(prev => ({ ...prev, [field]: value }));
+  const handleAuthSuccess = () => {
+    // User will be automatically redirected by the useEffect above
   };
 
   return (
@@ -119,10 +78,10 @@ const Index = () => {
 
             {/* CTA Section - Fixed Height Container */}
             <div className="flex justify-center lg:justify-end">
-              <div className={`neumorphic-panel ${theme} p-6 md:p-8 w-full max-w-md h-[360px] flex flex-col transition-all duration-700 ${isTransitioning ? 'opacity-60' : 'opacity-100'}`}>
+              <div className={`h-[480px] flex flex-col transition-all duration-700 ${isTransitioning ? 'opacity-60' : 'opacity-100'}`}>
                 {/* Form Toggle Indicator */}
                 <div className="relative mb-6 flex-shrink-0">
-                  <div className={`absolute top-0 left-0 h-1 bg-gradient-to-r from-career-accent to-career-accent-dark rounded-full transition-all duration-700 ease-in-out ${showLoginForm ? 'w-1/2 translate-x-full' : 'w-1/2 translate-x-0'}`}>
+                  <div className={`absolute top-0 left-0 h-1 bg-gradient-to-r from-career-accent to-career-accent-dark rounded-full transition-all duration-700 ease-in-out ${showAuthForm ? 'w-1/2 translate-x-full' : 'w-1/2 translate-x-0'}`}>
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-pulse"></div>
                   </div>
                   <div className={`h-1 w-full rounded-full ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}></div>
@@ -130,7 +89,7 @@ const Index = () => {
 
                 {/* Form Content - Flex Grow */}
                 <div className={`flex-grow flex flex-col justify-between transition-all duration-500 ease-out ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-                  {!showLoginForm ? (
+                  {!showAuthForm ? (
                     <div className="flex flex-col h-full">
                       <div className="text-center mb-6 flex-shrink-0">
                         <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 transition-all duration-500`}>
@@ -164,64 +123,10 @@ const Index = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col h-full">
-                      <div className="text-center mb-4 flex-shrink-0">
-                        <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 transition-all duration-500`}>
-                          Welcome Back
-                        </h2>
-                        <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-4 transition-all duration-600`}>
-                          Sign in to your Praeviderant account
-                        </p>
-                      </div>
-
-                      <form onSubmit={handleLogin} className="flex-grow flex flex-col justify-center space-y-3">
-                        <div className="relative overflow-hidden">
-                          <Input
-                            id="email"
-                            type="email"
-                            value={loginData.email}
-                            onChange={(e) => handleLoginInputChange("email", e.target.value)}
-                            placeholder="Email address"
-                            className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-11 transition-all duration-300 focus:shadow-lg relative group`}
-                            required
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-career-accent to-transparent opacity-0 group-focus-within:opacity-5 translate-x-[-100%] group-focus-within:translate-x-[100%] transition-all duration-1200 ease-out pointer-events-none"></div>
-                        </div>
-                        
-                        <div className="relative overflow-hidden">
-                          <Input
-                            id="password"
-                            type="password"
-                            value={loginData.password}
-                            onChange={(e) => handleLoginInputChange("password", e.target.value)}
-                            placeholder="Password"
-                            className={`neumorphic-input ${theme === 'dark' ? 'text-career-text-dark placeholder:text-career-text-muted-dark' : 'text-career-text-light placeholder:text-career-text-muted-light'} h-11 transition-all duration-300 focus:shadow-lg relative group`}
-                            required
-                            minLength={6}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-career-accent to-transparent opacity-0 group-focus-within:opacity-5 translate-x-[-100%] group-focus-within:translate-x-[100%] transition-all duration-1200 ease-out pointer-events-none"></div>
-                        </div>
-
-                        <div className="pt-2 relative overflow-hidden">
-                          <Button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className={`w-full h-11 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-base transition-all duration-300 hover:shadow-lg disabled:opacity-50 relative overflow-hidden group`}
-                          >
-                            <span className={`relative z-10 transition-all duration-300 ${isSubmitting ? 'opacity-0' : 'opacity-100'}`}>
-                              Sign In
-                            </span>
-                            {isSubmitting && (
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              </div>
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 translate-x-[-100%] group-hover:translate-x-[100%] transition-all duration-1000 ease-out"></div>
-                          </Button>
-                        </div>
-                      </form>
-
-                      <div className="text-center pt-3 flex-shrink-0">
+                    <div className="flex flex-col h-full justify-center">
+                      <AuthForm onSuccess={handleAuthSuccess} />
+                      
+                      <div className="text-center mt-4 flex-shrink-0">
                         <button
                           onClick={() => handleFormToggle(false)}
                           className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-accent' : 'text-career-text-muted-light hover:text-career-accent'} text-xs transition-all duration-500 underline relative overflow-hidden group`}
@@ -238,7 +143,7 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Compact Features Section */}
+        {/* Features Section */}
         <section className="py-8 md:py-12">
           <div className="grid md:grid-cols-2 gap-8">
             {/* Value Proposition */}

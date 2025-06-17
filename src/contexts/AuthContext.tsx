@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, name: string) => Promise<{ user?: User; error: any }>;
+  signUp: (email: string, password: string, name: string, invitationCode?: string) => Promise<{ user?: User; error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -31,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -39,6 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -47,34 +49,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, name: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          name: name
+  const signUp = async (email: string, password: string, name: string, invitationCode?: string) => {
+    try {
+      // Clean up any existing auth state
+      await supabase.auth.signOut();
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      // If we have an invitation code, mark it as used
+      if (invitationCode && data.user) {
+        const { error: inviteError } = await supabase
+          .from('invitations')
+          .update({
+            status: 'used',
+            used_by: data.user.id,
+            used_at: new Date().toISOString()
+          })
+          .eq('code', invitationCode.toUpperCase());
+        
+        if (inviteError) {
+          console.error('Error marking invitation as used:', inviteError);
         }
       }
-    });
-    
-    return { user: data.user, error };
+      
+      return { user: data.user, error: null };
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      return { user: undefined, error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    return { error };
+    try {
+      // Clean up any existing auth state
+      await supabase.auth.signOut();
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      return { error };
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      return { error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   const value: AuthContextType = {
