@@ -57,6 +57,81 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          prompt_template: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          prompt_template?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          prompt_template?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      interviews: {
+        Row: {
+          audio_url: string | null
+          completed_at: string | null
+          created_at: string
+          extracted_context: Json | null
+          id: string
+          interview_type: string
+          started_at: string | null
+          status: string
+          transcript: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          completed_at?: string | null
+          created_at?: string
+          extracted_context?: Json | null
+          id?: string
+          interview_type: string
+          started_at?: string | null
+          status?: string
+          transcript?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          completed_at?: string | null
+          created_at?: string
+          extracted_context?: Json | null
+          id?: string
+          interview_type?: string
+          started_at?: string | null
+          status?: string
+          transcript?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           code: string
