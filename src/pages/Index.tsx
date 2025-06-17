@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,19 +117,20 @@ const Index = () => {
               </p>
             </div>
 
-            {/* CTA Section */}
+            {/* CTA Section - Fixed Height Container */}
             <div className="flex justify-center lg:justify-end">
-              <div className={`neumorphic-panel ${theme} p-6 md:p-8 w-full max-w-md transition-all duration-500 ${isTransitioning ? 'scale-95 opacity-70' : 'scale-100 opacity-100'}`}>
+              <div className={`neumorphic-panel ${theme} p-6 md:p-8 w-full max-w-md h-[420px] flex flex-col transition-all duration-500 ${isTransitioning ? 'scale-95 opacity-70' : 'scale-100 opacity-100'}`}>
                 {/* Form Toggle Indicator */}
-                <div className="relative mb-6">
+                <div className="relative mb-6 flex-shrink-0">
                   <div className={`absolute top-0 left-0 h-1 bg-career-accent rounded-full transition-all duration-500 ease-out ${showLoginForm ? 'w-1/2 translate-x-full' : 'w-1/2 translate-x-0'}`}></div>
                   <div className={`h-1 w-full rounded-full ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}></div>
                 </div>
 
-                <div className={`transition-all duration-300 ease-out ${isTransitioning ? 'opacity-0 transform translate-y-4' : 'opacity-100 transform translate-y-0'}`}>
+                {/* Form Content - Flex Grow */}
+                <div className={`flex-grow flex flex-col justify-between transition-all duration-300 ease-out ${isTransitioning ? 'opacity-0 transform translate-y-4' : 'opacity-100 transform translate-y-0'}`}>
                   {!showLoginForm ? (
-                    <div className="animate-fade-in">
-                      <div className="text-center mb-6">
+                    <div className="animate-fade-in flex flex-col h-full">
+                      <div className="text-center mb-6 flex-shrink-0">
                         <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 transform transition-all duration-300`}>
                           Get Early Access
                         </h2>
@@ -137,16 +139,18 @@ const Index = () => {
                         </p>
                       </div>
 
-                      <div className="transform transition-all duration-300 delay-150">
-                        <Button
-                          onClick={() => setIsModalOpen(true)}
-                          className={`w-full h-12 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-base transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95`}
-                        >
-                          Register Your Interest
-                        </Button>
+                      <div className="flex-grow flex flex-col justify-center">
+                        <div className="transform transition-all duration-300 delay-150">
+                          <Button
+                            onClick={() => setIsModalOpen(true)}
+                            className={`w-full h-12 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-base transition-all duration-200 hover:scale-105 hover:shadow-lg active:scale-95`}
+                          >
+                            Register Your Interest
+                          </Button>
+                        </div>
                       </div>
 
-                      <div className="text-center mt-4 transform transition-all duration-300 delay-200">
+                      <div className="text-center mt-4 flex-shrink-0 transform transition-all duration-300 delay-200">
                         <button
                           onClick={() => handleFormToggle(true)}
                           className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-accent' : 'text-career-text-muted-light hover:text-career-accent'} text-xs transition-all duration-300 underline hover:scale-105 relative overflow-hidden group`}
@@ -157,8 +161,8 @@ const Index = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="animate-fade-in">
-                      <div className="text-center mb-6">
+                    <div className="animate-fade-in flex flex-col h-full">
+                      <div className="text-center mb-6 flex-shrink-0">
                         <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 transform transition-all duration-300`}>
                           Welcome Back
                         </h2>
@@ -167,7 +171,7 @@ const Index = () => {
                         </p>
                       </div>
 
-                      <form onSubmit={handleLogin} className="space-y-4">
+                      <form onSubmit={handleLogin} className="flex-grow flex flex-col justify-center space-y-4">
                         <div className="transform transition-all duration-300 delay-100">
                           <Label htmlFor="email" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-sm font-medium mb-2 block transition-colors duration-200`}>
                             Email
@@ -217,7 +221,7 @@ const Index = () => {
                         </div>
                       </form>
 
-                      <div className="text-center mt-4 transform transition-all duration-300 delay-250">
+                      <div className="text-center mt-4 flex-shrink-0 transform transition-all duration-300 delay-250">
                         <button
                           onClick={() => handleFormToggle(false)}
                           className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-accent' : 'text-career-text-muted-light hover:text-career-accent'} text-xs transition-all duration-300 underline hover:scale-105 relative overflow-hidden group`}
