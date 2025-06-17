@@ -33,7 +33,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending confirmation email to: ${email} for user: ${name}`);
 
     const emailResponse = await resend.emails.send({
-      from: "Praeviderant <noreply@yourdomain.com>", // You'll need to replace 'yourdomain.com' with your actual verified domain
+      from: "Praeviderant <noreply@praeviderant.com>",
       to: [email],
       subject: "Welcome to Praeviderant Early Access!",
       html: `
