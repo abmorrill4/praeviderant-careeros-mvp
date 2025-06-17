@@ -9,7 +9,6 @@ const corsHeaders = {
 
 serve(async (req) => {
   console.log('Received request:', req.method, req.url);
-  console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -19,10 +18,6 @@ serve(async (req) => {
 
   const { headers } = req;
   const upgradeHeader = headers.get("upgrade") || "";
-  const connectionHeader = headers.get("connection") || "";
-
-  console.log('Upgrade header:', upgradeHeader);
-  console.log('Connection header:', connectionHeader);
 
   if (upgradeHeader.toLowerCase() !== "websocket") {
     console.log('Not a WebSocket request');
@@ -32,106 +27,100 @@ serve(async (req) => {
     });
   }
 
+  // Check for OpenAI API key first
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) {
+    console.error('OPENAI_API_KEY not found in environment');
+    return new Response("OpenAI API key not configured", { 
+      status: 500,
+      headers: corsHeaders 
+    });
+  }
+
   console.log('Upgrading to WebSocket');
   const { socket, response } = Deno.upgradeWebSocket(req);
   
   let openAISocket: WebSocket | null = null;
-  let sessionStarted = false;
-
-  // Connect to OpenAI Realtime API
-  const connectToOpenAI = () => {
-    const apiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!apiKey) {
-      console.error('OPENAI_API_KEY not found in environment');
-      socket.send(JSON.stringify({ error: 'OpenAI API key not configured' }));
-      return;
-    }
-
-    console.log('Connecting to OpenAI Realtime API...');
-    const url = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
-    
-    try {
-      openAISocket = new WebSocket(url, [], {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'OpenAI-Beta': 'realtime=v1'
-        }
-      });
-
-      openAISocket.onopen = () => {
-        console.log('Successfully connected to OpenAI Realtime API');
-      };
-
-      openAISocket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('OpenAI message received:', data.type);
-
-          // Handle session created event
-          if (data.type === 'session.created' && !sessionStarted) {
-            sessionStarted = true;
-            console.log('Session created, sending configuration...');
-            
-            // Send session configuration
-            const sessionUpdate = {
-              type: 'session.update',
-              session: {
-                modalities: ['text', 'audio'],
-                instructions: 'You are conducting a professional career interview. Ask thoughtful questions about the user\'s background, experience, and career goals. Be conversational and encouraging. Keep responses concise but engaging.',
-                voice: 'alloy',
-                input_audio_format: 'pcm16',
-                output_audio_format: 'pcm16',
-                input_audio_transcription: {
-                  model: 'whisper-1'
-                },
-                turn_detection: {
-                  type: 'server_vad',
-                  threshold: 0.5,
-                  prefix_padding_ms: 300,
-                  silence_duration_ms: 1000
-                },
-                temperature: 0.8,
-                max_response_output_tokens: 'inf'
-              }
-            };
-            
-            openAISocket?.send(JSON.stringify(sessionUpdate));
-            console.log('Session configuration sent');
-          }
-
-          // Forward all messages to client
-          if (socket.readyState === WebSocket.OPEN) {
-            socket.send(event.data);
-          }
-        } catch (error) {
-          console.error('Error processing OpenAI message:', error);
-        }
-      };
-
-      openAISocket.onerror = (error) => {
-        console.error('OpenAI WebSocket error:', error);
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({ error: 'OpenAI connection error' }));
-        }
-      };
-
-      openAISocket.onclose = (event) => {
-        console.log('OpenAI WebSocket closed:', event.code, event.reason);
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.close();
-        }
-      };
-    } catch (error) {
-      console.error('Error creating OpenAI WebSocket:', error);
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ error: 'Failed to connect to OpenAI' }));
-      }
-    }
-  };
 
   socket.onopen = () => {
     console.log('Client WebSocket connected successfully');
-    connectToOpenAI();
+    
+    // Connect to OpenAI Realtime API
+    const url = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
+    
+    console.log('Connecting to OpenAI Realtime API...');
+    openAISocket = new WebSocket(url, [], {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'OpenAI-Beta': 'realtime=v1'
+      }
+    });
+
+    openAISocket.onopen = () => {
+      console.log('Successfully connected to OpenAI Realtime API');
+      // Don't send session update here - wait for session.created
+    };
+
+    openAISocket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('OpenAI message received:', data.type);
+
+        // Send session configuration ONLY after receiving session.created
+        if (data.type === 'session.created') {
+          console.log('Session created, now sending configuration...');
+          
+          const sessionUpdate = {
+            type: 'session.update',
+            session: {
+              modalities: ['text', 'audio'],
+              instructions: 'You are conducting a professional career interview. Ask thoughtful questions about the user\'s background, experience, and career goals. Be conversational and encouraging. Keep responses concise but engaging.',
+              voice: 'alloy',
+              input_audio_format: 'pcm16',
+              output_audio_format: 'pcm16',
+              input_audio_transcription: {
+                model: 'whisper-1'
+              },
+              turn_detection: {
+                type: 'server_vad',
+                threshold: 0.5,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 1000
+              },
+              temperature: 0.8,
+              max_response_output_tokens: 'inf'
+            }
+          };
+          
+          openAISocket?.send(JSON.stringify(sessionUpdate));
+          console.log('Session configuration sent');
+        }
+
+        // Forward all messages to client
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(event.data);
+        }
+      } catch (error) {
+        console.error('Error processing OpenAI message:', error);
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ error: 'Error processing OpenAI message' }));
+        }
+      }
+    };
+
+    openAISocket.onerror = (error) => {
+      console.error('OpenAI WebSocket error:', error);
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ error: 'OpenAI connection error' }));
+      }
+    };
+
+    openAISocket.onclose = (event) => {
+      console.log('OpenAI WebSocket closed:', event.code, event.reason);
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.close();
+      }
+    };
   };
 
   socket.onmessage = (event) => {
@@ -153,10 +142,16 @@ serve(async (req) => {
         openAISocket.send(event.data);
         console.log('Message forwarded to OpenAI');
       } else {
-        console.warn('Received client message but OpenAI socket is not open. State:', openAISocket?.readyState);
+        console.warn('Cannot forward message - OpenAI socket not ready. State:', openAISocket?.readyState);
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ error: 'OpenAI connection not ready' }));
+        }
       }
     } catch (error) {
       console.error('Error processing client message:', error);
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ error: 'Error processing message' }));
+      }
     }
   };
 
