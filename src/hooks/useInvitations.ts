@@ -64,6 +64,12 @@ export const useInvitations = () => {
   const createInvitation = async (invitedEmail?: string) => {
     setLoading(true);
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       // Generate invitation code
       const { data: codeData, error: codeError } = await supabase
         .rpc('generate_invitation_code');
@@ -75,6 +81,7 @@ export const useInvitations = () => {
         .from('invitations')
         .insert({
           code: codeData,
+          invited_by: user.id,
           invited_email: invitedEmail || null,
         })
         .select()
@@ -109,7 +116,14 @@ export const useInvitations = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return { success: true, invitations: data };
+      
+      // Type cast the status field to match our interface
+      const typedData = data?.map(invitation => ({
+        ...invitation,
+        status: invitation.status as 'pending' | 'used' | 'expired'
+      })) || [];
+      
+      return { success: true, invitations: typedData };
     } catch (error: any) {
       console.error('Error fetching invitations:', error);
       return { success: false, error: error.message };
