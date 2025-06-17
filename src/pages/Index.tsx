@@ -78,7 +78,7 @@ const Index = () => {
 
             {/* CTA Section - Fixed Height Container */}
             <div className="flex justify-center lg:justify-end">
-              <div className={`h-[480px] flex flex-col transition-all duration-700 ${isTransitioning ? 'opacity-60' : 'opacity-100'}`}>
+              <div className={`w-full max-w-md h-[520px] flex flex-col transition-all duration-700 ${isTransitioning ? 'opacity-60' : 'opacity-100'}`}>
                 {/* Form Toggle Indicator */}
                 <div className="relative mb-6 flex-shrink-0">
                   <div className={`absolute top-0 left-0 h-1 bg-gradient-to-r from-career-accent to-career-accent-dark rounded-full transition-all duration-700 ease-in-out ${showAuthForm ? 'w-1/2 translate-x-full' : 'w-1/2 translate-x-0'}`}>
@@ -123,8 +123,10 @@ const Index = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col h-full justify-center">
-                      <AuthForm onSuccess={handleAuthSuccess} />
+                    <div className="flex flex-col h-full">
+                      <div className="flex-grow flex items-center justify-center">
+                        <AuthForm onSuccess={handleAuthSuccess} />
+                      </div>
                       
                       <div className="text-center mt-4 flex-shrink-0">
                         <button
