@@ -47,23 +47,19 @@ serve(async (req) => {
     console.log('Client WebSocket connected');
     
     try {
-      // Connect to OpenAI Realtime API
+      // Connect to OpenAI Realtime API with correct URL and headers
       const url = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
       
       console.log('Attempting to connect to OpenAI Realtime API...');
-      openAISocket = new WebSocket(url, [], {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'OpenAI-Beta': 'realtime=v1'
-        }
-      });
+      openAISocket = new WebSocket(url);
 
+      // Set up authentication after connection
       openAISocket.onopen = () => {
         console.log('OpenAI WebSocket connection established');
         isOpenAIConnected = true;
         
-        // Send initial session configuration immediately
-        const sessionUpdate = {
+        // Send authentication via first message
+        const authEvent = {
           type: 'session.update',
           session: {
             modalities: ['text', 'audio'],
@@ -85,8 +81,16 @@ serve(async (req) => {
           }
         };
         
-        console.log('Sending session configuration to OpenAI');
-        openAISocket?.send(JSON.stringify(sessionUpdate));
+        console.log('Sending authentication and session configuration to OpenAI');
+        
+        // Add Authorization header to the message
+        const authenticatedMessage = {
+          ...authEvent,
+          authorization: `Bearer ${apiKey}`,
+          'openai-beta': 'realtime=v1'
+        };
+        
+        openAISocket?.send(JSON.stringify(authenticatedMessage));
       };
 
       openAISocket.onmessage = (event) => {
@@ -167,8 +171,15 @@ serve(async (req) => {
       const data = JSON.parse(event.data);
       console.log('Forwarding client message to OpenAI:', data.type);
       
+      // Add authorization to outgoing messages
+      const authenticatedData = {
+        ...data,
+        authorization: `Bearer ${apiKey}`,
+        'openai-beta': 'realtime=v1'
+      };
+      
       // Forward client messages to OpenAI
-      openAISocket.send(event.data);
+      openAISocket.send(JSON.stringify(authenticatedData));
       
     } catch (error) {
       console.error('Error processing client message:', error);
