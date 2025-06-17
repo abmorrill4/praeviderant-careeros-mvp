@@ -3,169 +3,67 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Play, Pause, Square, Mic, MicOff } from "lucide-react";
+import { Play, Mic } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { InterviewCard } from "./InterviewCard";
+import { RealtimeInterviewCard } from "./RealtimeInterviewCard";
 import { ResumePreview } from "./ResumePreview";
 import { VoiceVisualizer } from "./VoiceVisualizer";
-
-interface InterviewType {
-  id: string;
-  name: string;
-  title: string;
-  description: string;
-  prompt_template: string;
-  display_order: number;
-}
-
-interface Interview {
-  id: string;
-  interview_type: string;
-  status: 'not_started' | 'in_progress' | 'completed' | 'failed';
-  started_at?: string;
-  completed_at?: string;
-  transcript?: string;
-  extracted_context?: any;
-}
 
 const InterviewBuilder = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
-  const [interviewTypes, setInterviewTypes] = useState<InterviewType[]>([]);
-  const [currentInterview, setCurrentInterview] = useState<Interview | null>(null);
-  const [currentTypeIndex, setCurrentTypeIndex] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [extractedData, setExtractedData] = useState<any>({});
+  const [isCompleted, setIsCompleted] = useState(false);
 
-  useEffect(() => {
-    fetchInterviewTypes();
-  }, []);
-
-  const fetchInterviewTypes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('interview_types')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (error) throw error;
-      setInterviewTypes(data || []);
-    } catch (error) {
-      console.error('Error fetching interview types:', error);
-    }
+  const startInterview = () => {
+    setHasStarted(true);
   };
 
-  const startInterview = async () => {
-    if (!user || !interviewTypes[currentTypeIndex]) return;
+  const handleTranscriptUpdate = (transcript: string) => {
+    console.log('Transcript updated:', transcript);
+  };
+
+  const handleInterviewComplete = async (interviewData: any) => {
+    if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      // Save the interview data to Supabase
+      const { error } = await supabase
         .from('interviews')
         .insert({
           user_id: user.id,
-          interview_type: interviewTypes[currentTypeIndex].name,
-          status: 'in_progress',
-          started_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      const interviewData: Interview = {
-        ...data,
-        status: data.status as 'not_started' | 'in_progress' | 'completed' | 'failed'
-      };
-      
-      setCurrentInterview(interviewData);
-      console.log('Interview started:', interviewData);
-    } catch (error) {
-      console.error('Error starting interview:', error);
-    }
-  };
-
-  const completeCurrentSection = async (newExtractedData: any) => {
-    if (!currentInterview) return;
-
-    setIsProcessing(true);
-
-    try {
-      const updatedExtractedData = { ...extractedData, ...newExtractedData };
-
-      const { error } = await supabase
-        .from('interviews')
-        .update({
-          extracted_context: updatedExtractedData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentInterview.id);
+          interview_type: 'realtime_ai_interview',
+          status: 'completed',
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+          transcript: interviewData.transcript,
+          extracted_context: interviewData
+        });
 
       if (error) throw error;
 
-      setExtractedData(updatedExtractedData);
-
-      // Move to next section or complete interview
-      if (currentTypeIndex < interviewTypes.length - 1) {
-        setCurrentTypeIndex(currentTypeIndex + 1);
-      } else {
-        // Complete entire interview
-        await supabase
-          .from('interviews')
-          .update({
-            status: 'completed',
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', currentInterview.id);
-        
-        console.log('Interview completed successfully');
-      }
+      setExtractedData(interviewData);
+      setIsCompleted(true);
+      console.log('Interview completed and saved:', interviewData);
     } catch (error) {
-      console.error('Error completing section:', error);
-    } finally {
-      setIsProcessing(false);
+      console.error('Error saving interview:', error);
     }
   };
-
-  const currentType = interviewTypes[currentTypeIndex];
-  const hasStarted = currentInterview !== null;
-  const isCompleted = currentTypeIndex >= interviewTypes.length;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
         <h2 className={`text-3xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-4`}>
-          AI Career Interview
+          AI Real-time Interview
         </h2>
         <p className={`text-lg ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-          Speak naturally - our AI will transcribe and extract key information for your resume
+          Have a natural conversation with our AI - real-time voice communication
         </p>
       </div>
-
-      {/* Progress Indicator */}
-      {hasStarted && (
-        <div className="flex justify-center">
-          <div className="flex space-x-2">
-            {interviewTypes.map((_, index) => (
-              <div
-                key={index}
-                className={`w-3 h-3 rounded-full transition-colors duration-200 ${
-                  index < currentTypeIndex
-                    ? 'bg-green-500'
-                    : index === currentTypeIndex
-                    ? 'bg-career-accent'
-                    : theme === 'dark'
-                    ? 'bg-career-gray-dark'
-                    : 'bg-career-gray-light'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Interview Section */}
@@ -175,31 +73,42 @@ const InterviewBuilder = () => {
             <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
               <CardHeader>
                 <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                  Ready to Begin Your AI-Powered Interview?
+                  Ready for Your Real-time AI Interview?
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                  We'll guide you through {interviewTypes.length} sections using advanced AI to transcribe your responses 
-                  and extract key information for your resume. Simply speak naturally and our AI will do the rest.
+                  Experience the future of career interviews with OpenAI's real-time voice technology. 
+                  Have a natural conversation with our AI interviewer who will ask thoughtful questions 
+                  about your background, experience, and career goals.
                 </p>
                 <div className="space-y-2">
-                  {interviewTypes.map((type, index) => (
-                    <div key={type.id} className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-career-text-muted-dark' : 'bg-career-text-muted-light'}`} />
-                      <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                        {type.title}
-                      </span>
-                    </div>
-                  ))}
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-career-text-muted-dark' : 'bg-career-text-muted-light'}`} />
+                    <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      Real-time voice conversation
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-career-text-muted-dark' : 'bg-career-text-muted-light'}`} />
+                    <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      Intelligent follow-up questions
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-career-text-muted-dark' : 'bg-career-text-muted-light'}`} />
+                    <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      Automatic transcript generation
+                    </span>
+                  </div>
                 </div>
                 <Button 
                   onClick={startInterview}
                   className="w-full bg-career-accent hover:bg-career-accent-dark text-white"
                   disabled={!user}
                 >
-                  <Play className="w-4 h-4 mr-2" />
-                  Start AI Interview
+                  <Mic className="w-4 h-4 mr-2" />
+                  Start Real-time Interview
                 </Button>
               </CardContent>
             </Card>
@@ -213,8 +122,8 @@ const InterviewBuilder = () => {
               </CardHeader>
               <CardContent>
                 <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-4`}>
-                  Excellent work! Our AI has processed your responses and generated a comprehensive resume. 
-                  You can review, edit, and download it anytime.
+                  Excellent work! Your real-time AI interview has been completed and saved. 
+                  You can review the transcript and generate a resume from the extracted information.
                 </p>
                 <Button 
                   onClick={() => window.location.reload()}
@@ -225,12 +134,10 @@ const InterviewBuilder = () => {
               </CardContent>
             </Card>
           ) : (
-            /* Current Interview Section */
-            <InterviewCard
-              type={currentType}
-              isRecording={isRecording}
-              isProcessing={isProcessing}
-              onComplete={completeCurrentSection}
+            /* Real-time Interview Component */
+            <RealtimeInterviewCard
+              onTranscriptUpdate={handleTranscriptUpdate}
+              onComplete={handleInterviewComplete}
               theme={theme}
             />
           )}
