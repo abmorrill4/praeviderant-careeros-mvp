@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { AudioRecorder, encodeAudioForAPI, playAudioData } from "@/utils/RealtimeAudio";
+import { useRealtimeInterviewSocket, ConnectionStatus } from "@/hooks/useRealtimeInterviewSocket";
 
 interface RealtimeInterviewCardProps {
   onTranscriptUpdate: (transcript: string) => void;
@@ -13,16 +14,19 @@ interface RealtimeInterviewCardProps {
 }
 
 export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }: RealtimeInterviewCardProps) => {
-  const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [currentTranscript, setCurrentTranscript] = useState("");
   
-  const wsRef = useRef<WebSocket | null>(null);
   const audioRecorderRef = useRef<AudioRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const { toast } = useToast();
+
+  const wsUrl = `wss://deofbwuazrvpocyybjpl.functions.supabase.co/realtime-interview`;
+  const { connect, disconnect, sendMessage, lastMessage, status } = useRealtimeInterviewSocket(wsUrl);
+  
+  const isConnected = status === ConnectionStatus.Open;
 
   useEffect(() => {
     return () => {
@@ -30,85 +34,67 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
     };
   }, []);
 
-  const connect = async () => {
+  useEffect(() => {
+    if (!lastMessage) return;
+
+    try {
+      console.log('Received message:', lastMessage.type);
+
+      if (lastMessage.type === 'session.created') {
+        console.log('Session created successfully');
+      } else if (lastMessage.type === 'session.updated') {
+        console.log('Session configured successfully');
+      } else if (lastMessage.type === 'response.audio.delta') {
+        setIsSpeaking(true);
+        
+        // Convert base64 to Uint8Array and play
+        const binaryString = atob(lastMessage.delta);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        if (audioContextRef.current) {
+          playAudioData(audioContextRef.current, bytes);
+        }
+      } else if (lastMessage.type === 'response.audio.done') {
+        setIsSpeaking(false);
+      } else if (lastMessage.type === 'response.audio_transcript.delta') {
+        setCurrentTranscript(prev => prev + lastMessage.delta);
+      } else if (lastMessage.type === 'response.audio_transcript.done') {
+        const fullTranscript = currentTranscript;
+        setTranscript(prev => prev + '\nAI: ' + fullTranscript);
+        onTranscriptUpdate(fullTranscript);
+        setCurrentTranscript("");
+      } else if (lastMessage.type === 'input_audio_buffer.speech_started') {
+        console.log('User started speaking');
+      } else if (lastMessage.type === 'input_audio_buffer.speech_stopped') {
+        console.log('User stopped speaking');
+      } else if (lastMessage.error) {
+        throw new Error(lastMessage.error);
+      }
+    } catch (error) {
+      console.error('Error processing message:', error);
+      toast({
+        title: "Connection Error",
+        description: "Error processing message from server",
+        variant: "destructive",
+      });
+    }
+  }, [lastMessage, onTranscriptUpdate, toast, currentTranscript]);
+
+  const startInterview = async () => {
     try {
       // Initialize audio context
       audioContextRef.current = new AudioContext({ sampleRate: 24000 });
       
       // Connect to WebSocket
-      const wsUrl = `wss://deofbwuazrvpocyybjpl.functions.supabase.co/realtime-interview`;
-      wsRef.current = new WebSocket(wsUrl);
-
-      wsRef.current.onopen = () => {
-        console.log('Connected to realtime interview');
-        setIsConnected(true);
-        startRecording();
-        
-        toast({
-          title: "Connected",
-          description: "Ready to start your AI interview",
-        });
-      };
-
-      wsRef.current.onmessage = async (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('Received message:', data.type);
-
-          if (data.type === 'session.created') {
-            console.log('Session created successfully');
-          } else if (data.type === 'session.updated') {
-            console.log('Session configured successfully');
-          } else if (data.type === 'response.audio.delta') {
-            setIsSpeaking(true);
-            
-            // Convert base64 to Uint8Array and play
-            const binaryString = atob(data.delta);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-              bytes[i] = binaryString.charCodeAt(i);
-            }
-            
-            if (audioContextRef.current) {
-              await playAudioData(audioContextRef.current, bytes);
-            }
-          } else if (data.type === 'response.audio.done') {
-            setIsSpeaking(false);
-          } else if (data.type === 'response.audio_transcript.delta') {
-            setCurrentTranscript(prev => prev + data.delta);
-          } else if (data.type === 'response.audio_transcript.done') {
-            const fullTranscript = currentTranscript;
-            setTranscript(prev => prev + '\nAI: ' + fullTranscript);
-            onTranscriptUpdate(fullTranscript);
-            setCurrentTranscript("");
-          } else if (data.type === 'input_audio_buffer.speech_started') {
-            console.log('User started speaking');
-          } else if (data.type === 'input_audio_buffer.speech_stopped') {
-            console.log('User stopped speaking');
-          } else if (data.error) {
-            throw new Error(data.error);
-          }
-        } catch (error) {
-          console.error('Error processing message:', error);
-        }
-      };
-
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        toast({
-          title: "Connection Error",
-          description: "Failed to connect to the interview service",
-          variant: "destructive",
-        });
-      };
-
-      wsRef.current.onclose = () => {
-        console.log('WebSocket connection closed');
-        setIsConnected(false);
-        setIsRecording(false);
-        setIsSpeaking(false);
-      };
-
+      connect();
+      
+      toast({
+        title: "Connecting",
+        description: "Establishing connection to AI interview service",
+      });
     } catch (error) {
       console.error('Error connecting:', error);
       toast({
@@ -122,12 +108,12 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
   const startRecording = async () => {
     try {
       audioRecorderRef.current = new AudioRecorder((audioData) => {
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
+        if (status === ConnectionStatus.Open) {
           const encodedAudio = encodeAudioForAPI(audioData);
-          wsRef.current.send(JSON.stringify({
+          sendMessage({
             type: 'input_audio_buffer.append',
             audio: encodedAudio
-          }));
+          });
         }
       });
 
@@ -145,23 +131,19 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
     }
   };
 
-  const disconnect = () => {
+  const endInterview = () => {
     if (audioRecorderRef.current) {
       audioRecorderRef.current.stop();
       audioRecorderRef.current = null;
     }
     
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
+    disconnect();
     
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
     
-    setIsConnected(false);
     setIsRecording(false);
     setIsSpeaking(false);
   };
@@ -179,6 +161,13 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
       description: "Your interview has been saved successfully",
     });
   };
+
+  // Auto-start recording when connected
+  useEffect(() => {
+    if (isConnected && !isRecording) {
+      startRecording();
+    }
+  }, [isConnected, isRecording]);
 
   return (
     <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
@@ -219,8 +208,8 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
             ) : (
               <>
                 <div className={`w-3 h-3 rounded-full ${theme === 'dark' ? 'bg-gray-500' : 'bg-gray-400'}`} />
-                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Ready to connect
+                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} capitalize`}>
+                  {status === ConnectionStatus.Connecting ? 'Connecting...' : 'Ready to connect'}
                 </span>
               </>
             )}
@@ -266,9 +255,9 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
 
         {/* Control Buttons */}
         <div className="flex space-x-3">
-          {!isConnected ? (
+          {!isConnected && status !== ConnectionStatus.Connecting ? (
             <Button
-              onClick={connect}
+              onClick={startInterview}
               className="flex-1 bg-career-accent hover:bg-career-accent-dark text-white"
             >
               <Phone className="w-4 h-4 mr-2" />
@@ -277,7 +266,7 @@ export const RealtimeInterviewCard = ({ onTranscriptUpdate, onComplete, theme }:
           ) : (
             <>
               <Button
-                onClick={disconnect}
+                onClick={endInterview}
                 variant="destructive"
                 className="flex-1"
               >

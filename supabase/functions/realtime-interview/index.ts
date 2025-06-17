@@ -102,12 +102,22 @@ serve(async (req) => {
 
   socket.onmessage = (event) => {
     try {
+      // Handle heartbeat messages
+      if (event.data === 'ping') {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send('pong');
+        }
+        return;
+      }
+
       const data = JSON.parse(event.data);
       console.log('Client message:', data.type);
       
       // Forward client messages to OpenAI
       if (openAISocket && openAISocket.readyState === WebSocket.OPEN) {
         openAISocket.send(event.data);
+      } else {
+        console.warn('Received client message but OpenAI socket is not open.');
       }
     } catch (error) {
       console.error('Error processing client message:', error);
