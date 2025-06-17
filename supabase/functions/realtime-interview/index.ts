@@ -41,32 +41,25 @@ serve(async (req) => {
   const { socket, response } = Deno.upgradeWebSocket(req);
   
   let openAISocket: WebSocket | null = null;
-  let isOpenAIConnected = false;
 
-  socket.onopen = async () => {
+  socket.onopen = () => {
     console.log('Client WebSocket connected');
     
     try {
-      // Connect to OpenAI Realtime API using the correct approach
-      const url = `wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-10-01`;
+      // Use the correct OpenAI Realtime API endpoint with sub-protocol authentication
+      const url = "wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview";
       
-      console.log('Attempting to connect to OpenAI Realtime API...');
+      console.log('Connecting to OpenAI Realtime API with sub-protocol auth...');
       
-      // Create WebSocket connection with authentication
-      // For Deno, we need to create the WebSocket with the Authorization header
-      const wsHeaders = new Headers();
-      wsHeaders.set('Authorization', `Bearer ${apiKey}`);
-      wsHeaders.set('OpenAI-Beta', 'realtime=v1');
-      
-      // Use the WebSocket constructor that accepts headers
-      openAISocket = new WebSocket(url);
-      
+      // Create WebSocket with proper sub-protocols for authentication
+      openAISocket = new WebSocket(url, [
+        'realtime',
+        `openai-insecure-api-key.${apiKey}`,
+        'openai-beta.realtime-v1',
+      ]);
+
       openAISocket.onopen = () => {
-        console.log('OpenAI WebSocket connection established');
-        isOpenAIConnected = true;
-        
-        // The connection is established, OpenAI should send session.created
-        // We'll wait for that before sending any configuration
+        console.log('OpenAI WebSocket connection established successfully');
       };
 
       openAISocket.onmessage = (event) => {
@@ -119,7 +112,6 @@ serve(async (req) => {
 
       openAISocket.onerror = (error) => {
         console.error('OpenAI WebSocket error:', error);
-        isOpenAIConnected = false;
         
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({ 
@@ -131,7 +123,6 @@ serve(async (req) => {
 
       openAISocket.onclose = (event) => {
         console.log('OpenAI WebSocket closed:', event.code, event.reason);
-        isOpenAIConnected = false;
         
         if (socket.readyState === WebSocket.OPEN) {
           socket.close(event.code, event.reason);
@@ -161,8 +152,8 @@ serve(async (req) => {
         return;
       }
 
-      if (!isOpenAIConnected || !openAISocket || openAISocket.readyState !== WebSocket.OPEN) {
-        console.warn('Cannot forward message - OpenAI not connected. Connected:', isOpenAIConnected, 'State:', openAISocket?.readyState);
+      if (!openAISocket || openAISocket.readyState !== WebSocket.OPEN) {
+        console.warn('Cannot forward message - OpenAI not connected. State:', openAISocket?.readyState);
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({ 
             type: 'error',
@@ -172,7 +163,7 @@ serve(async (req) => {
         return;
       }
 
-      console.log('Forwarding client message to OpenAI:', event.data);
+      console.log('Forwarding client message to OpenAI');
       
       // Forward client messages to OpenAI exactly as received
       openAISocket.send(event.data);
