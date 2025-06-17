@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,7 +75,14 @@ const InterviewBuilder = () => {
         .single();
 
       if (error) throw error;
-      setCurrentInterview(data);
+      
+      // Type cast the status field to match our interface
+      const interviewData: Interview = {
+        ...data,
+        status: data.status as 'not_started' | 'in_progress' | 'completed' | 'failed'
+      };
+      
+      setCurrentInterview(interviewData);
       
       // Start voice recording
       await startRecording();

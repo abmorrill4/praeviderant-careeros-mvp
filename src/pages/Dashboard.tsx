@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -26,7 +25,7 @@ import {
   Users,
   BarChart3
 } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import ThemeToggle from "@/components/ThemeToggle";
 import InterviewBuilder from "@/components/interview/InterviewBuilder";
 
 const Dashboard = () => {
