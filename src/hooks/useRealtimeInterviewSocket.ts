@@ -40,7 +40,7 @@ export const useRealtimeInterviewSocket = (defaultUrl?: string): UseRealtimeInte
   const [status, setStatus] = useState<ConnectionStatus>(ConnectionStatus.Closed);
   const socketRef = useRef<ReconnectingWebSocket | null>(null);
 
-  // Use the CORRECT WebSocket URL format
+  // Use the CORRECT WebSocket URL format for Supabase Edge Functions
   const WEBSOCKET_URL = defaultUrl || "wss://deofbwuazrvpocyybjpl.functions.supabase.co/realtime-interview";
 
   const sendMessage = useCallback((message: any) => {
@@ -48,7 +48,7 @@ export const useRealtimeInterviewSocket = (defaultUrl?: string): UseRealtimeInte
       console.log('Sending message:', message);
       socketRef.current.send(JSON.stringify(message));
     } else {
-      console.error('WebSocket not connected, cannot send message');
+      console.error('WebSocket not connected, cannot send message. ReadyState:', socketRef.current?.readyState);
       setError('Cannot send message - not connected');
     }
   }, []);
@@ -62,7 +62,7 @@ export const useRealtimeInterviewSocket = (defaultUrl?: string): UseRealtimeInte
     }
 
     console.log('Connecting to WebSocket...');
-    console.log('Attempting to connect to:', wsUrl);
+    console.log('WebSocket URL:', wsUrl);
     setIsConnecting(true);
     setStatus(ConnectionStatus.Connecting);
     setError(null);
@@ -78,30 +78,31 @@ export const useRealtimeInterviewSocket = (defaultUrl?: string): UseRealtimeInte
       });
 
       socketRef.current.onopen = () => {
-        console.log('WebSocket connected successfully');
+        console.log('✅ WebSocket connected successfully');
         setIsConnected(true);
         setIsConnecting(false);
         setStatus(ConnectionStatus.Open);
         setError(null);
         
         // Send initial ping to test connection
+        console.log('Sending initial ping...');
         sendMessage('ping');
       };
 
       socketRef.current.onmessage = (event) => {
         try {
-          console.log('Raw message received:', event.data);
+          console.log('📨 Raw message received:', event.data);
           
           // Handle heartbeat responses
           if (event.data === 'pong') {
-            console.log('Received pong response');
+            console.log('🏓 Received pong response - connection alive');
             return;
           }
 
           // Try to parse JSON messages
           try {
             const data = JSON.parse(event.data);
-            console.log('Parsed message:', data);
+            console.log('📋 Parsed message type:', data.type);
             
             const newMessage: Message = { 
               type: data.type || 'unknown', 
@@ -114,38 +115,15 @@ export const useRealtimeInterviewSocket = (defaultUrl?: string): UseRealtimeInte
 
             // Handle specific message types
             if (data.type === 'session.created') {
-              console.log('OpenAI session created, sending configuration...');
-              
-              // Send session update after receiving session.created
-              const sessionUpdate = {
-                type: 'session.update',
-                session: {
-                  modalities: ['text', 'audio'],
-                  instructions: 'You are conducting a professional career interview. Ask thoughtful questions about the user\'s background, experience, and career goals. Be conversational and encouraging.',
-                  voice: 'alloy',
-                  input_audio_format: 'pcm16',
-                  output_audio_format: 'pcm16',
-                  input_audio_transcription: {
-                    model: 'whisper-1'
-                  },
-                  turn_detection: {
-                    type: 'server_vad',
-                    threshold: 0.5,
-                    prefix_padding_ms: 300,
-                    silence_duration_ms: 1000
-                  },
-                  temperature: 0.8,
-                  max_response_output_tokens: 'inf'
-                }
-              };
-              
-              sendMessage(sessionUpdate);
+              console.log('🎉 OpenAI session created, ready for configuration');
+            } else if (data.type === 'session.updated') {
+              console.log('🔧 Session configuration updated successfully');
             } else if (data.type === 'error') {
-              console.error('Server error:', data.error);
+              console.error('❌ Server error:', data.error);
               setError(`Server error: ${data.error}`);
             }
           } catch (parseError) {
-            console.log('Non-JSON message received:', event.data);
+            console.log('📝 Non-JSON message received:', event.data);
             // Create a simple message for non-JSON responses
             const simpleMessage: Message = {
               type: 'text',
@@ -160,25 +138,38 @@ export const useRealtimeInterviewSocket = (defaultUrl?: string): UseRealtimeInte
       };
 
       socketRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setError('Failed to connect to interview service. Please try again.');
+        console.error('❌ WebSocket error:', error);
+        setError('Failed to connect to interview service. Please check the connection.');
         setIsConnecting(false);
         setStatus(ConnectionStatus.Closed);
       };
 
       socketRef.current.onclose = (event) => {
-        console.log(`WebSocket connection closed: ${event.code} ${event.reason}`);
+        console.log(`🔒 WebSocket connection closed - Code: ${event.code}, Reason: "${event.reason}"`);
         setIsConnected(false);
         setIsConnecting(false);
         setStatus(ConnectionStatus.Closed);
         
-        if (event.code !== 1000) {
-          setError(`Connection closed unexpectedly: ${event.reason || 'Unknown reason'}`);
+        // Log specific close codes for debugging
+        switch(event.code) {
+          case 1000:
+            console.log('Normal closure');
+            break;
+          case 1001:
+            console.log('Going away (page reload/navigation)');
+            break;
+          case 1006:
+            console.log('⚠️ Abnormal closure - connection lost or failed to establish');
+            setError('Connection lost unexpectedly. Please try again.');
+            break;
+          default:
+            console.log(`Unexpected close code: ${event.code}`);
+            setError(`Connection closed unexpectedly: ${event.reason || 'Unknown reason'}`);
         }
       };
 
     } catch (error) {
-      console.error('Error creating WebSocket:', error);
+      console.error('❌ Error creating WebSocket:', error);
       setError('Failed to create WebSocket connection');
       setIsConnecting(false);
       setStatus(ConnectionStatus.Closed);
@@ -186,7 +177,7 @@ export const useRealtimeInterviewSocket = (defaultUrl?: string): UseRealtimeInte
   }, [sendMessage, WEBSOCKET_URL]);
 
   const disconnect = useCallback(() => {
-    console.log('Disconnecting WebSocket...');
+    console.log('🔌 Disconnecting WebSocket...');
     
     if (socketRef.current) {
       setStatus(ConnectionStatus.Closing);
@@ -203,10 +194,12 @@ export const useRealtimeInterviewSocket = (defaultUrl?: string): UseRealtimeInte
   }, []);
 
   const startInterview = useCallback(() => {
+    console.log('🎙️ Starting interview...');
     connect();
   }, [connect]);
 
   const endInterview = useCallback(() => {
+    console.log('🛑 Ending interview...');
     disconnect();
   }, [disconnect]);
 

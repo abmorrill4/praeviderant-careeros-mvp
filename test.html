@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -75,12 +76,24 @@
       border: 1px solid #ddd;
       border-radius: 4px;
     }
+    .url-info {
+      background: #e3f2fd;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+      border-left: 4px solid #2196f3;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🎤 CareerOS WebSocket Test Harness</h1>
     <p>This page tests the connection to the Supabase Edge Function that proxies OpenAI's Realtime API.</p>
+    
+    <div class="url-info">
+      <strong>WebSocket URL:</strong> <code id="websocket-url"></code><br>
+      <small>This should use the format: wss://&lt;project-ref&gt;.functions.supabase.co/&lt;function-name&gt;</small>
+    </div>
     
     <div id="status" class="status disconnected">Disconnected</div>
     
@@ -118,6 +131,9 @@
     // Using the CORRECT Supabase WebSocket URL format
     const WEBSOCKET_URL = "wss://deofbwuazrvpocyybjpl.functions.supabase.co/realtime-interview";
 
+    // Display the URL in the UI
+    document.getElementById("websocket-url").textContent = WEBSOCKET_URL;
+
     function log(msg, type = 'info') {
       const timestamp = new Date().toISOString();
       const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : '📝';
@@ -147,7 +163,8 @@
         return;
       }
 
-      log(`Attempting to connect to: ${WEBSOCKET_URL}`);
+      log(`🚀 Attempting to connect to: ${WEBSOCKET_URL}`);
+      log(`URL format check: ${WEBSOCKET_URL.includes('.functions.supabase.co/') ? '✅ Correct format' : '❌ Incorrect format'}`);
       updateStatus('connecting', 'Connecting...');
       
       try {
@@ -160,6 +177,7 @@
           
           // Send initial ping to test basic communication
           setTimeout(() => {
+            log("Sending initial ping to test connection...");
             sendPing();
           }, 1000);
         };
@@ -171,7 +189,8 @@
             // Try to parse as JSON for better formatting
             try {
               const parsed = JSON.parse(event.data);
-              log(`📨 Parsed message: ${JSON.stringify(parsed, null, 2)}`);
+              log(`📋 Parsed message type: ${parsed.type}`);
+              log(`📋 Full message: ${JSON.stringify(parsed, null, 2)}`);
               
               // Handle specific message types
               if (parsed.type === 'session.created') {
@@ -184,7 +203,9 @@
             } catch (parseError) {
               // Not JSON, just log as text
               if (event.data === 'pong') {
-                log("🏓 Received pong response", 'success');
+                log("🏓 Received pong response - connection alive", 'success');
+              } else {
+                log(`📝 Non-JSON message: ${event.data}`);
               }
             }
           } catch (error) {
@@ -193,7 +214,8 @@
         };
 
         ws.onerror = (error) => {
-          log(`❌ WebSocket error occurred: ${JSON.stringify(error)}`, 'error');
+          log(`❌ WebSocket error occurred:`, 'error');
+          log(`Error details: ${JSON.stringify(error)}`, 'error');
           log("This might indicate a connection issue or server error", 'error');
         };
 
@@ -202,19 +224,23 @@
           updateStatus('disconnected', `Disconnected (${event.code})`);
           updateButtons(false);
           
-          // Log common close codes
+          // Log detailed close codes for debugging
           switch(event.code) {
             case 1000:
-              log("Normal closure", 'info');
+              log("✅ Normal closure - connection closed cleanly", 'info');
               break;
             case 1001:
-              log("Going away (page reload/navigation)", 'info');
+              log("📱 Going away (page reload/navigation)", 'info');
               break;
             case 1006:
-              log("Abnormal closure (connection lost)", 'warning');
+              log("⚠️ Abnormal closure - connection lost or failed to establish", 'warning');
+              log("This usually means the server rejected the connection or network issues", 'warning');
+              break;
+            case 1011:
+              log("🚨 Server error - the server encountered an unexpected condition", 'error');
               break;
             default:
-              log(`Unexpected close code: ${event.code}`, 'warning');
+              log(`❓ Unexpected close code: ${event.code}`, 'warning');
           }
         };
 
@@ -227,7 +253,7 @@
 
     function disconnect() {
       if (ws) {
-        log("Disconnecting WebSocket...");
+        log("🔌 Disconnecting WebSocket...");
         ws.close(1000, "User initiated disconnect");
         ws = null;
       }
@@ -239,6 +265,7 @@
         ws.send('ping');
       } else {
         log("Cannot send ping - not connected", 'error');
+        log(`WebSocket state: ${ws ? ws.readyState : 'null'}`, 'error');
       }
     }
 
@@ -306,13 +333,14 @@
 
     function clearOutput() {
       output.innerHTML = '';
-      log("Log cleared");
+      log("📋 Log cleared");
     }
 
     // Auto-connect on page load for convenience
     window.onload = () => {
       log("🚀 CareerOS WebSocket Test Harness Ready");
-      log(`Target URL: ${WEBSOCKET_URL}`);
+      log(`🔗 Target URL: ${WEBSOCKET_URL}`);
+      log(`📋 URL Format: ${WEBSOCKET_URL.includes('.functions.supabase.co/') ? 'CORRECT ✅' : 'INCORRECT ❌'}`);
       log("Click 'Connect to Edge Function' to start testing");
     };
 
