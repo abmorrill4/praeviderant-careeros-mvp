@@ -100,6 +100,8 @@ export type Database = {
           id: string
           invitation_code: string | null
           name: string | null
+          onboarding_completed: boolean | null
+          onboarding_data: Json | null
           updated_at: string
         }
         Insert: {
@@ -108,6 +110,8 @@ export type Database = {
           id: string
           invitation_code?: string | null
           name?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_data?: Json | null
           updated_at?: string
         }
         Update: {
@@ -116,6 +120,8 @@ export type Database = {
           id?: string
           invitation_code?: string | null
           name?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_data?: Json | null
           updated_at?: string
         }
         Relationships: [
