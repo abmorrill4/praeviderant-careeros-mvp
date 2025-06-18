@@ -27,7 +27,7 @@ import {
   BarChart3
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
-import InterviewBuilder from "@/components/interview/InterviewBuilder";
+import AIInterviewPage from "@/components/interview/AIInterviewPage";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -52,7 +52,7 @@ const Dashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "interview":
-        return <InterviewBuilder />;
+        return <AIInterviewPage />;
       case "resumes":
         return (
           <div className="space-y-6">
@@ -117,7 +117,7 @@ const Dashboard = () => {
           </div>
         );
       default:
-        return <InterviewBuilder />;
+        return <AIInterviewPage />;
     }
   };
 
