@@ -57,6 +57,77 @@ export type Database = {
         }
         Relationships: []
       }
+      interview_sessions: {
+        Row: {
+          audio_file_url: string | null
+          created_at: string
+          ended_at: string | null
+          id: string
+          session_id: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_file_url?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          session_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_file_url?: string | null
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          session_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      interview_transcripts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          session_id: string
+          speaker: string
+          timestamp_ms: number | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          session_id: string
+          speaker: string
+          timestamp_ms?: number | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          session_id?: string
+          speaker?: string
+          timestamp_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_transcripts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interview_types: {
         Row: {
           created_at: string
