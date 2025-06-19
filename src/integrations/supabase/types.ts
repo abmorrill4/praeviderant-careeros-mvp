@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      career_profile: {
+        Row: {
+          created_at: string | null
+          current_company: string | null
+          current_title: string | null
+          id: string
+          summary: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_company?: string | null
+          current_title?: string | null
+          id?: string
+          summary?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_company?: string | null
+          current_title?: string | null
+          id?: string
+          summary?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       domain_values: {
         Row: {
           category: string
@@ -169,6 +199,7 @@ export type Database = {
           extracted_context: Json | null
           id: string
           interview_type: string
+          processed: boolean | null
           started_at: string | null
           status: string
           transcript: string | null
@@ -182,6 +213,7 @@ export type Database = {
           extracted_context?: Json | null
           id?: string
           interview_type: string
+          processed?: boolean | null
           started_at?: string | null
           status?: string
           transcript?: string | null
@@ -195,6 +227,7 @@ export type Database = {
           extracted_context?: Json | null
           id?: string
           interview_type?: string
+          processed?: boolean | null
           started_at?: string | null
           status?: string
           transcript?: string | null
@@ -238,6 +271,95 @@ export type Database = {
           used_by?: string | null
         }
         Relationships: []
+      }
+      jobs: {
+        Row: {
+          company: string
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          impact: string | null
+          start_date: string | null
+          title: string
+          tools_used: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company: string
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          impact?: string | null
+          start_date?: string | null
+          title: string
+          tools_used?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company?: string
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          impact?: string | null
+          start_date?: string | null
+          title?: string
+          tools_used?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profile_deltas: {
+        Row: {
+          created_at: string | null
+          entity_type: string
+          field: string | null
+          id: string
+          new_value: string | null
+          original_value: string | null
+          source_interview: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          entity_type: string
+          field?: string | null
+          id?: string
+          new_value?: string | null
+          original_value?: string | null
+          source_interview: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          entity_type?: string
+          field?: string | null
+          id?: string
+          new_value?: string | null
+          original_value?: string | null
+          source_interview?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_deltas_source_interview_fkey"
+            columns: ["source_interview"]
+            isOneToOne: false
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
