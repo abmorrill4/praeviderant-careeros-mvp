@@ -14,6 +14,7 @@ export class WebRTCAudioManager {
 
   async initialize(
     clientSecret: string,
+    systemPrompt: string,
     onMessage?: (data: any) => void,
     onStateChange?: (state: RTCPeerConnectionState) => void
   ) {
@@ -86,12 +87,12 @@ export class WebRTCAudioManager {
     
     this.dataChannel.onopen = () => {
       console.log('Data channel opened');
-      // Send session configuration
+      // Send session configuration with the provided system prompt
       this.sendMessage({
         type: 'session.update',
         session: {
           modalities: ['text', 'audio'],
-          instructions: 'You are a friendly, professional career interviewer. Ask thoughtful questions about the user\'s background, experience, and career goals. Keep questions conversational and ask one at a time. Be encouraging and show genuine interest in their responses.',
+          instructions: systemPrompt,
           voice: 'alloy',
           input_audio_format: 'pcm16',
           output_audio_format: 'pcm16',
@@ -108,6 +109,27 @@ export class WebRTCAudioManager {
           max_response_output_tokens: 4096
         }
       });
+
+      // Start the interview by having the AI initiate the conversation
+      setTimeout(() => {
+        this.sendMessage({
+          type: 'conversation.item.create',
+          item: {
+            type: 'message',
+            role: 'system',
+            content: [
+              {
+                type: 'text',
+                text: 'Begin the interview by greeting the user and asking about their current or most recent role.'
+              }
+            ]
+          }
+        });
+        
+        this.sendMessage({
+          type: 'response.create'
+        });
+      }, 1000);
     };
 
     // Create offer

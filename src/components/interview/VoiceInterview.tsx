@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useInterviewSession } from '@/hooks/useInterviewSession';
 import { useInterviewModes } from '@/hooks/useInterviewModes';
+import { useSystemPrompt } from '@/hooks/useSystemPrompt';
 import { WebRTCAudioManager } from '@/utils/webrtcAudio';
 import { useToast } from '@/hooks/use-toast';
 import VoiceControls from './VoiceControls';
@@ -21,6 +22,7 @@ const mockStructuredData: StructuredDataItem[] = [
 const VoiceInterview = () => {
   const { theme } = useTheme();
   const { toast } = useToast();
+  const { systemPrompt, isLoading: isLoadingPrompt } = useSystemPrompt();
   const {
     session,
     transcript,
@@ -47,7 +49,7 @@ const VoiceInterview = () => {
     message: string;
     visible: boolean;
   }>({ type: 'info', message: '', visible: false });
-  const [structuredData, setStructuredData] = useState<StructuredDataItem[]>(mockStructuredData);
+  const [structuredData, setStructuredData] = useState<StructuredDataItem[]>([]);
   const [audioData, setAudioData] = useState<Float32Array>();
 
   const audioManagerRef = useRef<WebRTCAudioManager | null>(null);
@@ -89,6 +91,11 @@ const VoiceInterview = () => {
   };
 
   const handleStartInterview = async () => {
+    if (isLoadingPrompt) {
+      showStatusBanner('error', 'System prompt is still loading. Please wait.', 3000);
+      return;
+    }
+
     try {
       setIsConnecting(true);
       showStatusBanner('connecting', 'Connecting to AI interviewer...', 0);
@@ -109,15 +116,21 @@ const VoiceInterview = () => {
       setIsConnected(true);
       
       await addSystemMessage(
-        `Interview started in ${mode} mode. ${mode === 'voice' ? 'Speak naturally when ready.' : 'Type your responses below.'}`,
+        `Interview started in ${mode} mode. ${mode === 'voice' ? 'The AI will greet you shortly.' : 'The AI will greet you - you can respond below.'}`,
         'success'
       );
       
       showStatusBanner('success', `Interview started in ${mode} mode`, 3000);
       
-      if (mode === 'voice') {
+      // For text mode, simulate AI greeting
+      if (mode === 'text') {
+        setTimeout(async () => {
+          const greeting = "Hello! I'm Praeviderant, your career assistant. I'm here to learn about your professional background to help create a tailored resume. To get started, could you tell me about your current or most recent role?";
+          await addTranscriptEntry('assistant', greeting);
+        }, 1500);
+      } else {
         setIsListening(true);
-        showStatusBanner('listening', 'Listening for your response...', 0);
+        showStatusBanner('listening', 'AI is preparing to greet you...', 0);
       }
       
     } catch (error) {
@@ -142,6 +155,7 @@ const VoiceInterview = () => {
       
       await audioManagerRef.current.initialize(
         sessionData.clientSecret,
+        systemPrompt,
         handleDataChannelMessage,
         handleConnectionStateChange
       );
@@ -351,7 +365,7 @@ const VoiceInterview = () => {
 
   // Handle mode changes during active session
   useEffect(() => {
-    if (isConnected && mode === 'voice' && isVoiceAvailable && !audioManagerRef.current && session) {
+    if (isConnected && mode === 'voice' && isVoiceAvailable && !audioManagerRef.current && session && !isLoadingPrompt) {
       initializeVoiceMode(session).catch(console.error);
     } else if (mode === 'text' && audioManagerRef.current) {
       audioManagerRef.current.disconnect();
@@ -360,7 +374,7 @@ const VoiceInterview = () => {
       setIsListening(false);
       setStatusBanner(prev => ({ ...prev, visible: false }));
     }
-  }, [mode, isConnected, isVoiceAvailable, session]);
+  }, [mode, isConnected, isVoiceAvailable, session, isLoadingPrompt]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -407,7 +421,7 @@ const VoiceInterview = () => {
           mode={mode}
           connectionState={connectionState}
           isConnected={isConnected}
-          isConnecting={isConnecting}
+          isConnecting={isConnecting || isLoadingPrompt}
           isLoading={isLoading}
           micEnabled={micEnabled}
           audioEnabled={audioEnabled}

@@ -280,6 +280,30 @@ export type Database = {
           },
         ]
       }
+      system_prompts: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          label: string
+          prompt: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          label: string
+          prompt: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          prompt?: string
+        }
+        Relationships: []
+      }
       user_interest: {
         Row: {
           beta: boolean | null
