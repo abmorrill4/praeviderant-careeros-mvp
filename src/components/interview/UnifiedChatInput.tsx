@@ -63,16 +63,16 @@ const UnifiedChatInput = ({
   }
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 p-4 border-t ${
+    <div className={`fixed bottom-0 left-0 right-0 p-6 border-t ${
       theme === 'dark' 
-        ? 'bg-career-panel-dark/95 backdrop-blur border-career-text-dark/20' 
-        : 'bg-career-panel-light/95 backdrop-blur border-career-text-light/20'
+        ? 'bg-career-panel-dark/95 backdrop-blur-sm border-career-gray-dark/30' 
+        : 'bg-career-panel-light/95 backdrop-blur-sm border-career-gray-light/30'
     }`}>
       <div className="max-w-4xl mx-auto">
-        <div className={`flex items-end gap-3 p-3 rounded-2xl border ${
+        <div className={`flex items-end gap-3 p-4 rounded-2xl border shadow-sm ${
           theme === 'dark' 
-            ? 'bg-career-gray-dark/20 border-career-text-dark/20' 
-            : 'bg-white border-career-text-light/20'
+            ? 'bg-career-gray-dark/30 border-career-gray-dark/40' 
+            : 'bg-white border-career-gray-light/40 shadow-neumorphic-sm-light'
         }`}>
           {/* Mode Toggle */}
           <Button
@@ -80,10 +80,10 @@ const UnifiedChatInput = ({
             variant="ghost"
             size="sm"
             disabled={isProcessing || isRecording}
-            className={`rounded-xl ${
+            className={`rounded-xl p-2 transition-all ${
               mode === 'voice' 
-                ? 'bg-career-accent/20 text-career-accent' 
-                : 'text-gray-500'
+                ? 'bg-career-accent/20 text-career-accent hover:bg-career-accent/30' 
+                : `${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-text-dark hover:bg-career-gray-dark/40' : 'text-career-text-muted-light hover:text-career-text-light hover:bg-career-gray-light/40'}`
             }`}
           >
             {mode === 'voice' ? <Mic className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
@@ -98,7 +98,7 @@ const UnifiedChatInput = ({
                 onKeyPress={handleKeyPress}
                 placeholder="Type your response..."
                 disabled={isProcessing}
-                className={`flex-1 min-h-[48px] max-h-32 resize-none border-0 shadow-none focus:ring-0 ${
+                className={`flex-1 min-h-[48px] max-h-32 resize-none border-0 shadow-none focus:ring-0 focus-visible:ring-0 ${
                   theme === 'dark' 
                     ? 'bg-transparent text-career-text-dark placeholder:text-career-text-muted-dark' 
                     : 'bg-transparent text-career-text-light placeholder:text-career-text-muted-light'
@@ -109,7 +109,7 @@ const UnifiedChatInput = ({
               <Button
                 onClick={handleSend}
                 disabled={!message.trim() || isProcessing}
-                className="bg-career-accent hover:bg-career-accent-dark text-white rounded-xl"
+                className="bg-career-accent hover:bg-career-accent-dark text-white rounded-xl shadow-sm"
                 size="sm"
               >
                 {isProcessing ? (
@@ -126,10 +126,10 @@ const UnifiedChatInput = ({
                 <Button
                   onClick={handleVoiceToggle}
                   disabled={!micEnabled || isProcessing}
-                  className={`rounded-full px-6 py-3 transition-all ${
+                  className={`rounded-full px-6 py-3 transition-all font-medium ${
                     isRecording 
-                      ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                      : 'bg-career-accent hover:bg-career-accent-dark'
+                      ? 'bg-red-500 hover:bg-red-600 animate-pulse shadow-lg' 
+                      : 'bg-career-accent hover:bg-career-accent-dark shadow-sm'
                   } text-white`}
                 >
                   <Mic className="w-5 h-5 mr-2" />
@@ -147,8 +147,10 @@ const UnifiedChatInput = ({
                 onClick={onToggleMicrophone}
                 variant="ghost"
                 size="sm"
-                className={`rounded-xl ${
-                  !micEnabled ? 'text-red-500' : 'text-gray-500'
+                className={`rounded-xl p-2 transition-all ${
+                  !micEnabled 
+                    ? 'text-red-500 hover:bg-red-50 hover:text-red-600' 
+                    : `${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-text-dark hover:bg-career-gray-dark/40' : 'text-career-text-muted-light hover:text-career-text-light hover:bg-career-gray-light/40'}`
                 }`}
               >
                 {micEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
@@ -158,7 +160,7 @@ const UnifiedChatInput = ({
         </div>
         
         {/* Helper Text */}
-        <div className={`text-xs text-center mt-2 ${
+        <div className={`text-xs text-center mt-3 ${
           theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'
         }`}>
           {mode === 'voice' 
