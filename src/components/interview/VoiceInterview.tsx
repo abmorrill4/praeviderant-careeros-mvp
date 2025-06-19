@@ -121,11 +121,10 @@ const VoiceInterview = () => {
   const structuredData = [
     {
       id: '1',
-      type: 'work_experience' as const,
-      content: 'Sample work experience data',
+      type: 'company' as const,
+      value: 'Sample Company Inc',
+      status: 'new' as const,
       confidence: 0.95,
-      status: 'pending' as const,
-      timestamp: new Date().toISOString(),
     }
   ];
 
