@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useInterviewSession } from '@/hooks/useInterviewSession';
@@ -10,13 +9,13 @@ import TranscriptDisplay from './TranscriptDisplay';
 import UnifiedChatInput from './UnifiedChatInput';
 import AudioWaveform from './AudioWaveform';
 import StatusBanner from './StatusBanner';
-import StructuredDataDisplay from './StructuredDataDisplay';
+import StructuredDataDisplay, { StructuredDataItem } from './StructuredDataDisplay';
 
 // Mock structured data for demonstration
-const mockStructuredData = [
-  { id: '1', type: 'company' as const, value: 'Tech Corp', status: 'new' as const, confidence: 0.95 },
-  { id: '2', type: 'job_title' as const, value: 'Senior Developer', status: 'updated' as const, confidence: 0.88 },
-  { id: '3', type: 'skill' as const, value: 'React', status: 'existing' as const, confidence: 0.92 },
+const mockStructuredData: StructuredDataItem[] = [
+  { id: '1', type: 'company', value: 'Tech Corp', status: 'new', confidence: 0.95 },
+  { id: '2', type: 'job_title', value: 'Senior Developer', status: 'updated', confidence: 0.88 },
+  { id: '3', type: 'skill', value: 'React', status: 'existing', confidence: 0.92 },
 ];
 
 const VoiceInterview = () => {
@@ -48,7 +47,7 @@ const VoiceInterview = () => {
     message: string;
     visible: boolean;
   }>({ type: 'info', message: '', visible: false });
-  const [structuredData, setStructuredData] = useState(mockStructuredData);
+  const [structuredData, setStructuredData] = useState<StructuredDataItem[]>(mockStructuredData);
   const [audioData, setAudioData] = useState<Float32Array>();
 
   const audioManagerRef = useRef<WebRTCAudioManager | null>(null);

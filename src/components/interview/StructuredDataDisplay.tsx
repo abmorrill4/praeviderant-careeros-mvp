@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Edit, Plus, X } from 'lucide-react';
 
-interface StructuredDataItem {
+export interface StructuredDataItem {
   id: string;
   type: 'company' | 'job_title' | 'skill' | 'tool' | 'education' | 'certification';
   value: string;
