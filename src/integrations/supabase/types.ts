@@ -91,8 +91,11 @@ export type Database = {
         Row: {
           audio_file_url: string | null
           created_at: string
+          current_phase: string | null
+          current_question_id: string | null
           ended_at: string | null
           id: string
+          phase_data: Json | null
           session_id: string | null
           started_at: string | null
           status: string
@@ -102,8 +105,11 @@ export type Database = {
         Insert: {
           audio_file_url?: string | null
           created_at?: string
+          current_phase?: string | null
+          current_question_id?: string | null
           ended_at?: string | null
           id?: string
+          phase_data?: Json | null
           session_id?: string | null
           started_at?: string | null
           status?: string
@@ -113,8 +119,11 @@ export type Database = {
         Update: {
           audio_file_url?: string | null
           created_at?: string
+          current_phase?: string | null
+          current_question_id?: string | null
           ended_at?: string | null
           id?: string
+          phase_data?: Json | null
           session_id?: string | null
           started_at?: string | null
           status?: string
@@ -125,28 +134,40 @@ export type Database = {
       }
       interview_transcripts: {
         Row: {
+          ai_followup: string | null
           content: string
           created_at: string
           id: string
+          question_id: string | null
           session_id: string
           speaker: string
+          structured_response: Json | null
           timestamp_ms: number | null
+          user_answer: string | null
         }
         Insert: {
+          ai_followup?: string | null
           content: string
           created_at?: string
           id?: string
+          question_id?: string | null
           session_id: string
           speaker: string
+          structured_response?: Json | null
           timestamp_ms?: number | null
+          user_answer?: string | null
         }
         Update: {
+          ai_followup?: string | null
           content?: string
           created_at?: string
           id?: string
+          question_id?: string | null
           session_id?: string
           speaker?: string
+          structured_response?: Json | null
           timestamp_ms?: number | null
+          user_answer?: string | null
         }
         Relationships: [
           {
@@ -405,6 +426,42 @@ export type Database = {
           },
         ]
       }
+      question_flows: {
+        Row: {
+          branch_condition_json: Json | null
+          created_at: string
+          followup_trigger_keywords: string[] | null
+          id: string
+          metadata: Json | null
+          order_num: number
+          phase: Database["public"]["Enums"]["interview_phase"]
+          question_text: string
+          updated_at: string
+        }
+        Insert: {
+          branch_condition_json?: Json | null
+          created_at?: string
+          followup_trigger_keywords?: string[] | null
+          id?: string
+          metadata?: Json | null
+          order_num: number
+          phase: Database["public"]["Enums"]["interview_phase"]
+          question_text: string
+          updated_at?: string
+        }
+        Update: {
+          branch_condition_json?: Json | null
+          created_at?: string
+          followup_trigger_keywords?: string[] | null
+          id?: string
+          metadata?: Json | null
+          order_num?: number
+          phase?: Database["public"]["Enums"]["interview_phase"]
+          question_text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_prompts: {
         Row: {
           created_at: string | null
@@ -492,7 +549,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      interview_phase: "warmup" | "identity" | "impact" | "deep_dive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -607,6 +664,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      interview_phase: ["warmup", "identity", "impact", "deep_dive"],
+    },
   },
 } as const
