@@ -1,23 +1,14 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useInterviewSession } from '@/hooks/useInterviewSession';
 import { useInterviewModes } from '@/hooks/useInterviewModes';
 import { WebRTCAudioManager } from '@/utils/webrtcAudio';
-import { 
-  Mic, 
-  MicOff, 
-  Volume2, 
-  VolumeX, 
-  Play, 
-  Square,
-  Loader2 
-} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import TextInput from './TextInput';
 import ModeToggle from './ModeToggle';
+import VoiceControls from './VoiceControls';
+import TranscriptDisplay from './TranscriptDisplay';
 
 const VoiceInterview = () => {
   const { theme } = useTheme();
@@ -249,15 +240,6 @@ const VoiceInterview = () => {
     };
   }, []);
 
-  const getConnectionStatusColor = () => {
-    switch (connectionState) {
-      case 'connected': return 'text-green-500';
-      case 'connecting': return 'text-yellow-500';
-      case 'failed': case 'disconnected': return 'text-red-500';
-      default: return theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light';
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Mode Toggle */}
@@ -272,78 +254,20 @@ const VoiceInterview = () => {
       </div>
 
       {/* Controls */}
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
-        <CardHeader>
-          <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center justify-between`}>
-            <span>{mode === 'voice' ? 'Voice' : 'Text'} Interview Controls</span>
-            {mode === 'voice' && (
-              <span className={`text-sm font-normal ${getConnectionStatusColor()}`}>
-                {connectionState}
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-4 items-center">
-            {!isConnected ? (
-              <Button
-                onClick={handleStartInterview}
-                disabled={isLoading || isConnecting}
-                className="bg-career-accent hover:bg-career-accent-dark text-white"
-              >
-                {isConnecting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 mr-2" />
-                    Start Interview
-                  </>
-                )}
-              </Button>
-            ) : (
-              <Button
-                onClick={handleStopInterview}
-                variant="destructive"
-              >
-                <Square className="w-4 h-4 mr-2" />
-                End Interview
-              </Button>
-            )}
-            
-            {isConnected && mode === 'voice' && audioManagerRef.current && (
-              <>
-                <Button
-                  onClick={toggleMicrophone}
-                  variant={micEnabled ? "default" : "destructive"}
-                  size="sm"
-                >
-                  {micEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-                </Button>
-                
-                <Button
-                  onClick={toggleAudio}
-                  variant={audioEnabled ? "default" : "destructive"}
-                  size="sm"
-                >
-                  {audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                </Button>
-              </>
-            )}
-          </div>
-          
-          {isConnected && (
-            <div className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-              {mode === 'voice' 
-                ? '🎤 Speak naturally - the AI will respond when you finish talking.'
-                : '💬 Type your responses in the text box below.'
-              }
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <VoiceControls
+        mode={mode}
+        connectionState={connectionState}
+        isConnected={isConnected}
+        isConnecting={isConnecting}
+        isLoading={isLoading}
+        micEnabled={micEnabled}
+        audioEnabled={audioEnabled}
+        hasAudioManager={!!audioManagerRef.current}
+        onStartInterview={handleStartInterview}
+        onStopInterview={handleStopInterview}
+        onToggleMicrophone={toggleMicrophone}
+        onToggleAudio={toggleAudio}
+      />
 
       {/* Text Input (only shown in text mode and when connected) */}
       {isConnected && mode === 'text' && (
@@ -355,47 +279,11 @@ const VoiceInterview = () => {
       )}
 
       {/* Transcript */}
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
-        <CardHeader>
-          <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-            Interview Transcript
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {transcript.length === 0 ? (
-              <div className={`text-center py-8 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                {isConnected ? 
-                  `Transcript will appear here as you ${mode === 'voice' ? 'speak' : 'type'}...` : 
-                  "Start the interview to see the conversation transcript."
-                }
-              </div>
-            ) : (
-              transcript.map((entry, index) => (
-                <div
-                  key={entry.id || index}
-                  className={`p-3 rounded-lg ${
-                    entry.speaker === 'user'
-                      ? theme === 'dark'
-                        ? 'bg-career-accent/20 ml-8'
-                        : 'bg-career-accent/10 ml-8'
-                      : theme === 'dark'
-                        ? 'bg-career-gray-dark/20 mr-8'
-                        : 'bg-career-gray-light/20 mr-8'
-                  }`}
-                >
-                  <div className={`text-xs font-medium mb-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                    {entry.speaker === 'user' ? 'You' : 'AI Interviewer'}
-                  </div>
-                  <div className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                    {entry.content}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <TranscriptDisplay
+        transcript={transcript}
+        isConnected={isConnected}
+        mode={mode}
+      />
     </div>
   );
 };
