@@ -74,7 +74,16 @@ export const useInterviewSession = () => {
         return;
       }
 
-      setTranscript(prev => [...prev, data]);
+      // Type cast the database result to match our TranscriptEntry interface
+      const typedEntry: TranscriptEntry = {
+        id: data.id,
+        speaker: data.speaker as 'user' | 'assistant',
+        content: data.content,
+        timestamp_ms: data.timestamp_ms,
+        created_at: data.created_at,
+      };
+
+      setTranscript(prev => [...prev, typedEntry]);
     } catch (error) {
       console.error('Error adding transcript entry:', error);
     }
