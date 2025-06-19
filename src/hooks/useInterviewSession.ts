@@ -51,7 +51,9 @@ export const useInterviewSession = () => {
           activeInterview: contextData.active_interview === 'null' ? null : contextData.active_interview,
           careerProfile: contextData.career_profile === 'null' ? null : contextData.career_profile,
           jobHistory: Array.isArray(contextData.job_history) ? contextData.job_history : [],
-          recentSummaries: Array.isArray(contextData.recent_summaries) ? contextData.recent_summaries : []
+          recentSummaries: Array.isArray(contextData.recent_summaries) 
+            ? contextData.recent_summaries.filter((summary): summary is string => typeof summary === 'string')
+            : []
         };
         
         return context;
