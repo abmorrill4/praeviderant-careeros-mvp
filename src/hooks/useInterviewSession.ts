@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -45,13 +44,17 @@ export const useInterviewSession = () => {
       }
 
       if (data && data.length > 0) {
-        const context = data[0];
-        return {
-          activeInterview: context.active_interview,
-          careerProfile: context.career_profile,
-          jobHistory: context.job_history || [],
-          recentSummaries: context.recent_summaries || []
+        const contextData = data[0];
+        
+        // Properly cast and handle the Json types
+        const context: InterviewContext = {
+          activeInterview: contextData.active_interview === 'null' ? null : contextData.active_interview,
+          careerProfile: contextData.career_profile === 'null' ? null : contextData.career_profile,
+          jobHistory: Array.isArray(contextData.job_history) ? contextData.job_history : [],
+          recentSummaries: Array.isArray(contextData.recent_summaries) ? contextData.recent_summaries : []
         };
+        
+        return context;
       }
 
       return null;
@@ -69,7 +72,7 @@ export const useInterviewSession = () => {
       setInterviewContext(context);
 
       // Check if there's an active interview to resume
-      if (resumeInterview && context?.activeInterview) {
+      if (resumeInterview && context?.activeInterview && typeof context.activeInterview === 'object' && context.activeInterview.id) {
         setIsResumedSession(true);
         
         // Load existing transcript from the active interview
