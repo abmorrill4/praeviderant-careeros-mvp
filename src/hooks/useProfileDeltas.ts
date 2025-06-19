@@ -33,7 +33,9 @@ export const useProfileDeltas = (userId?: string) => {
         throw error;
       }
 
-      setDeltas(data || []);
+      // Type assertion to ensure status matches our union type
+      const typedData = (data || []) as ProfileDelta[];
+      setDeltas(typedData);
     } catch (error) {
       console.error('Error fetching profile deltas:', error);
       toast({
