@@ -58,7 +58,7 @@ const TranscriptDisplay = ({ transcript, isConnected, mode }: TranscriptDisplayP
       </div>
 
       {/* Conversation */}
-      <div className="flex-1 overflow-y-auto p-6 pb-32">
+      <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-4xl mx-auto space-y-4">
           {transcript.length === 0 ? (
             <div className={`text-center py-20 ${

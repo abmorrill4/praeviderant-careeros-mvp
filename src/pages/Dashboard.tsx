@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -208,7 +207,9 @@ const Dashboard = () => {
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <ThemeToggle />
+              <div className="relative">
+                <ThemeToggle />
+              </div>
               <Button
                 onClick={handleSignOut}
                 variant="ghost"

@@ -446,23 +446,11 @@ const VoiceInterview = () => {
       <FloatingInterviewControl
         isConnected={isConnected}
         isConnecting={isConnecting || isLoadingPrompt}
+        hasActiveInterview={hasActiveInterview}
         onStartInterview={() => handleStartInterview(false)}
+        onResumeInterview={() => handleStartInterview(true)}
         onStopInterview={handleStopInterview}
       />
-
-      {/* Resume Interview Button */}
-      {hasActiveInterview && !isConnected && (
-        <div className="fixed top-4 left-48 z-50">
-          <Button
-            onClick={() => handleStartInterview(true)}
-            disabled={isConnecting || isLoadingPrompt}
-            className="rounded-full shadow-lg px-6 py-2 bg-career-accent hover:bg-career-accent-dark text-white"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Resume Interview
-          </Button>
-        </div>
-      )}
 
       {/* Main Chat Interface */}
       <div className="flex-1 flex flex-col">
