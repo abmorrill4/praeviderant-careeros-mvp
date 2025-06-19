@@ -202,6 +202,7 @@ export type Database = {
           processed: boolean | null
           started_at: string | null
           status: string
+          summary: string | null
           transcript: string | null
           updated_at: string
           user_id: string
@@ -216,6 +217,7 @@ export type Database = {
           processed?: boolean | null
           started_at?: string | null
           status?: string
+          summary?: string | null
           transcript?: string | null
           updated_at?: string
           user_id: string
@@ -230,6 +232,7 @@ export type Database = {
           processed?: boolean | null
           started_at?: string | null
           status?: string
+          summary?: string | null
           transcript?: string | null
           updated_at?: string
           user_id?: string
@@ -473,6 +476,15 @@ export type Database = {
       generate_invitation_code: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_interview_context: {
+        Args: { p_user_id: string }
+        Returns: {
+          active_interview: Json
+          career_profile: Json
+          job_history: Json
+          recent_summaries: Json
+        }[]
       }
       mark_expired_invitations: {
         Args: Record<PropertyKey, never>

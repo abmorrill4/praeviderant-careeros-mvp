@@ -5,6 +5,8 @@ import { useInterviewModes } from '@/hooks/useInterviewModes';
 import { useSystemPrompt } from '@/hooks/useSystemPrompt';
 import { WebRTCAudioManager } from '@/utils/webrtcAudio';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { RotateCcw } from 'lucide-react';
 import TranscriptDisplay from './TranscriptDisplay';
 import UnifiedChatInput from './UnifiedChatInput';
 import CompactAudioWaveform from './CompactAudioWaveform';
@@ -28,7 +30,10 @@ const VoiceInterview = () => {
     session,
     transcript,
     isLoading,
+    interviewContext,
+    isResumedSession,
     createSession,
+    checkForActiveInterview,
     addTranscriptEntry,
     addSystemMessage,
     updateSessionStatus,
@@ -37,6 +42,7 @@ const VoiceInterview = () => {
 
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [hasActiveInterview, setHasActiveInterview] = useState(false);
   const [micEnabled, setMicEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [connectionState, setConnectionState] = useState<RTCPeerConnectionState>('new');
@@ -78,6 +84,16 @@ const VoiceInterview = () => {
     }
   });
 
+  // Check for active interview on component mount
+  useEffect(() => {
+    const checkActiveInterview = async () => {
+      const activeInterview = await checkForActiveInterview();
+      setHasActiveInterview(!!activeInterview);
+    };
+    
+    checkActiveInterview();
+  }, []);
+
   const showStatusBanner = (
     type: typeof statusBanner.type, 
     message: string, 
@@ -91,7 +107,7 @@ const VoiceInterview = () => {
     }
   };
 
-  const handleStartInterview = async () => {
+  const handleStartInterview = async (resumeMode = false) => {
     if (isLoadingPrompt) {
       showStatusBanner('error', 'System prompt is still loading. Please wait.', 3000);
       return;
@@ -99,9 +115,9 @@ const VoiceInterview = () => {
 
     try {
       setIsConnecting(true);
-      showStatusBanner('connecting', 'Connecting to AI interviewer...', 0);
+      showStatusBanner('connecting', resumeMode ? 'Resuming interview...' : 'Connecting to AI interviewer...', 0);
       
-      const sessionData = await createSession();
+      const sessionData = await createSession(resumeMode);
       
       if (mode === 'voice' && isVoiceAvailable) {
         try {
@@ -115,23 +131,27 @@ const VoiceInterview = () => {
 
       await updateSessionStatus('active');
       setIsConnected(true);
+      setHasActiveInterview(false); // Clear the resume button
       
-      await addSystemMessage(
-        `Interview started in ${mode} mode. ${mode === 'voice' ? 'The AI will greet you shortly.' : 'The AI will greet you - you can respond below.'}`,
-        'success'
-      );
+      const sessionMessage = resumeMode 
+        ? `Interview resumed in ${mode} mode. The AI has context from your previous session.`
+        : `Interview started in ${mode} mode. ${mode === 'voice' ? 'The AI will greet you shortly.' : 'The AI will greet you - you can respond below.'}`;
       
-      showStatusBanner('success', `Interview started in ${mode} mode`, 3000);
+      await addSystemMessage(sessionMessage, 'success');
+      
+      showStatusBanner('success', resumeMode ? `Interview resumed in ${mode} mode` : `Interview started in ${mode} mode`, 3000);
       
       // For text mode, simulate AI greeting
       if (mode === 'text') {
         setTimeout(async () => {
-          const greeting = "Hello! I'm Praeviderant, your career assistant. I'm here to learn about your professional background to help create a tailored resume. To get started, could you tell me about your current or most recent role?";
+          const greeting = resumeMode 
+            ? "Welcome back! I see we were discussing your career background. Let me review where we left off and continue from there. Based on our previous conversation, what would you like to elaborate on or update?"
+            : "Hello! I'm Praeviderant, your career assistant. I'm here to learn about your professional background to help create a tailored resume. To get started, could you tell me about your current or most recent role?";
           await addTranscriptEntry('assistant', greeting);
         }, 1500);
       } else {
         setIsListening(true);
-        showStatusBanner('listening', 'AI is preparing to greet you...', 0);
+        showStatusBanner('listening', resumeMode ? 'AI is reviewing your previous session...' : 'AI is preparing to greet you...', 0);
       }
       
     } catch (error) {
@@ -154,9 +174,15 @@ const VoiceInterview = () => {
       
       audioManagerRef.current = new WebRTCAudioManager();
       
+      // Create enhanced system prompt with context for resumed sessions
+      let enhancedPrompt = systemPrompt;
+      if (isResumedSession && interviewContext) {
+        enhancedPrompt = createContextualPrompt(systemPrompt, interviewContext);
+      }
+      
       await audioManagerRef.current.initialize(
         sessionData.clientSecret,
-        systemPrompt,
+        enhancedPrompt,
         handleDataChannelMessage,
         handleConnectionStateChange
       );
@@ -171,6 +197,26 @@ const VoiceInterview = () => {
       handleMicrophonePermissionDenied();
       throw error;
     }
+  };
+
+  const createContextualPrompt = (basePrompt: string, context: any) => {
+    const contextSections = [];
+    
+    if (context.careerProfile) {
+      contextSections.push(`CURRENT PROFILE: ${JSON.stringify(context.careerProfile)}`);
+    }
+    
+    if (context.jobHistory && context.jobHistory.length > 0) {
+      contextSections.push(`JOB HISTORY: ${JSON.stringify(context.jobHistory)}`);
+    }
+    
+    if (context.recentSummaries && context.recentSummaries.length > 0) {
+      contextSections.push(`PREVIOUS SESSION SUMMARIES: ${context.recentSummaries.join('; ')}`);
+    }
+    
+    const contextPrefix = `RESUMING INTERVIEW - You have the following context about the user:\n${contextSections.join('\n\n')}\n\nUse this context to continue the conversation naturally without asking for information you already have. Focus on filling gaps or getting updates to existing information.\n\n`;
+    
+    return contextPrefix + basePrompt;
   };
 
   const handleStopInterview = () => {
@@ -400,9 +446,23 @@ const VoiceInterview = () => {
       <FloatingInterviewControl
         isConnected={isConnected}
         isConnecting={isConnecting || isLoadingPrompt}
-        onStartInterview={handleStartInterview}
+        onStartInterview={() => handleStartInterview(false)}
         onStopInterview={handleStopInterview}
       />
+
+      {/* Resume Interview Button */}
+      {hasActiveInterview && !isConnected && (
+        <div className="fixed top-4 left-48 z-50">
+          <Button
+            onClick={() => handleStartInterview(true)}
+            disabled={isConnecting || isLoadingPrompt}
+            className="rounded-full shadow-lg px-6 py-2 bg-career-accent hover:bg-career-accent-dark text-white"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Resume Interview
+          </Button>
+        </div>
+      )}
 
       {/* Main Chat Interface */}
       <div className="flex-1 flex flex-col">
