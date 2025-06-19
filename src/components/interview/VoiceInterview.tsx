@@ -16,6 +16,7 @@ const VoiceInterview = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [hasActiveInterview, setHasActiveInterview] = useState(false);
+  const [statusBannerVisible, setStatusBannerVisible] = useState(false);
 
   const {
     session,
@@ -116,6 +117,45 @@ const VoiceInterview = () => {
     }
   };
 
+  // Create sample data for CollapsibleDataSidebar
+  const structuredData = [
+    {
+      id: '1',
+      type: 'work_experience' as const,
+      content: 'Sample work experience data',
+      confidence: 0.95,
+      status: 'pending' as const,
+      timestamp: new Date().toISOString(),
+    }
+  ];
+
+  const handleConfirm = (id: string) => {
+    console.log('Confirming data item:', id);
+  };
+
+  const handleEdit = (id: string, newValue: string) => {
+    console.log('Editing data item:', id, newValue);
+  };
+
+  const handleRemove = (id: string) => {
+    console.log('Removing data item:', id);
+  };
+
+  const getStatusMessage = () => {
+    if (isConnecting) return "Connecting to interview session...";
+    if (isDemoMode) return "Running in demo mode - full functionality requires backend setup";
+    if (isResumedSession) return "Interview session resumed";
+    if (mode === 'voice') return "Voice mode active";
+    return "Text mode active";
+  };
+
+  const getStatusType = (): 'connecting' | 'listening' | 'thinking' | 'switching' | 'error' | 'success' | 'info' => {
+    if (isConnecting) return 'connecting';
+    if (isDemoMode) return 'info';
+    if (isResumedSession) return 'success';
+    return 'info';
+  };
+
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-bg-dark' : 'bg-career-bg-light'}`}>
       <div className="container mx-auto px-4 py-8">
@@ -142,10 +182,10 @@ const VoiceInterview = () => {
 
         {/* Status Banner */}
         <StatusBanner
-          isConnected={isConnected}
-          isDemoMode={isDemoMode}
-          isResumedSession={isResumedSession}
-          currentMode={mode}
+          type={getStatusType()}
+          message={getStatusMessage()}
+          visible={statusBannerVisible}
+          onDismiss={() => setStatusBannerVisible(false)}
         />
 
         {/* Main Content Grid */}
@@ -173,9 +213,10 @@ const VoiceInterview = () => {
           {/* Data Sidebar */}
           <div className="lg:col-span-1">
             <CollapsibleDataSidebar
-              transcript={transcript}
-              interviewContext={interviewContext}
-              isConnected={isConnected}
+              data={structuredData}
+              onConfirm={handleConfirm}
+              onEdit={handleEdit}
+              onRemove={handleRemove}
             />
           </div>
         </div>

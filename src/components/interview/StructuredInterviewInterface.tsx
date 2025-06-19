@@ -151,7 +151,7 @@ const StructuredInterviewInterface = ({ sessionId }: StructuredInterviewInterfac
                     >
                       <p className="text-sm leading-relaxed">{message.content}</p>
                       {message.isFollowup && (
-                        <Badge variant="outline" size="sm" className="mt-2 text-xs bg-orange-50 text-orange-600 border-orange-200">
+                        <Badge variant="outline" className="mt-2 text-xs bg-orange-50 text-orange-600 border-orange-200">
                           Follow-up
                         </Badge>
                       )}

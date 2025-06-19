@@ -16,6 +16,9 @@ export const useInterviewModes = ({ onModeChange }: UseInterviewModesProps = {})
   const [isVoiceAvailable, setIsVoiceAvailable] = useState(true);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [micEnabled, setMicEnabled] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
   const { toast } = useToast();
 
   // Save preference to localStorage
@@ -90,6 +93,25 @@ export const useInterviewModes = ({ onModeChange }: UseInterviewModesProps = {})
     switchMode(newMode);
   }, [mode, isVoiceAvailable, switchMode, toast]);
 
+  const toggleMicrophone = useCallback(() => {
+    setMicEnabled(prev => !prev);
+    if (isRecording) {
+      setIsRecording(false);
+    }
+  }, [isRecording]);
+
+  const startRecording = useCallback(() => {
+    if (micEnabled && isVoiceAvailable) {
+      setIsRecording(true);
+      setIsProcessing(false);
+    }
+  }, [micEnabled, isVoiceAvailable]);
+
+  const stopRecording = useCallback(() => {
+    setIsRecording(false);
+    setIsProcessing(true);
+  }, []);
+
   const resetVoiceAvailability = useCallback(() => {
     setIsVoiceAvailable(true);
     setReconnectAttempts(0);
@@ -101,10 +123,16 @@ export const useInterviewModes = ({ onModeChange }: UseInterviewModesProps = {})
     isVoiceAvailable,
     isReconnecting,
     reconnectAttempts,
+    isProcessing,
+    micEnabled,
+    isRecording,
     toggleMode,
     switchMode,
     handleMicrophonePermissionDenied,
     handleConnectionFailure,
     resetVoiceAvailability,
+    toggleMicrophone,
+    startRecording,
+    stopRecording,
   };
 };
