@@ -5,12 +5,13 @@ import { useInterviewModes } from '@/hooks/useInterviewModes';
 import { useSystemPrompt } from '@/hooks/useSystemPrompt';
 import { WebRTCAudioManager } from '@/utils/webrtcAudio';
 import { useToast } from '@/hooks/use-toast';
-import VoiceControls from './VoiceControls';
 import TranscriptDisplay from './TranscriptDisplay';
 import UnifiedChatInput from './UnifiedChatInput';
-import AudioWaveform from './AudioWaveform';
+import CompactAudioWaveform from './CompactAudioWaveform';
 import StatusBanner from './StatusBanner';
-import StructuredDataDisplay, { StructuredDataItem } from './StructuredDataDisplay';
+import CollapsibleDataSidebar from './CollapsibleDataSidebar';
+import FloatingInterviewControl from './FloatingInterviewControl';
+import { StructuredDataItem } from './StructuredDataDisplay';
 
 // Mock structured data for demonstration
 const mockStructuredData: StructuredDataItem[] = [
@@ -49,7 +50,7 @@ const VoiceInterview = () => {
     message: string;
     visible: boolean;
   }>({ type: 'info', message: '', visible: false });
-  const [structuredData, setStructuredData] = useState<StructuredDataItem[]>([]);
+  const [structuredData, setStructuredData] = useState<StructuredDataItem[]>(mockStructuredData);
   const [audioData, setAudioData] = useState<Float32Array>();
 
   const audioManagerRef = useRef<WebRTCAudioManager | null>(null);
@@ -386,7 +387,7 @@ const VoiceInterview = () => {
   }, []);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+    <div className="relative h-screen flex">
       {/* Status Banner */}
       <StatusBanner
         type={statusBanner.type}
@@ -395,76 +396,58 @@ const VoiceInterview = () => {
         onDismiss={() => setStatusBanner(prev => ({ ...prev, visible: false }))}
       />
 
-      {/* Left Column: Interview Interface */}
-      <div className="lg:col-span-2 space-y-6">
-        {/* Audio Waveform */}
-        <div className={`p-6 rounded-lg border ${
-          theme === 'dark' 
-            ? 'bg-career-panel-dark border-career-text-dark/20' 
-            : 'bg-career-panel-light border-career-text-light/20'
-        }`}>
-          <h3 className={`text-lg font-medium mb-4 ${
-            theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'
-          }`}>
-            AI Voice Interface
-          </h3>
-          <AudioWaveform
-            isPlaying={isPlaying}
-            isListening={isListening}
-            isThinking={isThinking}
-            audioData={audioData}
-          />
-        </div>
+      {/* Floating Interview Control */}
+      <FloatingInterviewControl
+        isConnected={isConnected}
+        isConnecting={isConnecting || isLoadingPrompt}
+        onStartInterview={handleStartInterview}
+        onStopInterview={handleStopInterview}
+      />
 
-        {/* Controls */}
-        <VoiceControls
-          mode={mode}
-          connectionState={connectionState}
-          isConnected={isConnected}
-          isConnecting={isConnecting || isLoadingPrompt}
-          isLoading={isLoading}
-          micEnabled={micEnabled}
-          audioEnabled={audioEnabled}
-          hasAudioManager={!!audioManagerRef.current}
-          onStartInterview={handleStartInterview}
-          onStopInterview={handleStopInterview}
-          onToggleMicrophone={toggleMicrophone}
-          onToggleAudio={toggleAudio}
-        />
+      {/* Main Chat Interface */}
+      <div className="flex-1 flex flex-col">
+        {/* Compact Waveform */}
+        {isConnected && (
+          <div className="px-6 pt-6">
+            <CompactAudioWaveform
+              isPlaying={isPlaying}
+              isListening={isListening}
+              isThinking={isThinking}
+              audioData={audioData}
+            />
+          </div>
+        )}
 
-        {/* Unified Chat Input */}
-        <UnifiedChatInput
-          mode={mode}
-          isVoiceAvailable={isVoiceAvailable}
-          isConnected={isConnected}
-          isProcessing={isProcessingText || isReconnecting}
-          micEnabled={micEnabled}
-          isRecording={isRecording}
-          onModeToggle={toggleMode}
-          onSendTextMessage={handleTextMessage}
-          onStartRecording={handleStartRecording}
-          onStopRecording={handleStopRecording}
-          onToggleMicrophone={toggleMicrophone}
-        />
-      </div>
-
-      {/* Right Column: Transcript & Data */}
-      <div className="space-y-6">
-        {/* Transcript */}
+        {/* Transcript Display */}
         <TranscriptDisplay
           transcript={transcript}
           isConnected={isConnected}
           mode={mode}
         />
-
-        {/* Structured Data */}
-        <StructuredDataDisplay
-          data={structuredData}
-          onConfirm={handleConfirmData}
-          onEdit={handleEditData}
-          onRemove={handleRemoveData}
-        />
       </div>
+
+      {/* Collapsible Data Sidebar */}
+      <CollapsibleDataSidebar
+        data={structuredData}
+        onConfirm={handleConfirmData}
+        onEdit={handleEditData}
+        onRemove={handleRemoveData}
+      />
+
+      {/* Unified Chat Input */}
+      <UnifiedChatInput
+        mode={mode}
+        isVoiceAvailable={isVoiceAvailable}
+        isConnected={isConnected}
+        isProcessing={isProcessingText || isReconnecting}
+        micEnabled={micEnabled}
+        isRecording={isRecording}
+        onModeToggle={toggleMode}
+        onSendTextMessage={handleTextMessage}
+        onStartRecording={handleStartRecording}
+        onStopRecording={handleStopRecording}
+        onToggleMicrophone={toggleMicrophone}
+      />
     </div>
   );
 };
