@@ -11,10 +11,11 @@ interface InterviewSession {
 
 interface TranscriptEntry {
   id: string;
-  speaker: 'user' | 'assistant';
+  speaker: 'user' | 'assistant' | 'system';
   content: string;
   timestamp_ms?: number;
   created_at: string;
+  type?: 'info' | 'warning' | 'success';
 }
 
 export const useInterviewSession = () => {
@@ -89,6 +90,18 @@ export const useInterviewSession = () => {
     }
   };
 
+  const addSystemMessage = async (message: string, type: 'info' | 'warning' | 'success' = 'info') => {
+    const systemEntry: TranscriptEntry = {
+      id: `system-${Date.now()}`,
+      speaker: 'system',
+      content: message,
+      created_at: new Date().toISOString(),
+      type,
+    };
+
+    setTranscript(prev => [...prev, systemEntry]);
+  };
+
   const updateSessionStatus = async (status: 'active' | 'completed' | 'failed') => {
     if (!session) return;
 
@@ -121,6 +134,7 @@ export const useInterviewSession = () => {
     isLoading,
     createSession,
     addTranscriptEntry,
+    addSystemMessage,
     updateSessionStatus,
     endSession,
   };

@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTheme } from '@/contexts/ThemeContext';
 import { 
-  Mic, 
-  MicOff, 
   Volume2, 
   VolumeX, 
   Play, 
@@ -56,8 +54,8 @@ const VoiceControls = ({
     <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
       <CardHeader>
         <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center justify-between`}>
-          <span>{mode === 'voice' ? 'Voice' : 'Text'} Interview Controls</span>
-          {mode === 'voice' && (
+          <span>Interview Controls</span>
+          {mode === 'voice' && isConnected && (
             <span className={`text-sm font-normal ${getConnectionStatusColor()}`}>
               {connectionState}
             </span>
@@ -95,23 +93,13 @@ const VoiceControls = ({
           )}
           
           {isConnected && mode === 'voice' && hasAudioManager && (
-            <>
-              <Button
-                onClick={onToggleMicrophone}
-                variant={micEnabled ? "default" : "destructive"}
-                size="sm"
-              >
-                {micEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-              </Button>
-              
-              <Button
-                onClick={onToggleAudio}
-                variant={audioEnabled ? "default" : "destructive"}
-                size="sm"
-              >
-                {audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              </Button>
-            </>
+            <Button
+              onClick={onToggleAudio}
+              variant={audioEnabled ? "default" : "destructive"}
+              size="sm"
+            >
+              {audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </Button>
           )}
         </div>
         
@@ -119,7 +107,7 @@ const VoiceControls = ({
           <div className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
             {mode === 'voice' 
               ? '🎤 Speak naturally - the AI will respond when you finish talking.'
-              : '💬 Type your responses in the text box below.'
+              : '💬 Type your responses below or switch to voice mode.'
             }
           </div>
         )}

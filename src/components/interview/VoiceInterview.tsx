@@ -5,10 +5,9 @@ import { useInterviewSession } from '@/hooks/useInterviewSession';
 import { useInterviewModes } from '@/hooks/useInterviewModes';
 import { WebRTCAudioManager } from '@/utils/webrtcAudio';
 import { useToast } from '@/hooks/use-toast';
-import TextInput from './TextInput';
-import ModeToggle from './ModeToggle';
 import VoiceControls from './VoiceControls';
 import TranscriptDisplay from './TranscriptDisplay';
+import UnifiedChatInput from './UnifiedChatInput';
 
 const VoiceInterview = () => {
   const { theme } = useTheme();
@@ -19,6 +18,7 @@ const VoiceInterview = () => {
     isLoading,
     createSession,
     addTranscriptEntry,
+    addSystemMessage,
     updateSessionStatus,
     endSession,
   } = useInterviewSession();
@@ -29,6 +29,7 @@ const VoiceInterview = () => {
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [connectionState, setConnectionState] = useState<RTCPeerConnectionState>('new');
   const [isProcessingText, setIsProcessingText] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   
   const audioManagerRef = useRef<WebRTCAudioManager | null>(null);
 
@@ -43,6 +44,14 @@ const VoiceInterview = () => {
   } = useInterviewModes({
     onModeChange: (newMode) => {
       console.log('Interview mode changed to:', newMode);
+      
+      // Add system message for mode change
+      if (session) {
+        addSystemMessage(
+          `Switched to ${newMode} mode`,
+          newMode === 'voice' ? 'success' : 'info'
+        );
+      }
       
       // Announce mode change for screen readers
       const announcement = `Switched to ${newMode} mode`;
@@ -68,11 +77,22 @@ const VoiceInterview = () => {
       const sessionData = await createSession();
       
       if (mode === 'voice' && isVoiceAvailable) {
-        await initializeVoiceMode(sessionData);
+        try {
+          await initializeVoiceMode(sessionData);
+        } catch (error) {
+          console.error('Voice initialization failed:', error);
+          handleMicrophonePermissionDenied();
+        }
       }
 
       await updateSessionStatus('active');
       setIsConnected(true);
+      
+      // Add welcome system message
+      await addSystemMessage(
+        `Interview started in ${mode} mode. ${mode === 'voice' ? 'Speak naturally when ready.' : 'Type your responses below.'}`,
+        'success'
+      );
       
       toast({
         title: "Interview Started",
@@ -111,6 +131,12 @@ const VoiceInterview = () => {
       );
     } catch (error) {
       console.error('Voice initialization failed:', error);
+      if (session) {
+        await addSystemMessage(
+          "Microphone access denied — switched to text mode.",
+          'warning'
+        );
+      }
       handleMicrophonePermissionDenied();
       throw error;
     }
@@ -124,6 +150,7 @@ const VoiceInterview = () => {
     
     setIsConnected(false);
     setConnectionState('new');
+    setIsRecording(false);
     endSession();
     
     toast({
@@ -157,6 +184,16 @@ const VoiceInterview = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleStartRecording = () => {
+    setIsRecording(true);
+    // Voice recording logic would go here
+  };
+
+  const handleStopRecording = () => {
+    setIsRecording(false);
+    // Stop recording and process audio
   };
 
   const handleDataChannelMessage = (data: any) => {
@@ -195,6 +232,12 @@ const VoiceInterview = () => {
     setConnectionState(state);
     
     if (state === 'failed' || state === 'disconnected') {
+      if (session) {
+        addSystemMessage(
+          "Voice connection lost. You're now in text mode.",
+          'warning'
+        );
+      }
       handleConnectionFailure(async () => {
         if (session) {
           await initializeVoiceMode(session);
@@ -242,17 +285,6 @@ const VoiceInterview = () => {
 
   return (
     <div className="space-y-6">
-      {/* Mode Toggle */}
-      <div className="flex justify-center">
-        <ModeToggle
-          mode={mode}
-          onToggle={toggleMode}
-          isVoiceAvailable={isVoiceAvailable}
-          isReconnecting={isReconnecting}
-          disabled={isConnecting}
-        />
-      </div>
-
       {/* Controls */}
       <VoiceControls
         mode={mode}
@@ -269,14 +301,20 @@ const VoiceInterview = () => {
         onToggleAudio={toggleAudio}
       />
 
-      {/* Text Input (only shown in text mode and when connected) */}
-      {isConnected && mode === 'text' && (
-        <TextInput
-          onSendMessage={handleTextMessage}
-          isProcessing={isProcessingText}
-          disabled={!session}
-        />
-      )}
+      {/* Unified Chat Input */}
+      <UnifiedChatInput
+        mode={mode}
+        isVoiceAvailable={isVoiceAvailable}
+        isConnected={isConnected}
+        isProcessing={isProcessingText || isReconnecting}
+        micEnabled={micEnabled}
+        isRecording={isRecording}
+        onModeToggle={toggleMode}
+        onSendTextMessage={handleTextMessage}
+        onStartRecording={handleStartRecording}
+        onStopRecording={handleStopRecording}
+        onToggleMicrophone={toggleMicrophone}
+      />
 
       {/* Transcript */}
       <TranscriptDisplay
