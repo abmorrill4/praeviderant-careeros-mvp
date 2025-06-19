@@ -442,18 +442,20 @@ const VoiceInterview = () => {
         onDismiss={() => setStatusBanner(prev => ({ ...prev, visible: false }))}
       />
 
-      {/* Floating Interview Control */}
-      <FloatingInterviewControl
-        isConnected={isConnected}
-        isConnecting={isConnecting || isLoadingPrompt}
-        hasActiveInterview={hasActiveInterview}
-        onStartInterview={() => handleStartInterview(false)}
-        onResumeInterview={() => handleStartInterview(true)}
-        onStopInterview={handleStopInterview}
-      />
-
       {/* Main Chat Interface */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col relative">
+        {/* Interview Control positioned within the main content */}
+        <div className="absolute top-4 left-4 z-50">
+          <FloatingInterviewControl
+            isConnected={isConnected}
+            isConnecting={isConnecting || isLoadingPrompt}
+            hasActiveInterview={hasActiveInterview}
+            onStartInterview={() => handleStartInterview(false)}
+            onResumeInterview={() => handleStartInterview(true)}
+            onStopInterview={handleStopInterview}
+          />
+        </div>
+
         {/* Compact Waveform */}
         {isConnected && (
           <div className="px-6 pt-6">

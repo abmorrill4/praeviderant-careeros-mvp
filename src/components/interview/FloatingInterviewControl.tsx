@@ -24,20 +24,18 @@ const FloatingInterviewControl = ({
 
   if (isConnected) {
     return (
-      <div className="fixed top-4 left-4 z-50">
-        <Button
-          onClick={onStopInterview}
-          className="rounded-full shadow-lg px-4 py-3 font-medium bg-red-500 hover:bg-red-600 hover:shadow-xl text-white transition-all"
-        >
-          <Square className="w-4 h-4 mr-2" />
-          End
-        </Button>
-      </div>
+      <Button
+        onClick={onStopInterview}
+        className="rounded-full shadow-lg px-4 py-3 font-medium bg-red-500 hover:bg-red-600 hover:shadow-xl text-white transition-all"
+      >
+        <Square className="w-4 h-4 mr-2" />
+        End
+      </Button>
     );
   }
 
   return (
-    <div className="fixed top-4 left-4 z-50 flex gap-3">
+    <div className="flex gap-3">
       <Button
         onClick={onStartInterview}
         disabled={isConnecting}
