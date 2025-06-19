@@ -63,7 +63,7 @@ const UnifiedChatInput = ({
   }
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 p-6 border-t ${
+    <div className={`border-t p-4 ${
       theme === 'dark' 
         ? 'bg-career-panel-dark/95 backdrop-blur-sm border-career-gray-dark/30' 
         : 'bg-career-panel-light/95 backdrop-blur-sm border-career-gray-light/30'
@@ -137,7 +137,7 @@ const UnifiedChatInput = ({
                     ? 'Processing...' 
                     : isRecording 
                       ? 'Recording... (tap to stop)' 
-                      : 'Tap to speak'
+                      : 'Voice mode (demo)'
                   }
                 </Button>
               </div>
@@ -164,7 +164,7 @@ const UnifiedChatInput = ({
           theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'
         }`}>
           {mode === 'voice' 
-            ? '🎤 Speak naturally - AI responds when you finish talking'
+            ? '🎤 Voice mode (demo) - Switch to text mode for interactive chat'
             : '💬 Press Enter to send, Shift+Enter for new line'
           }
         </div>

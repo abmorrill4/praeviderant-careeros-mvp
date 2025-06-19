@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +31,7 @@ export const useInterviewSession = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [interviewContext, setInterviewContext] = useState<InterviewContext | null>(null);
   const [isResumedSession, setIsResumedSession] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const { toast } = useToast();
 
   const fetchInterviewContext = async () => {
@@ -69,69 +71,91 @@ export const useInterviewSession = () => {
   const createSession = async (resumeInterview = false) => {
     setIsLoading(true);
     try {
-      // Fetch interview context first
-      const context = await fetchInterviewContext();
-      setInterviewContext(context);
+      // Try to create a real session first, fall back to demo mode
+      try {
+        const context = await fetchInterviewContext();
+        setInterviewContext(context);
 
-      // Check if there's an active interview to resume
-      if (resumeInterview && context?.activeInterview && typeof context.activeInterview === 'object' && context.activeInterview.id) {
-        setIsResumedSession(true);
-        
-        // Load existing transcript from the active interview
-        const { data: transcriptData, error: transcriptError } = await supabase
-          .from('interview_transcripts')
-          .select('*')
-          .eq('session_id', context.activeInterview.id)
-          .order('created_at', { ascending: true });
+        if (resumeInterview && context?.activeInterview && typeof context.activeInterview === 'object' && context.activeInterview.id) {
+          setIsResumedSession(true);
+          
+          const { data: transcriptData, error: transcriptError } = await supabase
+            .from('interview_transcripts')
+            .select('*')
+            .eq('session_id', context.activeInterview.id)
+            .order('created_at', { ascending: true });
 
-        if (!transcriptError && transcriptData) {
-          const formattedTranscript: TranscriptEntry[] = transcriptData.map(entry => ({
-            id: entry.id,
-            speaker: entry.speaker as 'user' | 'assistant',
-            content: entry.content,
-            timestamp_ms: entry.timestamp_ms,
-            created_at: entry.created_at,
-          }));
-          setTranscript(formattedTranscript);
+          if (!transcriptError && transcriptData) {
+            const formattedTranscript: TranscriptEntry[] = transcriptData.map(entry => ({
+              id: entry.id,
+              speaker: entry.speaker as 'user' | 'assistant',
+              content: entry.content,
+              timestamp_ms: entry.timestamp_ms,
+              created_at: entry.created_at,
+            }));
+            setTranscript(formattedTranscript);
+          }
+
+          await supabase
+            .from('interviews')
+            .update({ status: 'resumed' })
+            .eq('id', context.activeInterview.id);
+
+          toast({
+            title: "Interview Resumed",
+            description: "Continuing your previous interview session.",
+          });
+        } else {
+          setIsResumedSession(false);
+          setTranscript([]);
         }
 
-        // Update interview status to resumed
-        await supabase
-          .from('interviews')
-          .update({ status: 'resumed' })
-          .eq('id', context.activeInterview.id);
-
-        toast({
-          title: "Interview Resumed",
-          description: "Continuing your previous interview session.",
+        const { data, error } = await supabase.functions.invoke('create-interview-session', {
+          body: { 
+            resumeMode: resumeInterview,
+            context: context 
+          }
         });
-      } else {
+        
+        if (error) {
+          throw error;
+        }
+
+        setSession(data);
+        setIsDemoMode(false);
+        
+        if (!resumeInterview) {
+          toast({
+            title: "Session Created",
+            description: "Your interview session has been created successfully.",
+          });
+        }
+        
+        return data;
+      } catch (realSessionError) {
+        console.warn('Real session creation failed, falling back to demo mode:', realSessionError);
+        
+        // Create a demo session
+        const demoSession = {
+          sessionId: `demo-session-${Date.now()}`,
+          openAISessionId: `demo-openai-${Date.now()}`,
+          clientSecret: 'demo-secret'
+        };
+        
+        setSession(demoSession);
+        setIsDemoMode(true);
         setIsResumedSession(false);
         setTranscript([]);
-      }
-
-      // Create new OpenAI session
-      const { data, error } = await supabase.functions.invoke('create-interview-session', {
-        body: { 
-          resumeMode: resumeInterview,
-          context: context 
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-
-      setSession(data);
-      
-      if (!resumeInterview) {
+        
         toast({
-          title: "Session Created",
-          description: "Your interview session has been created successfully.",
+          title: "Demo Mode",
+          description: "Running in demo mode - full functionality requires backend setup.",
+          variant: "default",
         });
+        
+        return demoSession;
       }
       
-      return data;
     } catch (error) {
       console.error('Error creating session:', error);
       toast({
@@ -172,9 +196,22 @@ export const useInterviewSession = () => {
   };
 
   const addTranscriptEntry = async (speaker: 'user' | 'assistant', content: string, timestampMs?: number) => {
-    if (!session) return;
-
     try {
+      if (isDemoMode || !session) {
+        // For demo mode or when no session, just add to local state
+        const demoEntry: TranscriptEntry = {
+          id: `demo-${Date.now()}-${Math.random()}`,
+          speaker,
+          content,
+          timestamp_ms: timestampMs,
+          created_at: new Date().toISOString(),
+        };
+        
+        setTranscript(prev => [...prev, demoEntry]);
+        return;
+      }
+
+      // Try to save to database in real mode
       const { data, error } = await supabase
         .from('interview_transcripts')
         .insert({
@@ -188,10 +225,20 @@ export const useInterviewSession = () => {
 
       if (error) {
         console.error('Error saving transcript:', error);
+        
+        // Fall back to local state if database save fails
+        const fallbackEntry: TranscriptEntry = {
+          id: `fallback-${Date.now()}-${Math.random()}`,
+          speaker,
+          content,
+          timestamp_ms: timestampMs,
+          created_at: new Date().toISOString(),
+        };
+        
+        setTranscript(prev => [...prev, fallbackEntry]);
         return;
       }
 
-      // Type cast the database result to match our TranscriptEntry interface
       const typedEntry: TranscriptEntry = {
         id: data.id,
         speaker: data.speaker as 'user' | 'assistant',
@@ -203,6 +250,17 @@ export const useInterviewSession = () => {
       setTranscript(prev => [...prev, typedEntry]);
     } catch (error) {
       console.error('Error adding transcript entry:', error);
+      
+      // Always fall back to local state on any error
+      const errorFallbackEntry: TranscriptEntry = {
+        id: `error-fallback-${Date.now()}-${Math.random()}`,
+        speaker,
+        content,
+        timestamp_ms: timestampMs,
+        created_at: new Date().toISOString(),
+      };
+      
+      setTranscript(prev => [...prev, errorFallbackEntry]);
     }
   };
 
@@ -237,13 +295,14 @@ export const useInterviewSession = () => {
   };
 
   const endSession = () => {
-    if (session) {
+    if (session && !isDemoMode) {
       updateSessionStatus('completed');
     }
     setSession(null);
     setTranscript([]);
     setInterviewContext(null);
     setIsResumedSession(false);
+    setIsDemoMode(false);
   };
 
   return {
@@ -252,6 +311,7 @@ export const useInterviewSession = () => {
     isLoading,
     interviewContext,
     isResumedSession,
+    isDemoMode,
     createSession,
     checkForActiveInterview,
     addTranscriptEntry,
