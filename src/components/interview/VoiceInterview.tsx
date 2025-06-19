@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useInterviewSession } from '@/hooks/useInterviewSession';
@@ -13,6 +14,7 @@ import CompactAudioWaveform from './CompactAudioWaveform';
 import StatusBanner from './StatusBanner';
 import CollapsibleDataSidebar from './CollapsibleDataSidebar';
 import FloatingInterviewControl from './FloatingInterviewControl';
+import InterviewModeSwitch from './InterviewModeSwitch';
 import { StructuredDataItem } from './StructuredDataDisplay';
 
 // Mock structured data for demonstration
@@ -443,17 +445,32 @@ const VoiceInterview = () => {
       />
 
       {/* Main Chat Interface */}
-      <div className="flex-1 flex flex-col relative">
-        {/* Interview Control positioned within the main content */}
-        <div className="absolute top-4 left-4 z-50">
-          <FloatingInterviewControl
-            isConnected={isConnected}
-            isConnecting={isConnecting || isLoadingPrompt}
-            hasActiveInterview={hasActiveInterview}
-            onStartInterview={() => handleStartInterview(false)}
-            onResumeInterview={() => handleStartInterview(true)}
-            onStopInterview={handleStopInterview}
-          />
+      <div className="flex-1 flex flex-col">
+        {/* Interview Controls Header */}
+        <div className={`border-b p-4 flex items-center justify-between ${
+          theme === 'dark' 
+            ? 'bg-career-panel-dark/95 border-career-text-dark/10' 
+            : 'bg-career-panel-light/95 border-career-text-light/10'
+        }`}>
+          <div className="flex items-center gap-4">
+            <FloatingInterviewControl
+              isConnected={isConnected}
+              isConnecting={isConnecting || isLoadingPrompt}
+              hasActiveInterview={hasActiveInterview}
+              onStartInterview={() => handleStartInterview(false)}
+              onResumeInterview={() => handleStartInterview(true)}
+              onStopInterview={handleStopInterview}
+            />
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <InterviewModeSwitch
+              mode={mode}
+              onToggle={toggleMode}
+              isVoiceAvailable={isVoiceAvailable}
+              disabled={isConnecting || isLoadingPrompt}
+            />
+          </div>
         </div>
 
         {/* Compact Waveform */}

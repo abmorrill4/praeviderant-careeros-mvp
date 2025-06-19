@@ -26,10 +26,10 @@ const FloatingInterviewControl = ({
     return (
       <Button
         onClick={onStopInterview}
-        className="rounded-full shadow-lg px-4 py-3 font-medium bg-red-500 hover:bg-red-600 hover:shadow-xl text-white transition-all"
+        className="px-4 py-2 font-medium bg-red-500 hover:bg-red-600 text-white transition-all"
       >
         <Square className="w-4 h-4 mr-2" />
-        End
+        End Interview
       </Button>
     );
   }
@@ -39,10 +39,10 @@ const FloatingInterviewControl = ({
       <Button
         onClick={onStartInterview}
         disabled={isConnecting}
-        className={`rounded-full shadow-lg px-6 py-3 font-medium transition-all ${
+        className={`px-6 py-2 font-medium transition-all ${
           isConnecting 
             ? 'bg-career-text-muted-dark hover:bg-career-text-muted-dark cursor-not-allowed' 
-            : 'bg-career-accent hover:bg-career-accent-dark hover:shadow-xl'
+            : 'bg-career-accent hover:bg-career-accent-dark'
         } text-white`}
       >
         {isConnecting ? (
@@ -62,7 +62,7 @@ const FloatingInterviewControl = ({
         <Button
           onClick={onResumeInterview}
           disabled={isConnecting}
-          className="rounded-full shadow-lg px-6 py-2 bg-career-accent hover:bg-career-accent-dark text-white"
+          className="px-6 py-2 bg-career-accent hover:bg-career-accent-dark text-white"
         >
           <RotateCcw className="w-4 h-4 mr-2" />
           Resume Interview
