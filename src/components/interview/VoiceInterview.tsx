@@ -4,9 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useInterviewSession } from '@/hooks/useInterviewSession';
 import { useInterviewModes } from '@/hooks/useInterviewModes';
+import { useStructuredInterview } from '@/hooks/useStructuredInterview';
 import StatusBanner from './StatusBanner';
 import CollapsibleDataSidebar from './CollapsibleDataSidebar';
-import UnifiedChatInput from './UnifiedChatInput';
+import InterviewControlPanel from './InterviewControlPanel';
+import UnifiedMessageInput from './UnifiedMessageInput';
 import StructuredInterviewInterface from './StructuredInterviewInterface';
 
 const VoiceInterview = () => {
@@ -14,7 +16,7 @@ const VoiceInterview = () => {
   const { theme } = useTheme();
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [statusBannerVisible, setStatusBannerVisible] = useState(false);
+  const [volumeEnabled, setVolumeEnabled] = useState(true);
 
   const {
     session,
@@ -40,6 +42,16 @@ const VoiceInterview = () => {
     stopRecording,
   } = useInterviewModes();
 
+  const {
+    isActive: isInterviewActive,
+    messages,
+    isLoading: isInterviewLoading,
+    isComplete,
+    startInterview,
+    sendMessage,
+    resetInterview,
+  } = useStructuredInterview(session?.sessionId || null);
+
   // Auto-start interview session when component mounts
   useEffect(() => {
     const autoStartInterview = async () => {
@@ -48,7 +60,7 @@ const VoiceInterview = () => {
         try {
           await createSession(false);
           setIsConnected(true);
-          await addSystemMessage("Interview session started", "success");
+          await addSystemMessage("Interview session created", "success");
         } catch (error) {
           console.error('Failed to auto-start interview:', error);
         } finally {
@@ -60,15 +72,27 @@ const VoiceInterview = () => {
     autoStartInterview();
   }, [user, isConnected, isConnecting, createSession, addSystemMessage]);
 
+  const handleStartInterview = async () => {
+    if (!isInterviewActive && session) {
+      await startInterview();
+    }
+  };
+
+  const handlePauseInterview = () => {
+    // Implement pause logic if needed
+    console.log('Pause interview');
+  };
+
   const handleStopInterview = () => {
     setIsConnected(false);
+    resetInterview();
     endSession();
   };
 
-  const handleSendTextMessage = async (message: string) => {
-    if (!isConnected || !session) return;
+  const handleSendMessage = async (message: string) => {
+    if (!isConnected || !session || !isInterviewActive) return;
     
-    // Add user message to transcript
+    await sendMessage(message);
     await addTranscriptEntry('user', message);
   };
 
@@ -82,6 +106,10 @@ const VoiceInterview = () => {
     if (isRecording) {
       stopRecording();
     }
+  };
+
+  const handleToggleVolume = () => {
+    setVolumeEnabled(prev => !prev);
   };
 
   // Create sample data for CollapsibleDataSidebar
@@ -107,19 +135,6 @@ const VoiceInterview = () => {
     console.log('Removing data item:', id);
   };
 
-  const getStatusMessage = () => {
-    if (isConnecting) return "Connecting to interview session...";
-    if (isResumedSession) return "Interview session resumed";
-    if (mode === 'voice') return "Voice mode active";
-    return "Text mode active";
-  };
-
-  const getStatusType = (): 'connecting' | 'listening' | 'thinking' | 'switching' | 'error' | 'success' | 'info' => {
-    if (isConnecting) return 'connecting';
-    if (isResumedSession) return 'success';
-    return 'info';
-  };
-
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-bg-dark' : 'bg-career-bg-light'}`}>
       <div className="container mx-auto px-4 py-8">
@@ -133,31 +148,58 @@ const VoiceInterview = () => {
               Interactive conversation to build your personalized resume
             </p>
           </div>
-
-          {isConnected && (
-            <button
-              onClick={handleStopInterview}
-              className="px-4 py-2 font-medium bg-red-500 hover:bg-red-600 text-white transition-all rounded-lg"
-            >
-              End Interview
-            </button>
-          )}
         </div>
 
         {/* Status Banner */}
-        <StatusBanner
-          type={getStatusType()}
-          message={getStatusMessage()}
-          visible={statusBannerVisible}
-          onDismiss={() => setStatusBannerVisible(false)}
-        />
+        {isConnecting && (
+          <StatusBanner
+            type="connecting"
+            message="Setting up your interview session..."
+            visible={true}
+            onDismiss={() => {}}
+          />
+        )}
+
+        {/* Control Panel */}
+        {isConnected && (
+          <div className="mb-6">
+            <InterviewControlPanel
+              isActive={isInterviewActive}
+              mode={mode}
+              isRecording={isRecording}
+              micEnabled={micEnabled}
+              volumeEnabled={volumeEnabled}
+              onStart={handleStartInterview}
+              onPause={handlePauseInterview}
+              onStop={handleStopInterview}
+              onModeToggle={toggleMode}
+              onMicToggle={toggleMicrophone}
+              onVolumeToggle={handleToggleVolume}
+            />
+          </div>
+        )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Interview Interface */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 space-y-6">
             {isConnected ? (
-              <StructuredInterviewInterface sessionId={session?.sessionId || null} />
+              <>
+                <StructuredInterviewInterface sessionId={session?.sessionId || null} />
+                
+                {/* Message Input */}
+                {isInterviewActive && (
+                  <UnifiedMessageInput
+                    mode={mode}
+                    isProcessing={isProcessing || isInterviewLoading}
+                    isRecording={isRecording}
+                    disabled={!isConnected || isComplete}
+                    onSendMessage={handleSendMessage}
+                    onStartRecording={handleStartRecording}
+                    onStopRecording={handleStopRecording}
+                  />
+                )}
+              </>
             ) : (
               <div className={`rounded-xl border p-8 text-center ${
                 theme === 'dark' 
@@ -184,25 +226,6 @@ const VoiceInterview = () => {
             />
           </div>
         </div>
-
-        {/* Chat Input - Fixed at bottom when connected */}
-        {isConnected && mode === 'text' && (
-          <div className="fixed bottom-0 left-0 right-0 z-10">
-            <UnifiedChatInput
-              mode={mode}
-              isVoiceAvailable={isVoiceAvailable}
-              isConnected={isConnected}
-              isProcessing={isProcessing}
-              micEnabled={micEnabled}
-              isRecording={isRecording}
-              onModeToggle={toggleMode}
-              onSendTextMessage={handleSendTextMessage}
-              onStartRecording={handleStartRecording}
-              onStopRecording={handleStopRecording}
-              onToggleMicrophone={toggleMicrophone}
-            />
-          </div>
-        )}
       </div>
     </div>
   );
