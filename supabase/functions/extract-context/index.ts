@@ -7,6 +7,246 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Define function schemas that match our database tables
+const functionSchemas = {
+  extractWorkExperience: {
+    name: "extract_work_experience",
+    description: "Extract work experience information from interview transcript",
+    parameters: {
+      type: "object",
+      properties: {
+        company: {
+          type: "string",
+          description: "The company name"
+        },
+        title: {
+          type: "string", 
+          description: "The job title/position"
+        },
+        start_date: {
+          type: "string",
+          description: "Start date in a readable format (e.g., 'January 2020', '2020', 'Jan 2020')"
+        },
+        end_date: {
+          type: "string",
+          description: "End date in a readable format, or 'Present' if currently employed"
+        },
+        description: {
+          type: "string",
+          description: "Detailed description of responsibilities, achievements, and impact"
+        }
+      },
+      required: ["company", "title"]
+    }
+  },
+  
+  extractEducation: {
+    name: "extract_education",
+    description: "Extract education information from interview transcript",
+    parameters: {
+      type: "object",
+      properties: {
+        institution: {
+          type: "string",
+          description: "The educational institution name"
+        },
+        degree: {
+          type: "string",
+          description: "The degree type (e.g., Bachelor's, Master's, PhD)"
+        },
+        field_of_study: {
+          type: "string",
+          description: "The field of study or major"
+        },
+        start_date: {
+          type: "string",
+          description: "Start date in a readable format"
+        },
+        end_date: {
+          type: "string",
+          description: "End date in a readable format"
+        },
+        gpa: {
+          type: "string",
+          description: "GPA if mentioned"
+        },
+        description: {
+          type: "string",
+          description: "Additional details about coursework, achievements, etc."
+        }
+      },
+      required: ["institution", "degree"]
+    }
+  },
+
+  extractSkills: {
+    name: "extract_skills",
+    description: "Extract skills information from interview transcript",
+    parameters: {
+      type: "object",
+      properties: {
+        skills: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
+                description: "The skill name"
+              },
+              category: {
+                type: "string",
+                description: "Skill category (e.g., 'Programming Language', 'Framework', 'Tool', 'Soft Skill')"
+              },
+              proficiency_level: {
+                type: "string",
+                description: "Proficiency level (e.g., 'Beginner', 'Intermediate', 'Advanced', 'Expert')"
+              },
+              years_of_experience: {
+                type: "number",
+                description: "Years of experience with this skill"
+              }
+            },
+            required: ["name"]
+          }
+        }
+      },
+      required: ["skills"]
+    }
+  },
+
+  extractProjects: {
+    name: "extract_projects",
+    description: "Extract project information from interview transcript",
+    parameters: {
+      type: "object",
+      properties: {
+        projects: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
+                description: "The project name"
+              },
+              description: {
+                type: "string",
+                description: "Project description and what was accomplished"
+              },
+              technologies_used: {
+                type: "array",
+                items: {
+                  type: "string"
+                },
+                description: "Technologies, frameworks, or tools used"
+              },
+              start_date: {
+                type: "string",
+                description: "Project start date"
+              },
+              end_date: {
+                type: "string",
+                description: "Project end date"
+              },
+              project_url: {
+                type: "string",
+                description: "URL to the live project if available"
+              },
+              repository_url: {
+                type: "string",
+                description: "URL to the code repository if available"
+              }
+            },
+            required: ["name"]
+          }
+        }
+      },
+      required: ["projects"]
+    }
+  },
+
+  extractCertifications: {
+    name: "extract_certifications",
+    description: "Extract certification information from interview transcript",
+    parameters: {
+      type: "object",
+      properties: {
+        certifications: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
+                description: "The certification name"
+              },
+              issuing_organization: {
+                type: "string",
+                description: "The organization that issued the certification"
+              },
+              issue_date: {
+                type: "string",
+                description: "Date the certification was issued"
+              },
+              expiration_date: {
+                type: "string",
+                description: "Expiration date if applicable"
+              },
+              credential_id: {
+                type: "string",
+                description: "Credential ID if provided"
+              },
+              credential_url: {
+                type: "string",
+                description: "URL to verify the credential"
+              }
+            },
+            required: ["name", "issuing_organization"]
+          }
+        }
+      },
+      required: ["certifications"]
+    }
+  },
+
+  extractGeneralContext: {
+    name: "extract_general_context",
+    description: "Extract general context and summary information from interview transcript",
+    parameters: {
+      type: "object",
+      properties: {
+        summary: {
+          type: "string",
+          description: "A concise summary of the main points discussed"
+        },
+        keyPoints: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Key points and important information extracted"
+        },
+        achievements: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Notable achievements and accomplishments mentioned"
+        },
+        metrics: {
+          type: "array",
+          items: {
+            type: "string"
+          },
+          description: "Quantifiable metrics and numbers mentioned"
+        }
+      },
+      required: ["summary", "keyPoints"]
+    }
+  }
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -21,146 +261,49 @@ serve(async (req) => {
 
     console.log(`Extracting context for ${interviewType}:`, transcript);
 
-    // Create a sophisticated Chain-of-Thought prompt with Few-Shot examples
-    const systemPrompt = `You are an AI assistant specialized in extracting structured information from interview transcripts for resume building. Your task is to analyze the user's response and extract key information in a structured JSON format.
-
-REASONING PROCESS (Chain-of-Thought):
-1. First, identify the main topic being discussed
-2. Extract specific facts, achievements, and quantifiable metrics
-3. Categorize information into relevant sections
-4. Structure the output according to the required JSON format
-5. Ensure all extracted information is accurate and relevant
-
-Here are two complete examples to guide your analysis:
-
-EXAMPLE 1 - Work Experience:
-Transcript: "I worked at Google as a Senior Software Engineer from January 2020 to March 2023. I led a team of 5 engineers developing machine learning algorithms for the search ranking system. We improved search relevance by 15% and reduced query latency by 200ms. I used Python, TensorFlow, and Go extensively. One of my biggest achievements was designing a new caching layer that handled 50 million requests per day."
-
-Chain-of-Thought Analysis:
-1. Topic: Work experience at Google
-2. Key facts: Company (Google), Title (Senior Software Engineer), Duration (Jan 2020 - Mar 2023)
-3. Achievements: Led team of 5, improved search relevance 15%, reduced latency 200ms, designed caching layer for 50M requests/day
-4. Skills: Python, TensorFlow, Go, machine learning, team leadership
-5. Structure: Map to WorkExperience format
-
-JSON Output:
-{
-  "summary": "Senior Software Engineer at Google leading ML search improvements",
-  "keyPoints": [
-    "Led team of 5 engineers developing ML algorithms for search ranking",
-    "Improved search relevance by 15% and reduced query latency by 200ms",
-    "Designed caching layer handling 50 million requests per day"
-  ],
-  "details": {
-    "skills": ["Python", "TensorFlow", "Go", "Machine Learning", "Team Leadership"],
-    "achievements": [
-      "Improved search relevance by 15%",
-      "Reduced query latency by 200ms",
-      "Led team of 5 engineers",
-      "Designed caching layer for 50M daily requests"
-    ],
-    "metrics": ["15% improvement", "200ms latency reduction", "5 team members", "50 million requests/day"]
-  },
-  "workExperience": {
-    "company": "Google",
-    "title": "Senior Software Engineer",
-    "startDate": "January 2020",
-    "endDate": "March 2023",
-    "description": "Led a team of 5 engineers developing machine learning algorithms for the search ranking system. Improved search relevance by 15% and reduced query latency by 200ms. Designed a new caching layer that handled 50 million requests per day."
-  },
-  "rawTranscript": "I worked at Google as a Senior Software Engineer from January 2020 to March 2023. I led a team of 5 engineers developing machine learning algorithms for the search ranking system. We improved search relevance by 15% and reduced query latency by 200ms. I used Python, TensorFlow, and Go extensively. One of my biggest achievements was designing a new caching layer that handled 50 million requests per day."
-}
-
-EXAMPLE 2 - Skills:
-Transcript: "I'm really proficient in React and have been using it for about 4 years now. I also know Node.js quite well, been working with it for 3 years. I'm comfortable with TypeScript, PostgreSQL, and AWS. I'd say I'm an expert in React, advanced in Node.js and TypeScript, and intermediate in PostgreSQL and AWS. I've built several full-stack applications and deployed them to production."
-
-Chain-of-Thought Analysis:
-1. Topic: Technical skills and proficiency levels
-2. Key facts: React (4 years, expert), Node.js (3 years, advanced), TypeScript (advanced), PostgreSQL (intermediate), AWS (intermediate)
-3. Experience indicators: Years of experience, self-assessed proficiency levels
-4. Context: Full-stack development, production deployments
-5. Structure: Map to Skills format with categories and proficiency levels
-
-JSON Output:
-{
-  "summary": "Full-stack developer with 4+ years React experience and strong backend skills",
-  "keyPoints": [
-    "Expert in React with 4 years of experience",
-    "Advanced in Node.js and TypeScript with 3+ years experience",
-    "Intermediate proficiency in PostgreSQL and AWS",
-    "Built and deployed full-stack applications to production"
-  ],
-  "details": {
-    "skills": ["React", "Node.js", "TypeScript", "PostgreSQL", "AWS", "Full-stack Development"],
-    "achievements": [
-      "Built several full-stack applications",
-      "Deployed applications to production",
-      "4 years of React development experience"
-    ],
-    "metrics": ["4 years React experience", "3 years Node.js experience"]
-  },
-  "skills": [
-    {
-      "name": "React",
-      "category": "Frontend",
-      "proficiencyLevel": "Expert",
-      "yearsOfExperience": 4
-    },
-    {
-      "name": "Node.js",
-      "category": "Backend",
-      "proficiencyLevel": "Advanced",
-      "yearsOfExperience": 3
-    },
-    {
-      "name": "TypeScript",
-      "category": "Programming Language",
-      "proficiencyLevel": "Advanced",
-      "yearsOfExperience": 3
-    },
-    {
-      "name": "PostgreSQL",
-      "category": "Database",
-      "proficiencyLevel": "Intermediate",
-      "yearsOfExperience": 2
-    },
-    {
-      "name": "AWS",
-      "category": "Cloud Platform",
-      "proficiencyLevel": "Intermediate",
-      "yearsOfExperience": 2
+    // Determine which functions to use based on interview type
+    let availableFunctions = [];
+    
+    switch (interviewType.toLowerCase()) {
+      case 'work_experience':
+      case 'work experience':
+      case 'job history':
+        availableFunctions = [functionSchemas.extractWorkExperience, functionSchemas.extractGeneralContext];
+        break;
+      case 'education':
+      case 'academic':
+        availableFunctions = [functionSchemas.extractEducation, functionSchemas.extractGeneralContext];
+        break;
+      case 'skills':
+      case 'technical skills':
+        availableFunctions = [functionSchemas.extractSkills, functionSchemas.extractGeneralContext];
+        break;
+      case 'projects':
+      case 'portfolio':
+        availableFunctions = [functionSchemas.extractProjects, functionSchemas.extractGeneralContext];
+        break;
+      case 'certifications':
+      case 'credentials':
+        availableFunctions = [functionSchemas.extractCertifications, functionSchemas.extractGeneralContext];
+        break;
+      default:
+        // For general interviews, use all functions
+        availableFunctions = Object.values(functionSchemas);
+        break;
     }
-  ],
-  "rawTranscript": "I'm really proficient in React and have been using it for about 4 years now. I also know Node.js quite well, been working with it for 3 years. I'm comfortable with TypeScript, PostgreSQL, and AWS. I'd say I'm an expert in React, advanced in Node.js and TypeScript, and intermediate in PostgreSQL and AWS. I've built several full-stack applications and deployed them to production."
-}
 
-Now analyze the following transcript using the same Chain-of-Thought reasoning approach:
+    const systemPrompt = `You are an AI assistant specialized in extracting structured information from interview transcripts for resume building.
 
-For ${interviewType} interviews, focus on extracting:
-- Key points and achievements
-- Specific details and quantifiable metrics
-- Relevant skills and technologies
-- Important dates and durations
-- Notable accomplishments
+Your task is to analyze the user's response and extract relevant information using the provided function calls. 
 
-Return a JSON object with the following structure:
-{
-  "summary": "A concise summary of the main points",
-  "keyPoints": ["Point 1", "Point 2", "Point 3"],
-  "details": {
-    "skills": ["Skill 1", "Skill 2"],
-    "achievements": ["Achievement 1", "Achievement 2"],
-    "metrics": ["Metric 1", "Metric 2"]
-  },
-  "rawTranscript": "The original transcript"
-}
+Guidelines:
+1. Call the appropriate extraction function(s) based on the content discussed
+2. Extract specific facts, achievements, and quantifiable metrics
+3. Ensure all extracted information is accurate and comes directly from the transcript
+4. For dates, use readable formats (e.g., "January 2020", "2020-2023", "Present")
+5. Be comprehensive but accurate - don't infer information not explicitly stated
 
-If the transcript contains work experience information, include a "workExperience" object.
-If the transcript contains skills information, include a "skills" array with detailed skill objects.
-If the transcript contains education information, include an "education" object.
-If the transcript contains project information, include a "projects" array.
-
-Think step by step and provide detailed, accurate extraction.`;
+For ${interviewType} interviews, focus on extracting relevant information and always call the extract_general_context function to provide a summary.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -172,8 +315,13 @@ Think step by step and provide detailed, accurate extraction.`;
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Interview Type: ${interviewType}\n\nPrompt: ${promptTemplate}\n\nTranscript: ${transcript}\n\nPlease analyze this transcript step by step and extract the structured information.` }
+          { 
+            role: 'user', 
+            content: `Interview Type: ${interviewType}\n\nPrompt: ${promptTemplate}\n\nTranscript: ${transcript}\n\nPlease analyze this transcript and extract the structured information using the appropriate function calls.` 
+          }
         ],
+        functions: availableFunctions,
+        function_call: "auto",
         temperature: 0.2,
       }),
     });
@@ -185,42 +333,92 @@ Think step by step and provide detailed, accurate extraction.`;
     }
 
     const result = await response.json();
-    const extractedContent = result.choices[0].message.content;
+    const message = result.choices[0].message;
+
+    console.log('OpenAI response:', JSON.stringify(message, null, 2));
+
+    let extractedContext = {
+      summary: "",
+      keyPoints: [],
+      details: {
+        skills: [],
+        achievements: [],
+        metrics: []
+      },
+      rawTranscript: transcript
+    };
+
+    // Process function calls if present
+    if (message.function_call) {
+      const functionName = message.function_call.name;
+      const functionArgs = JSON.parse(message.function_call.arguments);
+
+      console.log(`Function called: ${functionName}`, functionArgs);
+
+      switch (functionName) {
+        case 'extract_work_experience':
+          extractedContext.workExperience = functionArgs;
+          extractedContext.summary = `Work experience at ${functionArgs.company} as ${functionArgs.title}`;
+          extractedContext.keyPoints.push(`${functionArgs.title} at ${functionArgs.company}`);
+          if (functionArgs.description) {
+            extractedContext.details.achievements.push(functionArgs.description);
+          }
+          break;
+
+        case 'extract_education':
+          extractedContext.education = functionArgs;
+          extractedContext.summary = `Education: ${functionArgs.degree} from ${functionArgs.institution}`;
+          extractedContext.keyPoints.push(`${functionArgs.degree} from ${functionArgs.institution}`);
+          break;
+
+        case 'extract_skills':
+          extractedContext.skills = functionArgs.skills;
+          extractedContext.summary = `Skills: ${functionArgs.skills.map(s => s.name).join(', ')}`;
+          extractedContext.keyPoints = functionArgs.skills.map(s => `${s.name} (${s.proficiency_level || 'Not specified'})`);
+          extractedContext.details.skills = functionArgs.skills.map(s => s.name);
+          break;
+
+        case 'extract_projects':
+          extractedContext.projects = functionArgs.projects;
+          extractedContext.summary = `Projects: ${functionArgs.projects.map(p => p.name).join(', ')}`;
+          extractedContext.keyPoints = functionArgs.projects.map(p => p.name);
+          break;
+
+        case 'extract_certifications':
+          extractedContext.certifications = functionArgs.certifications;
+          extractedContext.summary = `Certifications: ${functionArgs.certifications.map(c => c.name).join(', ')}`;
+          extractedContext.keyPoints = functionArgs.certifications.map(c => `${c.name} from ${c.issuing_organization}`);
+          break;
+
+        case 'extract_general_context':
+          extractedContext.summary = functionArgs.summary;
+          extractedContext.keyPoints = functionArgs.keyPoints;
+          if (functionArgs.achievements) {
+            extractedContext.details.achievements = functionArgs.achievements;
+          }
+          if (functionArgs.metrics) {
+            extractedContext.details.metrics = functionArgs.metrics;
+          }
+          break;
+      }
+    } else {
+      // Fallback to parsing the message content if no function call
+      console.log('No function call, using message content as fallback');
+      extractedContext.summary = message.content || "Information extracted from transcript";
+      extractedContext.keyPoints = [message.content || ""];
+    }
 
     console.log('Context extraction successful');
 
-    try {
-      // Try to parse as JSON
-      const parsedContext = JSON.parse(extractedContent);
-      return new Response(
-        JSON.stringify({ extractedContext: parsedContext }),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          } 
-        }
-      );
-    } catch (parseError) {
-      // If JSON parsing fails, return as structured text
-      console.log('JSON parsing failed, returning as structured text');
-      return new Response(
-        JSON.stringify({ 
-          extractedContext: {
-            summary: extractedContent,
-            keyPoints: [],
-            details: {},
-            rawTranscript: transcript
-          }
-        }),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          } 
-        }
-      );
-    }
+    return new Response(
+      JSON.stringify({ extractedContext }),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    );
 
   } catch (error) {
     console.error('Error in extract-context function:', error);
