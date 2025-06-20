@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { X, Save } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
-import { FieldRenderer } from './FieldRenderer';
+import { useToast } from '@/hooks/use-toast';
+import { FormField } from './FormField';
+import { FormActions } from './FormActions';
 import type { VersionedEntity } from '@/types/versioned-entities';
 
 interface EditField {
@@ -27,7 +26,7 @@ export const InlineEditForm: React.FC<InlineEditFormProps> = ({
   onSave,
   onCancel
 }) => {
-  const { theme } = useTheme();
+  const { toast } = useToast();
   const [formData, setFormData] = useState<Record<string, any>>(() => {
     const initial: Record<string, any> = {};
     fields.forEach(field => {
@@ -48,28 +47,15 @@ export const InlineEditForm: React.FC<InlineEditFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {fields.map((field) => (
-        <div key={field.key} className="space-y-1">
-          <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-            {field.label}
-          </label>
-          <FieldRenderer
-            field={field}
-            value={formData[field.key]}
-            onChange={(value) => updateField(field.key, value)}
-          />
-        </div>
+        <FormField
+          key={field.key}
+          field={field}
+          value={formData[field.key]}
+          onChange={(value) => updateField(field.key, value)}
+        />
       ))}
       
-      <div className="flex gap-2 pt-2">
-        <Button type="submit" size="sm" className="bg-career-accent hover:bg-career-accent-dark text-white">
-          <Save className="w-3 h-3 mr-1" />
-          Save
-        </Button>
-        <Button type="button" size="sm" variant="outline" onClick={onCancel}>
-          <X className="w-3 h-3 mr-1" />
-          Cancel
-        </Button>
-      </div>
+      <FormActions onSave={() => {}} onCancel={onCancel} />
     </form>
   );
 };
