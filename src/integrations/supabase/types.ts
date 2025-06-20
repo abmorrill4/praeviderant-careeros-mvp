@@ -822,9 +822,23 @@ export type Database = {
           recent_summaries: Json
         }[]
       }
+      handle_user_deletion: {
+        Args: { target_user_id: string }
+        Returns: {
+          table_name: string
+          rows_deleted: number
+        }[]
+      }
       mark_expired_invitations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      test_user_deletion_dry_run: {
+        Args: { target_user_id: string }
+        Returns: {
+          table_name: string
+          rows_to_delete: number
+        }[]
       }
     }
     Enums: {
