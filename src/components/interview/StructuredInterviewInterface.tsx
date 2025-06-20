@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
-import { Play, Send, Loader2, MessageSquare, Target, Zap, CheckCircle } from 'lucide-react';
+import { Play, Send, Loader2, MessageSquare, Target, Zap, CheckCircle, Flag, RotateCcw } from 'lucide-react';
+import FollowupButton from './FollowupButton';
 
 interface StructuredInterviewInterfaceProps {
   sessionId: string | null;
@@ -24,9 +25,12 @@ const StructuredInterviewInterface = ({ sessionId }: StructuredInterviewInterfac
     phaseProgress,
     isLoading,
     isComplete,
+    currentQuestionId,
+    isProcessingFollowup,
     startInterview,
     sendMessage,
     resetInterview,
+    processFollowup,
   } = useStructuredInterview(sessionId);
 
   const handleSendMessage = () => {
@@ -81,9 +85,30 @@ const StructuredInterviewInterface = ({ sessionId }: StructuredInterviewInterfac
                   </p>
                 </div>
               </div>
-              <Badge variant="outline" className="bg-career-accent/10 text-career-accent border-career-accent/30">
-                {currentPhase.replace('_', ' ')}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-career-accent/10 text-career-accent border-career-accent/30">
+                  {currentPhase.replace('_', ' ')}
+                </Badge>
+                <Button
+                  onClick={processFollowup}
+                  disabled={isProcessingFollowup || isLoading}
+                  variant="outline"
+                  size="sm"
+                  className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                >
+                  {isProcessingFollowup ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-4 h-4 mr-1" />
+                      Process Follow-up
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
             
             {phaseProgress && (
@@ -142,18 +167,31 @@ const StructuredInterviewInterface = ({ sessionId }: StructuredInterviewInterfac
                     key={message.id}
                     className={`flex ${message.speaker === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                        message.speaker === 'user'
-                          ? 'bg-career-accent text-white'
-                          : `${theme === 'dark' ? 'bg-career-gray-dark/40 text-career-text-dark' : 'bg-career-gray-light/40 text-career-text-light'}`
-                      }`}
-                    >
-                      <p className="text-sm leading-relaxed">{message.content}</p>
-                      {message.isFollowup && (
-                        <Badge variant="outline" className="mt-2 text-xs bg-orange-50 text-orange-600 border-orange-200">
-                          Follow-up
-                        </Badge>
+                    <div className="max-w-[80%] space-y-2">
+                      <div
+                        className={`rounded-2xl px-4 py-3 ${
+                          message.speaker === 'user'
+                            ? 'bg-career-accent text-white'
+                            : `${theme === 'dark' ? 'bg-career-gray-dark/40 text-career-text-dark' : 'bg-career-gray-light/40 text-career-text-light'}`
+                        }`}
+                      >
+                        <p className="text-sm leading-relaxed">{message.content}</p>
+                        {message.isFollowup && (
+                          <Badge variant="outline" className="mt-2 text-xs bg-orange-50 text-orange-600 border-orange-200">
+                            Follow-up
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      {/* Follow-up button for assistant messages */}
+                      {message.speaker === 'assistant' && message.questionId && isActive && (
+                        <div className="flex justify-start">
+                          <FollowupButton
+                            sessionId={sessionId}
+                            questionId={message.questionId}
+                            className="text-xs"
+                          />
+                        </div>
                       )}
                     </div>
                   </div>

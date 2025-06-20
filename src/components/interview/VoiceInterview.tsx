@@ -9,6 +9,7 @@ import StatusBanner from './StatusBanner';
 import CollapsibleDataSidebar from './CollapsibleDataSidebar';
 import UnifiedChatInput from './UnifiedChatInput';
 import StructuredInterviewInterface from './StructuredInterviewInterface';
+import FollowupPanel from './FollowupPanel';
 
 const VoiceInterview = () => {
   const { user } = useAuth();
@@ -178,9 +179,9 @@ const VoiceInterview = () => {
         />
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
           {/* Main Interview Interface */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             {isConnected ? (
               <StructuredInterviewInterface sessionId={session?.sessionId || null} />
             ) : (
@@ -199,8 +200,17 @@ const VoiceInterview = () => {
             )}
           </div>
 
-          {/* Data Sidebar */}
-          <div className="lg:col-span-1">
+          {/* Sidebar with Data and Follow-ups */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Follow-up Panel */}
+            {isConnected && (
+              <FollowupPanel 
+                sessionId={session?.sessionId || null}
+                onSelectFollowup={(followupId) => console.log('Selected followup:', followupId)}
+              />
+            )}
+            
+            {/* Data Sidebar */}
             <CollapsibleDataSidebar
               data={structuredData}
               onConfirm={handleConfirm}

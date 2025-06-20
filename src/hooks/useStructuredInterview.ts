@@ -2,6 +2,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useFollowupFlags } from '@/hooks/useFollowupFlags';
 
 interface InterviewMessage {
   id: string;
@@ -26,6 +27,8 @@ interface InterviewState {
   phaseProgress: PhaseProgress | null;
   isLoading: boolean;
   isComplete: boolean;
+  currentQuestionId: string | null;
+  isProcessingFollowup: boolean;
 }
 
 export const useStructuredInterview = (sessionId: string | null) => {
@@ -36,9 +39,12 @@ export const useStructuredInterview = (sessionId: string | null) => {
     phaseProgress: null,
     isLoading: false,
     isComplete: false,
+    currentQuestionId: null,
+    isProcessingFollowup: false,
   });
   
   const { toast } = useToast();
+  const { getNextFollowup } = useFollowupFlags(sessionId);
 
   const startInterview = useCallback(async () => {
     if (!sessionId) {
@@ -78,6 +84,7 @@ export const useStructuredInterview = (sessionId: string | null) => {
         messages: [newMessage],
         phaseProgress: data.phaseProgress,
         isLoading: false,
+        currentQuestionId: data.questionId,
       }));
 
       toast({
@@ -143,6 +150,7 @@ export const useStructuredInterview = (sessionId: string | null) => {
         phaseProgress: data.phaseProgress || prev.phaseProgress,
         isLoading: false,
         isComplete: data.isComplete || false,
+        currentQuestionId: data.questionId || prev.currentQuestionId,
       }));
 
       if (data.isComplete) {
@@ -163,6 +171,59 @@ export const useStructuredInterview = (sessionId: string | null) => {
       });
     }
   }, [sessionId, state.isLoading, toast]);
+
+  const processFollowup = useCallback(async () => {
+    if (!sessionId || state.isProcessingFollowup) {
+      return;
+    }
+
+    setState(prev => ({ ...prev, isProcessingFollowup: true }));
+
+    try {
+      // Get the next pending follow-up
+      const followup = await getNextFollowup();
+      
+      if (!followup) {
+        toast({
+          title: "No Follow-ups",
+          description: "No pending follow-ups to process.",
+        });
+        return;
+      }
+
+      // Process the follow-up by asking the related question again
+      const followupMessage: InterviewMessage = {
+        id: `followup-${Date.now()}`,
+        speaker: 'assistant',
+        content: `Let's revisit this topic: ${followup.question_flows?.question_text}\n\nFollow-up reason: ${followup.reason}`,
+        timestamp: new Date().toISOString(),
+        isFollowup: true,
+        phase: followup.question_flows?.phase,
+        questionId: followup.question_id,
+      };
+
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, followupMessage],
+        currentQuestionId: followup.question_id,
+      }));
+
+      toast({
+        title: "Processing Follow-up",
+        description: "Revisiting a previously flagged topic.",
+      });
+
+    } catch (error) {
+      console.error('Error processing follow-up:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process follow-up.",
+        variant: "destructive",
+      });
+    } finally {
+      setState(prev => ({ ...prev, isProcessingFollowup: false }));
+    }
+  }, [sessionId, state.isProcessingFollowup, getNextFollowup, toast]);
 
   const nextQuestion = useCallback(async () => {
     if (!sessionId || state.isLoading) {
@@ -197,6 +258,7 @@ export const useStructuredInterview = (sessionId: string | null) => {
         phaseProgress: data.phaseProgress,
         isLoading: false,
         isComplete: data.isComplete || false,
+        currentQuestionId: data.questionId,
       }));
 
       if (data.isComplete) {
@@ -222,6 +284,8 @@ export const useStructuredInterview = (sessionId: string | null) => {
       phaseProgress: null,
       isLoading: false,
       isComplete: false,
+      currentQuestionId: null,
+      isProcessingFollowup: false,
     });
   }, []);
 
@@ -231,5 +295,6 @@ export const useStructuredInterview = (sessionId: string | null) => {
     sendMessage,
     nextQuestion,
     resetInterview,
+    processFollowup,
   };
 };
