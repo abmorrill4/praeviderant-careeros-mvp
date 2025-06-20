@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import DataManagement from "./pages/DataManagement";
 import InvitationManagement from "./pages/InvitationManagement";
+import ResumeUpload from "./pages/ResumeUpload";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -57,6 +58,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <InvitationManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/resume-upload"
+        element={
+          <ProtectedRoute>
+            <ResumeUpload />
           </ProtectedRoute>
         }
       />
