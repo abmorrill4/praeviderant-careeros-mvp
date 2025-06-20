@@ -52,7 +52,7 @@ export async function createEntity<T extends VersionedEntity>(
     .single();
 
   if (error) throw error;
-  return data as T;
+  return data as unknown as T;
 }
 
 // Generic function to update an entity (creates a new version)
@@ -95,7 +95,7 @@ export async function updateEntity<T extends VersionedEntity>(
     .single();
 
   if (error) throw error;
-  return data as T;
+  return data as unknown as T;
 }
 
 // Generic function to soft delete an entity (mark as inactive)
@@ -168,5 +168,5 @@ export async function getEntityVersion<T extends VersionedEntity>(
     if (error.code === 'PGRST116') return null; // No rows found
     throw error;
   }
-  return data as T;
+  return data as unknown as T;
 }
