@@ -73,12 +73,25 @@ const SimpleVoiceInterview = () => {
       
       webrtcRef.current = new SimpleWebRTCManager();
       
-      await webrtcRef.current.connect(
-        sessionData.clientSecret,
-        sessionData.systemPrompt,
-        handleMessage,
-        handleConnectionState
-      );
+      try {
+        await webrtcRef.current.connect(
+          sessionData.clientSecret,
+          sessionData.systemPrompt,
+          handleMessage,
+          handleConnectionState
+        );
+      } catch (error: any) {
+        if (error.name === 'NotAllowedError') {
+          toast({
+            title: "Microphone Access Denied",
+            description: "Please enable microphone access in your browser's site settings to start the AI interview.",
+            variant: "destructive",
+          });
+        } else {
+          throw error; // Re-throw other errors to be handled by the outer catch
+        }
+        return; // Exit early for permission errors
+      }
 
       await updateSessionStatus('active');
       setIsConnected(true);
