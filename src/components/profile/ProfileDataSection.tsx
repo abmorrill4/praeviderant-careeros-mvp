@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Accept, Edit, Calendar, MapPin, Building, GraduationCap, Award, Code, Trophy } from 'lucide-react';
+import { Check, Edit, Calendar, MapPin, Building, GraduationCap, Award, Code, Trophy } from 'lucide-react';
 import type { VersionedEntity } from '@/types/versioned-entities';
 
 interface ProfileDataSectionProps {
@@ -88,7 +88,7 @@ export const ProfileDataSection: React.FC<ProfileDataSectionProps> = ({
                       onClick={() => onAccept(item)}
                       className="text-green-600 border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20"
                     >
-                      <Accept className="w-3 h-3 mr-1" />
+                      <Check className="w-3 h-3 mr-1" />
                       Accept
                     </Button>
                     <Button

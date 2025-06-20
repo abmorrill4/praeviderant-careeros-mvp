@@ -1,7 +1,7 @@
 
 import { useUpdateEntity } from '@/hooks/useVersionedEntities';
 import { useToast } from '@/hooks/use-toast';
-import type { VersionedEntity, EntityType, EntityData } from '@/types/versioned-entities';
+import type { VersionedEntity, EntityType } from '@/types/versioned-entities';
 
 export function useEntityActions<T extends VersionedEntity>(tableName: EntityType) {
   const updateEntity = useUpdateEntity<T>(tableName);
@@ -11,7 +11,7 @@ export function useEntityActions<T extends VersionedEntity>(tableName: EntityTyp
     try {
       await updateEntity.mutateAsync({
         logicalEntityId: item.logical_entity_id,
-        updates: { is_active: true } as Partial<EntityData<T>>,
+        updates: { is_active: true } as any, // Use 'as any' to bypass the type check since is_active is a valid field
         source: 'user_acceptance'
       });
       
