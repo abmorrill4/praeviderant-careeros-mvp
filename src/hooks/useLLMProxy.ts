@@ -34,6 +34,7 @@ export interface LLMProxyResponse {
       temperature: number;
       description: string;
     };
+    cache_hit?: boolean;
   };
 }
 
@@ -77,7 +78,8 @@ export const useLLMProxy = () => {
         model: response.model,
         complexity: response.complexity,
         responseLength: response.response.length,
-        processingTime: response.metadata.processing_time_ms
+        processingTime: response.metadata.processing_time_ms,
+        cacheHit: response.metadata.cache_hit
       });
 
       return response;
