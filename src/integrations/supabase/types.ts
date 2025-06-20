@@ -171,6 +171,33 @@ export type Database = {
         }
         Relationships: []
       }
+      encrypted_data: {
+        Row: {
+          content_type: string
+          created_at: string
+          encrypted_content: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_type?: string
+          created_at?: string
+          encrypted_content: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          encrypted_content?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       interest_registrations: {
         Row: {
           created_at: string
