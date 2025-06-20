@@ -95,12 +95,8 @@ serve(async (req) => {
       throw new Error(`Failed to download file: ${downloadError.message}`);
     }
 
-    // Convert file to base64 for OpenAI API
-    const arrayBuffer = await fileData.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-    
-    // Extract text using OpenAI API
-    const extractedText = await extractTextWithOpenAI(base64, upload.mime_type);
+    // Convert file to text for processing
+    const extractedText = await extractTextFromFile(fileData, upload.mime_type);
     
     // Parse the extracted text into structured data
     const structuredData = await parseResumeText(extractedText);
@@ -133,19 +129,24 @@ serve(async (req) => {
     console.error('Error parsing resume:', error);
 
     // Update database with error
-    if (req.body && req.body.uploadId) {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
+    try {
+      const { uploadId } = await req.json();
+      if (uploadId) {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
 
-      await supabase
-        .from('resume_uploads')
-        .update({
-          parsing_status: 'failed',
-          error_message: error.message
-        })
-        .eq('id', req.body.uploadId);
+        await supabase
+          .from('resume_uploads')
+          .update({
+            parsing_status: 'failed',
+            error_message: error.message
+          })
+          .eq('id', uploadId);
+      }
+    } catch (dbError) {
+      console.error('Failed to update error status:', dbError);
     }
 
     return new Response(
@@ -161,14 +162,38 @@ serve(async (req) => {
   }
 });
 
+async function extractTextFromFile(fileData: Blob, mimeType: string): Promise<string> {
+  console.log('Extracting text from file, MIME type:', mimeType);
+  
+  // For PDFs and Word documents, we'll use a simple text extraction approach
+  // Since Deno doesn't have built-in PDF parsing, we'll rely on OpenAI to extract
+  // and structure the content directly from the raw text we can extract
+  
+  if (mimeType === 'application/pdf') {
+    // For PDFs, we'll convert to base64 and let OpenAI handle the extraction
+    const arrayBuffer = await fileData.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    
+    // Use OpenAI to extract text from PDF
+    return await extractTextWithOpenAI(base64, mimeType);
+  } else if (mimeType.includes('word') || mimeType.includes('document')) {
+    // For Word documents, try to extract what we can
+    const text = await fileData.text();
+    return text;
+  } else {
+    // Fallback to text extraction
+    const text = await fileData.text();
+    return text;
+  }
+}
+
 async function extractTextWithOpenAI(base64Content: string, mimeType: string): Promise<string> {
   const openAIKey = Deno.env.get('OPENAI_API_KEY');
   if (!openAIKey) {
     throw new Error('OpenAI API key not configured');
   }
 
-  // For now, we'll use a simple text extraction prompt
-  // In a production environment, you might want to use a specialized PDF parsing service
+  // Use OpenAI's text completion API to extract content from the document
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -180,23 +205,11 @@ async function extractTextWithOpenAI(base64Content: string, mimeType: string): P
       messages: [
         {
           role: 'system',
-          content: `You are a document text extraction specialist. Extract all text content from the provided document. 
-          Return only the plain text content without any formatting, maintaining the logical structure and spacing.`
+          content: `You are a document text extraction specialist. I will provide you with a base64-encoded ${mimeType} document. Please extract all the text content from this document and return it as plain text, maintaining the logical structure and spacing. Focus on extracting all readable text including names, contact information, work experience, education, skills, and any other relevant information.`
         },
         {
           role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Please extract all text from this ${mimeType} document:`
-            },
-            ...(mimeType === 'application/pdf' ? [{
-              type: 'image_url',
-              image_url: {
-                url: `data:${mimeType};base64,${base64Content}`
-              }
-            }] : [])
-          ]
+          content: `Please extract all text from this ${mimeType} document (base64 encoded): ${base64Content.substring(0, 100000)}` // Limit size to avoid token limits
         }
       ],
       max_tokens: 4000,
