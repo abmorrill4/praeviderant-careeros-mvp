@@ -4,19 +4,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useInterviewSession } from '@/hooks/useInterviewSession';
 import { useInterviewModes } from '@/hooks/useInterviewModes';
-import FloatingInterviewControl from './FloatingInterviewControl';
 import StatusBanner from './StatusBanner';
 import CollapsibleDataSidebar from './CollapsibleDataSidebar';
 import UnifiedChatInput from './UnifiedChatInput';
 import StructuredInterviewInterface from './StructuredInterviewInterface';
-import FollowupPanel from './FollowupPanel';
 
 const VoiceInterview = () => {
   const { user } = useAuth();
   const { theme } = useTheme();
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [hasActiveInterview, setHasActiveInterview] = useState(false);
   const [statusBannerVisible, setStatusBannerVisible] = useState(false);
 
   const {
@@ -26,7 +23,6 @@ const VoiceInterview = () => {
     interviewContext,
     isResumedSession,
     createSession,
-    checkForActiveInterview,
     addTranscriptEntry,
     addSystemMessage,
     endSession,
@@ -44,47 +40,25 @@ const VoiceInterview = () => {
     stopRecording,
   } = useInterviewModes();
 
-  // Check for active interview on component mount
+  // Auto-start interview session when component mounts
   useEffect(() => {
-    const checkActiveInterview = async () => {
-      if (user) {
-        const activeInterview = await checkForActiveInterview();
-        setHasActiveInterview(!!activeInterview);
+    const autoStartInterview = async () => {
+      if (user && !isConnected && !isConnecting) {
+        setIsConnecting(true);
+        try {
+          await createSession(false);
+          setIsConnected(true);
+          await addSystemMessage("Interview session started", "success");
+        } catch (error) {
+          console.error('Failed to auto-start interview:', error);
+        } finally {
+          setIsConnecting(false);
+        }
       }
     };
     
-    checkActiveInterview();
-  }, [user, checkForActiveInterview]);
-
-  const handleStartInterview = async () => {
-    if (isConnecting) return;
-    
-    setIsConnecting(true);
-    try {
-      await createSession(false);
-      setIsConnected(true);
-      await addSystemMessage("Interview session started", "success");
-    } catch (error) {
-      console.error('Failed to start interview:', error);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const handleResumeInterview = async () => {
-    if (isConnecting) return;
-    
-    setIsConnecting(true);
-    try {
-      await createSession(true);
-      setIsConnected(true);
-      await addSystemMessage("Interview session resumed", "success");
-    } catch (error) {
-      console.error('Failed to resume interview:', error);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
+    autoStartInterview();
+  }, [user, isConnected, isConnecting, createSession, addSystemMessage]);
 
   const handleStopInterview = () => {
     setIsConnected(false);
@@ -149,7 +123,7 @@ const VoiceInterview = () => {
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-bg-dark' : 'bg-career-bg-light'}`}>
       <div className="container mx-auto px-4 py-8">
-        {/* Header with Controls */}
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
@@ -160,14 +134,14 @@ const VoiceInterview = () => {
             </p>
           </div>
 
-          <FloatingInterviewControl
-            isConnected={isConnected}
-            isConnecting={isConnecting}
-            hasActiveInterview={hasActiveInterview}
-            onStartInterview={handleStartInterview}
-            onResumeInterview={handleResumeInterview}
-            onStopInterview={handleStopInterview}
-          />
+          {isConnected && (
+            <button
+              onClick={handleStopInterview}
+              className="px-4 py-2 font-medium bg-red-500 hover:bg-red-600 text-white transition-all rounded-lg"
+            >
+              End Interview
+            </button>
+          )}
         </div>
 
         {/* Status Banner */}
@@ -191,26 +165,17 @@ const VoiceInterview = () => {
                   : 'bg-white border-career-gray-light/30'
               }`}>
                 <h3 className={`text-xl font-semibold mb-4 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                  Ready to Start Your Career Interview?
+                  Preparing Your Interview...
                 </h3>
                 <p className={`mb-6 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                  Our AI will guide you through a structured conversation to capture your professional background and create a personalized resume.
+                  Please wait while we set up your career interview session.
                 </p>
               </div>
             )}
           </div>
 
-          {/* Sidebar with Data and Follow-ups */}
+          {/* Data Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Follow-up Panel */}
-            {isConnected && (
-              <FollowupPanel 
-                sessionId={session?.sessionId || null}
-                onSelectFollowup={(followupId) => console.log('Selected followup:', followupId)}
-              />
-            )}
-            
-            {/* Data Sidebar */}
             <CollapsibleDataSidebar
               data={structuredData}
               onConfirm={handleConfirm}
