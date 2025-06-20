@@ -1,7 +1,7 @@
 
 import { useUpdateEntity } from '@/hooks/useVersionedEntities';
 import { useToast } from '@/hooks/use-toast';
-import type { VersionedEntity, EntityType } from '@/types/versioned-entities';
+import type { VersionedEntity, EntityType, EntityData } from '@/types/versioned-entities';
 
 export function useEntityActions<T extends VersionedEntity>(tableName: EntityType) {
   const updateEntity = useUpdateEntity<T>(tableName);
@@ -11,7 +11,7 @@ export function useEntityActions<T extends VersionedEntity>(tableName: EntityTyp
     try {
       await updateEntity.mutateAsync({
         logicalEntityId: item.logical_entity_id,
-        updates: { is_active: true } as any,
+        updates: { is_active: true } as Partial<EntityData<T>>,
         source: 'user_acceptance'
       });
       
@@ -29,7 +29,7 @@ export function useEntityActions<T extends VersionedEntity>(tableName: EntityTyp
     }
   };
 
-  const handleEdit = async (item: VersionedEntity, updates: Record<string, any>) => {
+  const handleEdit = async (item: VersionedEntity, updates: Partial<EntityData<T>>) => {
     try {
       await updateEntity.mutateAsync({
         logicalEntityId: item.logical_entity_id,

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Check, Edit, Calendar, MapPin, Building, GraduationCap, Award, Code, Trophy } from 'lucide-react';
 import { InlineEditForm } from './InlineEditForm';
-import type { VersionedEntity } from '@/types/versioned-entities';
+import type { VersionedEntity, EntityData } from '@/types/versioned-entities';
 
 interface EditField {
   key: string;
@@ -16,17 +16,17 @@ interface EditField {
   placeholder?: string;
 }
 
-interface ProfileDataSectionProps {
+interface ProfileDataSectionProps<T extends VersionedEntity> {
   title: string;
   icon: React.ReactNode;
-  items: VersionedEntity[];
+  items: T[];
   editFields: EditField[];
   onAccept: (item: VersionedEntity) => void;
-  onEdit: (item: VersionedEntity, updates: Record<string, any>) => void;
-  renderItem: (item: VersionedEntity) => React.ReactNode;
+  onEdit: (item: T, updates: Partial<EntityData<T>>) => void;
+  renderItem: (item: T) => React.ReactNode;
 }
 
-export const ProfileDataSection: React.FC<ProfileDataSectionProps> = ({
+export const ProfileDataSection = <T extends VersionedEntity>({
   title,
   icon,
   items,
@@ -34,19 +34,21 @@ export const ProfileDataSection: React.FC<ProfileDataSectionProps> = ({
   onAccept,
   onEdit,
   renderItem
-}) => {
+}: ProfileDataSectionProps<T>) => {
   const { theme } = useTheme();
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   const isPendingAIExtraction = (item: VersionedEntity) => 
     item.source === 'AI_EXTRACTION' && !item.is_active;
 
-  const handleEditClick = (item: VersionedEntity) => {
+  const handleEditClick = (item: T) => {
     setEditingItemId(`${item.logical_entity_id}-${item.version}`);
   };
 
-  const handleEditSave = (item: VersionedEntity, updates: Record<string, any>) => {
-    onEdit(item, updates);
+  const handleEditSave = (item: T, updates: Record<string, any>) => {
+    // Type assertion here since we know the updates come from our form fields
+    // which are designed to match the entity structure
+    onEdit(item, updates as Partial<EntityData<T>>);
     setEditingItemId(null);
   };
 
