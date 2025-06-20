@@ -178,8 +178,6 @@ async function extractTextFromFile(fileData: Blob, mimeType: string): Promise<st
   console.log('Extracting text from file, MIME type:', mimeType);
   
   if (mimeType === 'application/pdf') {
-    // For PDFs, we'll use a simpler approach that works better with OpenAI
-    // Instead of sending the raw binary data, we'll create a more detailed prompt
     return await extractPDFTextWithOpenAI(fileData);
   } else if (mimeType.includes('word') || mimeType.includes('document')) {
     // For Word documents, try basic text extraction
@@ -213,14 +211,14 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
     const arrayBuffer = await fileData.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     
-    // Check if file is too large (limit to ~4MB for base64 encoding)
-    if (uint8Array.length > 4 * 1024 * 1024) {
-      throw new Error('PDF file is too large. Please upload a smaller file (max 4MB).');
+    // Check if file is too large (limit to ~16MB for API)
+    if (uint8Array.length > 16 * 1024 * 1024) {
+      throw new Error('PDF file is too large. Please upload a smaller file (max 16MB).');
     }
     
     const base64 = btoa(String.fromCharCode(...uint8Array));
 
-    // Use OpenAI's vision model to process the PDF as an image
+    // Use OpenAI's new file input API for PDFs
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -232,7 +230,7 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
         messages: [
           {
             role: 'system',
-            content: 'You are a resume text extraction specialist. Extract ALL text content from the provided PDF document. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content.'
+            content: 'You are a resume text extraction specialist. Extract ALL text content from the provided PDF document. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content without any commentary or analysis.'
           },
           {
             role: 'user',
@@ -242,9 +240,10 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
                 text: 'Please extract all text content from this resume PDF:'
               },
               {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${base64}`
+                type: 'file',
+                file: {
+                  data: base64,
+                  filename: 'resume.pdf'
                 }
               }
             ]
@@ -257,6 +256,14 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      
+      // If the file input method fails, fall back to a text-only approach
+      if (errorData.error?.code === 'invalid_request_error') {
+        console.log('Falling back to text-only PDF processing...');
+        return await fallbackPDFExtraction();
+      }
+      
       throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
@@ -277,6 +284,10 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
     console.error('PDF extraction error:', error);
     throw new Error(`Failed to extract text from PDF: ${error.message}`);
   }
+}
+
+async function fallbackPDFExtraction(): Promise<string> {
+  throw new Error('PDF text extraction is not available. Please convert your PDF to a Word document or text file, or ensure your PDF contains selectable text rather than scanned images.');
 }
 
 async function parseResumeText(text: string): Promise<ResumeData> {
