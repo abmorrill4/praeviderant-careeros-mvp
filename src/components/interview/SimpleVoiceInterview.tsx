@@ -60,7 +60,7 @@ const SimpleVoiceInterview = () => {
       console.error('Failed to start:', error);
       toast({
         title: "Connection Failed",
-        description: "Please try again.",
+        description: "Failed to start the interview. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -80,11 +80,13 @@ const SimpleVoiceInterview = () => {
     
     toast({
       title: "Interview Ended",
-      description: "Session saved.",
+      description: "Your interview session has been saved.",
     });
   };
 
   const handleMessage = (data: any) => {
+    console.log('Received message:', data.type);
+    
     switch (data.type) {
       case 'conversation.item.created':
         if (data.item?.content?.[0]?.type === 'text') {
@@ -99,15 +101,26 @@ const SimpleVoiceInterview = () => {
         break;
         
       case 'error':
-        console.error('AI error:', data.error);
+        console.error('OpenAI error:', data.error);
+        toast({
+          title: "AI Error",
+          description: data.error.message || "An error occurred with the AI service.",
+          variant: "destructive",
+        });
         break;
     }
   };
 
   const handleConnectionState = (state: RTCPeerConnectionState) => {
     setConnectionState(state);
+    
     if (state === 'failed' || state === 'disconnected') {
       setIsConnected(false);
+      toast({
+        title: "Connection Lost",
+        description: "The interview connection was lost.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -127,6 +140,16 @@ const SimpleVoiceInterview = () => {
     }
   };
 
+  const getConnectionStatusColor = () => {
+    switch (connectionState) {
+      case 'connected': return 'text-green-500';
+      case 'connecting': return 'text-yellow-500';
+      case 'failed': case 'disconnected': return 'text-red-500';
+      default: return theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light';
+    }
+  };
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (webrtcRef.current) {
@@ -137,11 +160,14 @@ const SimpleVoiceInterview = () => {
 
   return (
     <div className="space-y-4">
-      {/* Simple Controls */}
+      {/* Controls */}
       <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
         <CardHeader className="pb-3">
-          <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-            Voice Interview
+          <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center justify-between`}>
+            <span>Voice Interview</span>
+            <span className={`text-sm font-normal ${getConnectionStatusColor()}`}>
+              {connectionState}
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -155,7 +181,7 @@ const SimpleVoiceInterview = () => {
                 {isConnecting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Starting...
+                    Connecting...
                   </>
                 ) : (
                   <>
@@ -168,7 +194,7 @@ const SimpleVoiceInterview = () => {
               <>
                 <Button onClick={handleStop} variant="destructive">
                   <Square className="w-4 h-4 mr-2" />
-                  End
+                  End Interview
                 </Button>
                 
                 <Button onClick={toggleMic} variant={micEnabled ? "default" : "destructive"} size="sm">
@@ -178,13 +204,15 @@ const SimpleVoiceInterview = () => {
                 <Button onClick={toggleAudio} variant={audioEnabled ? "default" : "destructive"} size="sm">
                   {audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                 </Button>
-
-                <span className={`text-sm ml-auto ${connectionState === 'connected' ? 'text-green-500' : 'text-yellow-500'}`}>
-                  {connectionState}
-                </span>
               </>
             )}
           </div>
+          
+          {isConnected && (
+            <div className={`text-sm mt-3 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              💡 Speak naturally - the AI will respond when you finish talking.
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -192,7 +220,7 @@ const SimpleVoiceInterview = () => {
       <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
         <CardHeader className="pb-3">
           <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-            Conversation
+            Interview Transcript
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -200,7 +228,7 @@ const SimpleVoiceInterview = () => {
             <div className="space-y-3 pr-4">
               {transcript.length === 0 ? (
                 <div className={`text-center py-8 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                  {isConnected ? "Conversation will appear here..." : "Start interview to begin"}
+                  {isConnected ? "Transcript will appear here as you speak..." : "Start the interview to see the conversation transcript."}
                 </div>
               ) : (
                 transcript.map((entry, index) => (
@@ -209,15 +237,15 @@ const SimpleVoiceInterview = () => {
                     className={`p-3 rounded-lg ${
                       entry.speaker === 'user'
                         ? theme === 'dark'
-                          ? 'bg-career-accent/20 ml-6'
-                          : 'bg-career-accent/10 ml-6'
+                          ? 'bg-career-accent/20 ml-8'
+                          : 'bg-career-accent/10 ml-8'
                         : theme === 'dark'
-                          ? 'bg-career-gray-dark/20 mr-6'
-                          : 'bg-career-gray-light/20 mr-6'
+                          ? 'bg-career-gray-dark/20 mr-8'
+                          : 'bg-career-gray-light/20 mr-8'
                     }`}
                   >
                     <div className={`text-xs font-medium mb-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                      {entry.speaker === 'user' ? 'You' : 'AI'}
+                      {entry.speaker === 'user' ? 'You' : 'AI Interviewer'}
                     </div>
                     <div className={`text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
                       {entry.content}
