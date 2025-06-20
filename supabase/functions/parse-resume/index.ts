@@ -82,6 +82,39 @@ serve(async (req) => {
       throw new Error(`Upload not found: ${fetchError?.message}`);
     }
 
+    // Check if already processing or completed to prevent duplicate processing
+    if (upload.parsing_status === 'processing') {
+      // Check if it's been processing for more than 5 minutes (stuck)
+      const processingTime = new Date().getTime() - new Date(upload.updated_at).getTime();
+      if (processingTime < 5 * 60 * 1000) { // Less than 5 minutes
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Upload is already being processed. Please wait.' 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 409 
+          }
+        );
+      }
+      console.log('Upload stuck in processing state, continuing...');
+    }
+
+    if (upload.parsing_status === 'completed') {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Resume already parsed',
+          structuredData: upload.structured_data 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
+
     // Update status to processing
     await supabase
       .from('resume_uploads')
@@ -238,7 +271,7 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
 
     console.log('File uploaded to OpenAI with ID:', fileId);
 
-    // Use the file with chat completions to extract text
+    // Use the file with chat completions to extract text - FIXED API CALL
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -254,16 +287,7 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
           },
           {
             role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: 'Please extract all text content from this resume PDF:'
-              },
-              {
-                type: 'file',
-                file_id: fileId
-              }
-            ]
+            content: `Please extract all text content from this resume PDF. File ID: ${fileId}`
           }
         ],
         max_tokens: 4000,

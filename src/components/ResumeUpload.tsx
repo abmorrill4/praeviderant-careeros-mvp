@@ -1,9 +1,8 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, File, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, File, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,6 +16,7 @@ interface ResumeUpload {
   structured_data?: any;
   error_message?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export const ResumeUpload = () => {
@@ -118,7 +118,12 @@ export const ResumeUpload = () => {
 
       if (error) throw error;
       
-      toast.success('Resume parsed successfully!');
+      if (data?.success) {
+        toast.success('Resume parsed successfully!');
+      } else {
+        throw new Error(data?.error || 'Unknown parsing error');
+      }
+      
       await fetchRecentUploads();
       
     } catch (error: any) {
@@ -126,6 +131,25 @@ export const ResumeUpload = () => {
       toast.error('Failed to parse resume: ' + error.message);
     } finally {
       setParsing(false);
+    }
+  };
+
+  const retryProcessing = async (uploadId: string) => {
+    try {
+      // Reset status to allow retry
+      await supabase
+        .from('resume_uploads')
+        .update({ 
+          parsing_status: 'pending',
+          error_message: null 
+        })
+        .eq('id', uploadId);
+
+      toast.success('Retrying resume processing...');
+      await parseResume(uploadId);
+    } catch (error: any) {
+      console.error('Retry error:', error);
+      toast.error('Failed to retry processing: ' + error.message);
     }
   };
 
@@ -170,17 +194,44 @@ export const ResumeUpload = () => {
     }
   };
 
-  const getStatusIcon = (uploadStatus: string, parsingStatus: string) => {
+  const getStatusIcon = (uploadStatus: string, parsingStatus: string, updated_at: string) => {
     if (uploadStatus === 'failed' || parsingStatus === 'failed') {
       return <AlertCircle className="h-4 w-4 text-red-500" />;
     }
     if (parsingStatus === 'processing') {
-      return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
+      // Check if stuck (more than 5 minutes)
+      const processingTime = new Date().getTime() - new Date(updated_at).getTime();
+      const isStuck = processingTime > 5 * 60 * 1000; // 5 minutes
+      return isStuck ? 
+        <AlertCircle className="h-4 w-4 text-yellow-500" /> :
+        <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
     }
     if (parsingStatus === 'completed') {
       return <CheckCircle className="h-4 w-4 text-green-500" />;
     }
     return <File className="h-4 w-4 text-gray-500" />;
+  };
+
+  const getStatusText = (uploadStatus: string, parsingStatus: string, updated_at: string) => {
+    if (uploadStatus === 'failed' || parsingStatus === 'failed') {
+      return 'Failed';
+    }
+    if (parsingStatus === 'processing') {
+      // Check if stuck (more than 5 minutes)
+      const processingTime = new Date().getTime() - new Date(updated_at).getTime();
+      const isStuck = processingTime > 5 * 60 * 1000; // 5 minutes
+      return isStuck ? 'Stuck - Retry?' : 'Processing';
+    }
+    if (parsingStatus === 'completed') {
+      return 'Parsed';
+    }
+    return 'Pending';
+  };
+
+  const isStuckProcessing = (parsingStatus: string, updated_at: string) => {
+    if (parsingStatus !== 'processing') return false;
+    const processingTime = new Date().getTime() - new Date(updated_at).getTime();
+    return processingTime > 5 * 60 * 1000; // 5 minutes
   };
 
   const formatFileSize = (bytes: number) => {
@@ -262,7 +313,7 @@ export const ResumeUpload = () => {
                     className="flex items-center justify-between p-3 border rounded-lg"
                   >
                     <div className="flex items-center space-x-3">
-                      {getStatusIcon(upload.upload_status, upload.parsing_status)}
+                      {getStatusIcon(upload.upload_status, upload.parsing_status, upload.updated_at)}
                       <div>
                         <p className="font-medium">{upload.file_name}</p>
                         <p className="text-sm text-gray-500">
@@ -271,12 +322,27 @@ export const ResumeUpload = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium capitalize">
-                        {upload.parsing_status === 'completed' ? 'Parsed' : upload.parsing_status}
-                      </p>
-                      {upload.error_message && (
-                        <p className="text-xs text-red-500">{upload.error_message}</p>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <p className="text-sm font-medium capitalize">
+                          {getStatusText(upload.upload_status, upload.parsing_status, upload.updated_at)}
+                        </p>
+                        {upload.error_message && (
+                          <p className="text-xs text-red-500 max-w-xs truncate" title={upload.error_message}>
+                            {upload.error_message}
+                          </p>
+                        )}
+                      </div>
+                      {(upload.parsing_status === 'failed' || isStuckProcessing(upload.parsing_status, upload.updated_at)) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => retryProcessing(upload.id)}
+                          className="ml-2"
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Retry
+                        </Button>
                       )}
                     </div>
                   </div>
