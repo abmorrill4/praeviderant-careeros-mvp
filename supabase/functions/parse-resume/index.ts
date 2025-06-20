@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -209,18 +208,37 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
   }
 
   try {
-    // Convert to base64 for OpenAI Vision API
-    const arrayBuffer = await fileData.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    
-    // Check if file is too large (limit to ~10MB)
-    if (uint8Array.length > 10 * 1024 * 1024) {
-      throw new Error('PDF file is too large. Please upload a smaller file (max 10MB).');
+    // Check if file is too large (limit to ~25MB for OpenAI)
+    if (fileData.size > 25 * 1024 * 1024) {
+      throw new Error('PDF file is too large. Please upload a smaller file (max 25MB).');
     }
-    
-    const base64 = btoa(String.fromCharCode(...uint8Array));
 
-    // Use OpenAI's vision model to extract text from PDF pages
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('file', fileData, 'resume.pdf');
+    formData.append('purpose', 'assistants');
+
+    // Upload file to OpenAI
+    const uploadResponse = await fetch('https://api.openai.com/v1/files', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIKey}`,
+      },
+      body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json();
+      console.error('OpenAI file upload error:', errorData);
+      throw new Error(`OpenAI file upload error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const uploadData = await uploadResponse.json();
+    const fileId = uploadData.id;
+
+    console.log('File uploaded to OpenAI with ID:', fileId);
+
+    // Use the file with chat completions to extract text
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -232,21 +250,18 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
         messages: [
           {
             role: 'system',
-            content: 'You are a resume text extraction specialist. Extract ALL text content from the provided document image. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content without any commentary or analysis. If you cannot read the document clearly, say "Unable to extract text from this document format."'
+            content: 'You are a resume text extraction specialist. Extract ALL text content from the provided PDF document. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content without any commentary or analysis. If you cannot read the document clearly, say "Unable to extract text from this document format."'
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Please extract all text content from this resume document:'
+                text: 'Please extract all text content from this resume PDF:'
               },
               {
-                type: 'image_url',
-                image_url: {
-                  url: `data:application/pdf;base64,${base64}`,
-                  detail: 'high'
-                }
+                type: 'file',
+                file_id: fileId
               }
             ]
           }
@@ -255,6 +270,19 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
         temperature: 0
       }),
     });
+
+    // Clean up the uploaded file
+    try {
+      await fetch(`https://api.openai.com/v1/files/${fileId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${openAIKey}`,
+        },
+      });
+      console.log('Cleaned up uploaded file:', fileId);
+    } catch (cleanupError) {
+      console.warn('Failed to cleanup uploaded file:', cleanupError);
+    }
 
     if (!response.ok) {
       const errorData = await response.json();
