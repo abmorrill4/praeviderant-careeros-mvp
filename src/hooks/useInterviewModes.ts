@@ -11,7 +11,7 @@ interface UseInterviewModesProps {
 export const useInterviewModes = ({ onModeChange }: UseInterviewModesProps = {}) => {
   const [mode, setMode] = useState<InterviewMode>(() => {
     const saved = localStorage.getItem('interview-mode-preference');
-    return (saved as InterviewMode) || 'voice';
+    return (saved as InterviewMode) || 'voice'; // Default to voice mode
   });
   const [isVoiceAvailable, setIsVoiceAvailable] = useState(true);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);

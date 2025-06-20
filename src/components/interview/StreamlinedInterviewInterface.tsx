@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDirectInterview } from '@/hooks/useDirectInterview';
+import { useRealtimeSpeech } from '@/hooks/useRealtimeSpeech';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -53,20 +54,30 @@ const StreamlinedInterviewInterface = ({
   const [inputMessage, setInputMessage] = useState('');
   const [volumeEnabled, setVolumeEnabled] = useState(true);
   
-  const {
-    isActive,
-    messages,
-    isLoading,
-    isComplete,
-    startInterview,
-    sendMessage,
-    resetInterview,
-  } = useDirectInterview(sessionId);
+  // Use different hooks based on mode
+  const directInterview = useDirectInterview(sessionId);
+  const realtimeSpeech = useRealtimeSpeech({ sessionId });
+
+  // Choose which system to use based on mode
+  const isActive = mode === 'voice' ? realtimeSpeech.isConnected : directInterview.isActive;
+  const messages = mode === 'voice' ? realtimeSpeech.messages : directInterview.messages;
+  const isLoading = mode === 'voice' ? realtimeSpeech.isConnecting : directInterview.isLoading;
+  const isComplete = mode === 'voice' ? false : directInterview.isComplete;
+
+  const handleStartInterview = async () => {
+    if (mode === 'voice') {
+      await realtimeSpeech.connect();
+    } else {
+      await directInterview.startInterview();
+    }
+  };
 
   const handleSendMessage = async (message: string) => {
     if (message.trim()) {
-      await sendMessage(message);
-      onSendMessage(message);
+      if (mode === 'text') {
+        await directInterview.sendMessage(message);
+        onSendMessage(message);
+      }
       setInputMessage('');
     }
   };
@@ -79,17 +90,33 @@ const StreamlinedInterviewInterface = ({
   };
 
   const handleVoiceToggle = () => {
-    if (isRecording) {
-      onStopRecording();
+    if (mode === 'voice') {
+      if (realtimeSpeech.isRecording) {
+        realtimeSpeech.stopRecording();
+      } else {
+        realtimeSpeech.startRecording();
+      }
     } else {
-      onStartRecording();
+      // Fallback for text mode
+      if (isRecording) {
+        onStopRecording();
+      } else {
+        onStartRecording();
+      }
     }
   };
 
   const handleEndInterview = () => {
-    resetInterview();
+    if (mode === 'voice') {
+      realtimeSpeech.disconnect();
+    } else {
+      directInterview.resetInterview();
+    }
     onEndInterview();
   };
+
+  const currentIsRecording = mode === 'voice' ? realtimeSpeech.isRecording : isRecording;
+  const currentIsSpeaking = mode === 'voice' ? realtimeSpeech.isSpeaking : false;
 
   if (!isConnected) {
     return (
@@ -115,7 +142,7 @@ const StreamlinedInterviewInterface = ({
           AI Career Interview
         </h1>
         <p className={`text-lg ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-          Interactive conversation to build your personalized resume
+          {mode === 'voice' ? 'Real-time voice conversation' : 'Interactive conversation'} to build your personalized resume
         </p>
       </div>
 
@@ -134,6 +161,12 @@ const StreamlinedInterviewInterface = ({
                   {mode === 'voice' ? <Mic className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
                   <span className="ml-2">{mode === 'voice' ? 'Voice' : 'Text'}</span>
                 </Button>
+                
+                {currentIsSpeaking && (
+                  <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    🎵 AI is speaking...
+                  </span>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -177,22 +210,25 @@ const StreamlinedInterviewInterface = ({
                 Ready for Your Career Interview?
               </h3>
               <p className={`text-sm mb-6 max-w-md mx-auto ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                I'll ask you some questions about your professional background to create a personalized resume.
+                {mode === 'voice' 
+                  ? "I'll conduct a real-time voice interview to understand your professional background."
+                  : "I'll ask you some questions about your professional background to create a personalized resume."
+                }
               </p>
               <Button
-                onClick={startInterview}
+                onClick={handleStartInterview}
                 disabled={isLoading || !sessionId}
                 className="bg-career-accent hover:bg-career-accent-dark text-white px-6 py-2"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Starting...
+                    {mode === 'voice' ? 'Connecting...' : 'Starting...'}
                   </>
                 ) : (
                   <>
                     <Play className="w-4 h-4 mr-2" />
-                    Start Interview
+                    Start {mode === 'voice' ? 'Voice ' : ''}Interview
                   </>
                 )}
               </Button>
@@ -204,12 +240,12 @@ const StreamlinedInterviewInterface = ({
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${message.speaker === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className="max-w-[80%]">
                       <div
                         className={`rounded-2xl px-4 py-3 ${
-                          message.speaker === 'user'
+                          message.type === 'user'
                             ? 'bg-career-accent text-white'
                             : `${theme === 'dark' ? 'bg-career-gray-dark/40 text-career-text-dark' : 'bg-career-gray-light/40 text-career-text-light'}`
                         }`}
@@ -220,7 +256,16 @@ const StreamlinedInterviewInterface = ({
                   </div>
                 ))}
                 
-                {isLoading && (
+                {/* Show current transcript for voice mode */}
+                {mode === 'voice' && realtimeSpeech.currentTranscript && (
+                  <div className="flex justify-start">
+                    <div className={`rounded-2xl px-4 py-3 ${theme === 'dark' ? 'bg-career-gray-dark/40 text-career-text-dark' : 'bg-career-gray-light/40 text-career-text-light'} opacity-70`}>
+                      <p className="text-sm leading-relaxed">{realtimeSpeech.currentTranscript}...</p>
+                    </div>
+                  </div>
+                )}
+                
+                {isLoading && mode === 'text' && (
                   <div className="flex justify-start">
                     <div className={`rounded-2xl px-4 py-3 ${theme === 'dark' ? 'bg-career-gray-dark/40' : 'bg-career-gray-light/40'}`}>
                       <div className="flex items-center gap-2">
@@ -267,19 +312,21 @@ const StreamlinedInterviewInterface = ({
                     <div className="flex items-center justify-center py-4">
                       <Button
                         onClick={handleVoiceToggle}
-                        disabled={isProcessing}
+                        disabled={!micEnabled}
                         className={`rounded-full px-8 py-4 transition-all font-medium ${
-                          isRecording 
+                          currentIsRecording 
                             ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                            : 'bg-career-accent hover:bg-career-accent-dark'
+                            : currentIsSpeaking
+                              ? 'bg-blue-500 hover:bg-blue-600'
+                              : 'bg-career-accent hover:bg-career-accent-dark'
                         } text-white`}
                       >
                         <Mic className="w-5 h-5 mr-2" />
-                        {isProcessing 
-                          ? 'Processing...' 
-                          : isRecording 
+                        {currentIsSpeaking
+                          ? 'AI is speaking...'
+                          : currentIsRecording 
                             ? 'Recording... (tap to stop)' 
-                            : 'Tap to speak'
+                            : 'Hold to speak'
                         }
                       </Button>
                     </div>
@@ -288,7 +335,7 @@ const StreamlinedInterviewInterface = ({
                   <p className={`text-xs mt-2 text-center ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
                     {mode === 'text' 
                       ? 'Press Enter to send, Shift+Enter for new line'
-                      : 'Voice input mode - speak clearly and tap to stop'
+                      : 'Real-time voice mode - speak naturally, the AI will respond automatically'
                     }
                   </p>
                 </div>
@@ -305,7 +352,7 @@ const StreamlinedInterviewInterface = ({
                     Thank you for sharing your experience. Check your dashboard for the generated resume.
                   </p>
                   <Button
-                    onClick={resetInterview}
+                    onClick={() => mode === 'voice' ? realtimeSpeech.connect() : directInterview.resetInterview()}
                     variant="outline"
                     className="border-career-accent text-career-accent hover:bg-career-accent hover:text-white"
                   >
