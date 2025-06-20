@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Brain, Zap } from 'lucide-react';
+import { Loader2, Brain, Zap, Clock, Database } from 'lucide-react';
 import { useLLMProxy, type LLMProxyResponse } from '@/hooks/useLLMProxy';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -135,6 +135,18 @@ const LLMProxyDemo = () => {
                 <Badge variant="outline">
                   {response.model}
                 </Badge>
+                {response.metadata.cache_hit && (
+                  <Badge className="bg-purple-500">
+                    <Database className="w-3 h-3 mr-1" />
+                    Cached
+                  </Badge>
+                )}
+                {!response.metadata.cache_hit && (
+                  <Badge variant="outline" className="text-orange-500 border-orange-500">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Fresh
+                  </Badge>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -152,6 +164,15 @@ const LLMProxyDemo = () => {
                 </span>
                 <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
                   {response.metadata.processing_time_ms}ms
+                </p>
+              </div>
+
+              <div>
+                <span className={`font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                  Cache Status:
+                </span>
+                <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                  {response.metadata.cache_hit ? 'Hit' : 'Miss'}
                 </p>
               </div>
               
@@ -172,15 +193,6 @@ const LLMProxyDemo = () => {
                     </span>
                     <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
                       {response.usage.completion_tokens}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <span className={`font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                      Total Tokens:
-                    </span>
-                    <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                      {response.usage.total_tokens}
                     </p>
                   </div>
                 </>

@@ -470,6 +470,42 @@ export type Database = {
         }
         Relationships: []
       }
+      llm_cache: {
+        Row: {
+          access_count: number
+          complexity: string
+          created_at: string
+          id: string
+          last_accessed_at: string
+          model: string
+          prompt_hash: string
+          request_data: Json
+          response_data: Json
+        }
+        Insert: {
+          access_count?: number
+          complexity: string
+          created_at?: string
+          id?: string
+          last_accessed_at?: string
+          model: string
+          prompt_hash: string
+          request_data: Json
+          response_data: Json
+        }
+        Update: {
+          access_count?: number
+          complexity?: string
+          created_at?: string
+          id?: string
+          last_accessed_at?: string
+          model?: string
+          prompt_hash?: string
+          request_data?: Json
+          response_data?: Json
+        }
+        Relationships: []
+      }
       profile_deltas: {
         Row: {
           created_at: string | null

@@ -1,6 +1,7 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,7 +50,88 @@ interface LLMResponse {
   metadata: {
     processing_time_ms: number;
     model_config: typeof MODEL_CONFIG[ComplexityLevel];
+    cache_hit?: boolean;
   };
+}
+
+// Initialize Supabase client for caching
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+);
+
+// Generate a hash for the request to use as cache key
+function generatePromptHash(request: LLMRequest): string {
+  const hashInput = JSON.stringify({
+    complexity: request.complexity,
+    messages: request.messages,
+    systemPrompt: request.systemPrompt,
+    temperature: request.temperature ?? MODEL_CONFIG[request.complexity].temperature,
+    maxTokens: request.maxTokens ?? MODEL_CONFIG[request.complexity].maxTokens
+  });
+  
+  // Simple hash function (in production, consider using crypto.subtle.digest)
+  let hash = 0;
+  for (let i = 0; i < hashInput.length; i++) {
+    const char = hashInput.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
+
+// Check cache for existing response
+async function getCachedResponse(promptHash: string): Promise<LLMResponse | null> {
+  try {
+    const { data, error } = await supabase
+      .from('llm_cache')
+      .select('*')
+      .eq('prompt_hash', promptHash)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    // Update access statistics
+    await supabase
+      .from('llm_cache')
+      .update({
+        last_accessed_at: new Date().toISOString(),
+        access_count: data.access_count + 1
+      })
+      .eq('id', data.id);
+
+    // Return cached response with cache hit flag
+    const cachedResponse = data.response_data as LLMResponse;
+    cachedResponse.metadata.cache_hit = true;
+    
+    console.log('Cache hit for prompt hash:', promptHash);
+    return cachedResponse;
+  } catch (error) {
+    console.error('Error checking cache:', error);
+    return null;
+  }
+}
+
+// Store response in cache
+async function cacheResponse(promptHash: string, request: LLMRequest, response: LLMResponse): Promise<void> {
+  try {
+    await supabase
+      .from('llm_cache')
+      .insert({
+        prompt_hash: promptHash,
+        complexity: request.complexity,
+        request_data: request,
+        response_data: response,
+        model: response.model
+      });
+    
+    console.log('Response cached for prompt hash:', promptHash);
+  } catch (error) {
+    console.error('Error caching response:', error);
+    // Don't throw error - caching failure shouldn't break the request
+  }
 }
 
 serve(async (req) => {
@@ -74,8 +156,26 @@ serve(async (req) => {
 
     const complexity = requestBody.complexity;
     const config = MODEL_CONFIG[complexity];
+    const promptHash = generatePromptHash(requestBody);
 
-    console.log(`Routing ${complexity} request to model: ${config.model}`);
+    console.log(`Processing ${complexity} request with hash: ${promptHash}`);
+
+    // Check cache first
+    const cachedResponse = await getCachedResponse(promptHash);
+    if (cachedResponse) {
+      console.log('Returning cached response');
+      return new Response(
+        JSON.stringify(cachedResponse),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
+
+    console.log(`Cache miss - routing to model: ${config.model}`);
 
     // Prepare messages array
     let messages = [...requestBody.messages];
@@ -146,16 +246,21 @@ serve(async (req) => {
       } : undefined,
       metadata: {
         processing_time_ms: processingTime,
-        model_config: config
+        model_config: config,
+        cache_hit: false
       }
     };
+
+    // Cache the response for future use
+    await cacheResponse(promptHash, requestBody, llmResponse);
 
     console.log('LLM proxy response completed:', {
       complexity,
       model: config.model,
       processingTimeMs: processingTime,
       responseLength: responseContent.length,
-      usage: result.usage
+      usage: result.usage,
+      cached: false
     });
 
     return new Response(
