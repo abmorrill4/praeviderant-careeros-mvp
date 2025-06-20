@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useStructuredInterview } from '@/hooks/useStructuredInterview';
+import { useDirectInterview } from '@/hooks/useDirectInterview';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,7 +61,7 @@ const StreamlinedInterviewInterface = ({
     startInterview,
     sendMessage,
     resetInterview,
-  } = useStructuredInterview(sessionId);
+  } = useDirectInterview(sessionId);
 
   const handleSendMessage = async (message: string) => {
     if (message.trim()) {
