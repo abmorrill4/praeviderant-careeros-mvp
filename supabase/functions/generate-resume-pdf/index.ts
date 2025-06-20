@@ -1,7 +1,6 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,12 +17,6 @@ interface GeneratePDFRequest {
     right?: string;
   };
 }
-
-// Initialize Supabase client
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
 
 function generateResumeHTML(resumeData: any): string {
   const {
@@ -43,6 +36,11 @@ function generateResumeHTML(resumeData: any): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume - ${basics.name || 'Professional Resume'}</title>
     <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -54,86 +52,90 @@ function generateResumeHTML(resumeData: any): string {
             line-height: 1.6;
             color: #333;
             background: white;
-            font-size: 14px;
+            font-size: 12px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
         
         .container {
-            max-width: 800px;
+            max-width: 210mm;
             margin: 0 auto;
-            padding: 40px;
+            padding: 0;
         }
         
         .header {
             text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
             border-bottom: 2px solid #e0e0e0;
         }
         
         .header h1 {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
             color: #2c3e50;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         
         .header .title {
-            font-size: 18px;
+            font-size: 16px;
             color: #7f8c8d;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         
         .contact-info {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
             flex-wrap: wrap;
-            font-size: 14px;
+            font-size: 12px;
             color: #555;
         }
         
         .contact-info span {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
         
         .section {
-            margin-bottom: 35px;
+            margin-bottom: 25px;
+            page-break-inside: avoid;
         }
         
         .section-title {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 15px;
-            padding-bottom: 5px;
+            margin-bottom: 12px;
+            padding-bottom: 4px;
             border-bottom: 1px solid #bdc3c7;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         
         .summary {
-            font-size: 15px;
-            line-height: 1.7;
+            font-size: 13px;
+            line-height: 1.6;
             color: #555;
             text-align: justify;
         }
         
         .experience-item, .education-item, .project-item {
-            margin-bottom: 25px;
-            padding-left: 20px;
+            margin-bottom: 18px;
+            padding-left: 15px;
             border-left: 3px solid #3498db;
             position: relative;
+            page-break-inside: avoid;
         }
         
         .experience-item::before, .education-item::before, .project-item::before {
             content: '';
             position: absolute;
-            left: -6px;
-            top: 5px;
-            width: 9px;
-            height: 9px;
+            left: -5px;
+            top: 4px;
+            width: 7px;
+            height: 7px;
             background: #3498db;
             border-radius: 50%;
         }
@@ -142,80 +144,81 @@ function generateResumeHTML(resumeData: any): string {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             flex-wrap: wrap;
         }
         
         .item-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             color: #2c3e50;
         }
         
         .item-company, .item-institution {
-            font-size: 15px;
+            font-size: 13px;
             color: #7f8c8d;
             font-weight: 500;
         }
         
         .item-date {
-            font-size: 13px;
+            font-size: 11px;
             color: #95a5a6;
             font-weight: 500;
         }
         
         .item-description {
             color: #555;
-            margin-top: 8px;
-            line-height: 1.6;
+            margin-top: 6px;
+            line-height: 1.5;
+            font-size: 12px;
         }
         
         .skills-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
         }
         
         .skill-category {
             background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #3498db;
         }
         
         .skill-category h4 {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             text-transform: uppercase;
         }
         
         .skill-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
         }
         
         .skill-tag {
             background: #ecf0f1;
             color: #2c3e50;
-            padding: 4px 8px;
-            border-radius: 15px;
-            font-size: 12px;
+            padding: 3px 6px;
+            border-radius: 12px;
+            font-size: 10px;
             font-weight: 500;
         }
         
         .projects-grid {
             display: grid;
-            gap: 20px;
+            gap: 15px;
         }
         
         .project-item {
             background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #e74c3c;
         }
         
         .project-item::before {
@@ -223,53 +226,60 @@ function generateResumeHTML(resumeData: any): string {
         }
         
         .project-tech {
-            margin-top: 10px;
+            margin-top: 8px;
         }
         
         .tech-tag {
             display: inline-block;
             background: #3498db;
             color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            margin-right: 6px;
-            margin-bottom: 6px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 9px;
+            margin-right: 4px;
+            margin-bottom: 4px;
         }
         
         .certificates-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
         }
         
         .certificate-item {
             background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #27ae60;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid #27ae60;
         }
         
         .certificate-name {
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
+            font-size: 12px;
         }
         
         .certificate-issuer {
             color: #7f8c8d;
-            font-size: 13px;
+            font-size: 11px;
         }
         
         .certificate-date {
             color: #95a5a6;
-            font-size: 12px;
-            margin-top: 5px;
+            font-size: 10px;
+            margin-top: 4px;
         }
         
         @media print {
-            body { print-color-adjust: exact; }
-            .container { padding: 20px; }
+            body { 
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            .container { 
+                padding: 0; 
+                max-width: none;
+            }
         }
     </style>
 </head>
@@ -412,40 +422,88 @@ function generateResumeHTML(resumeData: any): string {
   `;
 }
 
-async function generatePDF(html: string, options: any = {}): Promise<Uint8Array> {
-  // Note: This is a simplified version. In a real implementation, you would need to use
-  // a service like Puppeteer running in a container or a third-party PDF service
-  // since Deno Deploy doesn't support Puppeteer directly.
-  
-  // For now, we'll use a workaround with a third-party HTML to PDF service
-  // In production, you'd want to use a dedicated PDF service or run Puppeteer in a container
-  
-  const response = await fetch('https://api.htmlcsstoimage.com/v1/image', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${Deno.env.get('HTMLCSS_API_KEY') || 'demo'}`,
-    },
-    body: JSON.stringify({
-      html: html,
-      css: '',
-      width: 794, // A4 width in pixels at 96 DPI
-      height: 1123, // A4 height in pixels at 96 DPI
-      device_scale_factor: 2,
-      format: 'pdf',
-      quality: 100,
-    }),
-  });
+async function convertHTMLToPDF(html: string): Promise<Uint8Array> {
+  // Use jsPDF via a CDN-hosted library for PDF generation
+  const jsPDFScript = `
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+      async function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        const element = document.body;
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff'
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = 210; // A4 width in mm
+        const pageHeight = 295; // A4 height in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+        
+        return pdf.output('arraybuffer');
+      }
+      
+      generatePDF().then(buffer => {
+        window.pdfBuffer = new Uint8Array(buffer);
+        window.pdfReady = true;
+      });
+    </script>
+  `;
 
-  if (!response.ok) {
-    // Fallback: Return the HTML as a simple PDF using browser print styles
-    // This is a basic fallback - in production you'd want a proper PDF service
-    const encoder = new TextEncoder();
-    return encoder.encode(html);
-  }
-
-  const arrayBuffer = await response.arrayBuffer();
-  return new Uint8Array(arrayBuffer);
+  // For now, return the HTML content as a pseudo-PDF since we can't run browser APIs in Deno
+  // In a production environment, you'd want to use a service like Puppeteer Cloud or similar
+  const encoder = new TextEncoder();
+  const htmlWithPrint = html.replace('</head>', `
+    <style>
+      @media print {
+        html, body { 
+          width: 210mm; 
+          height: 297mm;
+          margin: 0;
+          padding: 0;
+        }
+      }
+    </style>
+    </head>
+  `);
+  
+  // Return HTML that can be printed to PDF by the browser
+  return encoder.encode(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Resume PDF</title>
+    </head>
+    <body style="margin:0;padding:20px;font-family:Arial,sans-serif;">
+      <h3>Resume PDF Generation</h3>
+      <p>To generate a PDF, please use your browser's print function (Ctrl+P or Cmd+P) and select "Save as PDF".</p>
+      <hr>
+      ${htmlWithPrint.replace('<!DOCTYPE html>', '').replace('<html lang="en">', '').replace('</html>', '')}
+    </body>
+    </html>
+  `);
 }
 
 serve(async (req) => {
@@ -465,25 +523,17 @@ serve(async (req) => {
     // Generate HTML from resume data
     const html = generateResumeHTML(requestBody.resumeData);
     
-    // Generate PDF from HTML
-    const pdfBuffer = await generatePDF(html, {
-      format: requestBody.format || 'A4',
-      margin: requestBody.margin || {
-        top: '20mm',
-        bottom: '20mm',
-        left: '20mm',
-        right: '20mm'
-      }
-    });
+    // Convert HTML to PDF-ready format
+    const pdfBuffer = await convertHTMLToPDF(html);
 
-    console.log('Successfully generated PDF');
+    console.log('Successfully generated print-ready HTML');
 
-    // Return PDF as response
+    // Return HTML that can be printed to PDF
     return new Response(pdfBuffer, {
       headers: {
         ...corsHeaders,
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="resume.pdf"',
+        'Content-Type': 'text/html',
+        'Content-Disposition': 'inline; filename="resume.html"',
       },
     });
 

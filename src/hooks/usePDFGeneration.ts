@@ -27,7 +27,7 @@ export const usePDFGeneration = (): UsePDFGenerationReturn => {
     setError(null);
 
     try {
-      console.log('Generating PDF for resume data:', resumeData);
+      console.log('Generating print-ready HTML for resume data:', resumeData);
 
       const { data, error: functionError } = await supabase.functions.invoke('generate-resume-pdf', {
         body: {
@@ -49,11 +49,11 @@ export const usePDFGeneration = (): UsePDFGenerationReturn => {
         throw new Error(`PDF generation failed: ${functionError.message}`);
       }
 
-      // The response should be a PDF blob
-      const pdfBlob = new Blob([data], { type: 'application/pdf' });
+      // The response is now HTML that can be printed to PDF
+      const htmlBlob = new Blob([data], { type: 'text/html' });
       
-      console.log('PDF generated successfully');
-      return pdfBlob;
+      console.log('Print-ready HTML generated successfully');
+      return htmlBlob;
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to generate PDF';

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Download, FileText, Loader2 } from 'lucide-react';
+import { Download, FileText, Loader2, Printer } from 'lucide-react';
 import { usePDFGeneration } from '@/hooks/usePDFGeneration';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,26 +31,32 @@ export const PDFResumeGenerator: React.FC<PDFResumeGeneratorProps> = ({
     }
 
     try {
-      const pdfBlob = await generatePDF(resumeData, { format });
+      const htmlBlob = await generatePDF(resumeData, { format });
       
-      // Create download link
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${resumeData.basics?.name || 'resume'}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      // Open the HTML in a new tab for printing
+      const url = URL.createObjectURL(htmlBlob);
+      const newWindow = window.open(url, '_blank');
+      
+      if (newWindow) {
+        // Give the page time to load, then trigger print dialog
+        setTimeout(() => {
+          newWindow.print();
+        }, 1000);
+      }
+
+      // Clean up the URL after a delay
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 5000);
 
       toast({
-        title: "PDF Generated",
-        description: "Your resume PDF has been downloaded successfully",
+        title: "Resume Ready for Print",
+        description: "Your resume has opened in a new tab. Use Ctrl+P (or Cmd+P) and select 'Save as PDF' to download.",
       });
     } catch (err) {
       toast({
         title: "Generation Failed",
-        description: error || "Failed to generate PDF. Please try again.",
+        description: error || "Failed to generate resume. Please try again.",
         variant: "destructive",
       });
     }
@@ -87,6 +93,18 @@ export const PDFResumeGenerator: React.FC<PDFResumeGeneratorProps> = ({
           </div>
         )}
 
+        <div className="bg-blue-50 p-3 rounded-md text-sm text-blue-800">
+          <div className="flex items-start gap-2">
+            <Printer className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">How to save as PDF:</p>
+              <p className="text-xs mt-1">
+                Click the button below to open your resume in a new tab, then use your browser's print function (Ctrl+P or Cmd+P) and select "Save as PDF" as the destination.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <Button 
           onClick={handleGeneratePDF} 
           disabled={isGenerating || !resumeData}
@@ -95,12 +113,12 @@ export const PDFResumeGenerator: React.FC<PDFResumeGeneratorProps> = ({
           {isGenerating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating PDF...
+              Generating Resume...
             </>
           ) : (
             <>
               <Download className="mr-2 h-4 w-4" />
-              Download PDF Resume
+              Open Resume for Print
             </>
           )}
         </Button>
