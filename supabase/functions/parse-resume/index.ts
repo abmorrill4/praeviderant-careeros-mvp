@@ -55,13 +55,16 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let uploadId: string;
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { uploadId } = await req.json();
+    const requestBody = await req.json();
+    uploadId = requestBody.uploadId;
 
     if (!uploadId) {
       throw new Error('Upload ID is required');
@@ -103,7 +106,7 @@ serve(async (req) => {
       throw new Error('No text content could be extracted from the document');
     }
 
-    // Check if the extracted text indicates an error from OpenAI
+    // Check if the extracted text indicates an error from processing
     if (extractedText.includes("I cannot process") || 
         extractedText.includes("I'm sorry, but I cannot") ||
         extractedText.includes("Please provide the document in a different format")) {
@@ -142,7 +145,6 @@ serve(async (req) => {
 
     // Update database with error
     try {
-      const { uploadId } = await req.json();
       if (uploadId) {
         const supabase = createClient(
           Deno.env.get('SUPABASE_URL') ?? '',
@@ -207,18 +209,18 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
   }
 
   try {
-    // Convert to base64 for OpenAI
+    // Convert to base64 for OpenAI Vision API
     const arrayBuffer = await fileData.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     
-    // Check if file is too large (limit to ~16MB for API)
-    if (uint8Array.length > 16 * 1024 * 1024) {
-      throw new Error('PDF file is too large. Please upload a smaller file (max 16MB).');
+    // Check if file is too large (limit to ~10MB)
+    if (uint8Array.length > 10 * 1024 * 1024) {
+      throw new Error('PDF file is too large. Please upload a smaller file (max 10MB).');
     }
     
     const base64 = btoa(String.fromCharCode(...uint8Array));
 
-    // Use OpenAI's new file input API for PDFs
+    // Use OpenAI's vision model to extract text from PDF pages
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -230,20 +232,20 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
         messages: [
           {
             role: 'system',
-            content: 'You are a resume text extraction specialist. Extract ALL text content from the provided PDF document. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content without any commentary or analysis.'
+            content: 'You are a resume text extraction specialist. Extract ALL text content from the provided document image. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content without any commentary or analysis. If you cannot read the document clearly, say "Unable to extract text from this document format."'
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Please extract all text content from this resume PDF:'
+                text: 'Please extract all text content from this resume document:'
               },
               {
-                type: 'file',
-                file: {
-                  data: base64,
-                  filename: 'resume.pdf'
+                type: 'image_url',
+                image_url: {
+                  url: `data:application/pdf;base64,${base64}`,
+                  detail: 'high'
                 }
               }
             ]
@@ -257,13 +259,6 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
     if (!response.ok) {
       const errorData = await response.json();
       console.error('OpenAI API error:', errorData);
-      
-      // If the file input method fails, fall back to a text-only approach
-      if (errorData.error?.code === 'invalid_request_error') {
-        console.log('Falling back to text-only PDF processing...');
-        return await fallbackPDFExtraction();
-      }
-      
       throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
@@ -273,10 +268,10 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
     // Check for common error responses from OpenAI
     if (extractedText.includes("I cannot process") || 
         extractedText.includes("I'm sorry, but I cannot") ||
-        extractedText.includes("Please provide the document in a different format") ||
-        extractedText.includes("I cannot read") ||
+        extractedText.includes("Unable to extract text") ||
+        extractedText.includes("cannot read") ||
         extractedText.trim().length < 10) {
-      throw new Error('Unable to extract readable text from PDF. The document may be scanned, corrupted, or in an unsupported format.');
+      throw new Error('Unable to extract readable text from PDF. The document may be scanned, corrupted, or in an unsupported format. Please try converting to a Word document or text file.');
     }
     
     return extractedText;
@@ -284,10 +279,6 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
     console.error('PDF extraction error:', error);
     throw new Error(`Failed to extract text from PDF: ${error.message}`);
   }
-}
-
-async function fallbackPDFExtraction(): Promise<string> {
-  throw new Error('PDF text extraction is not available. Please convert your PDF to a Word document or text file, or ensure your PDF contains selectable text rather than scanned images.');
 }
 
 async function parseResumeText(text: string): Promise<ResumeData> {
