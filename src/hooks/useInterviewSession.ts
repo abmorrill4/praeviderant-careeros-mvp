@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useEncryption } from '@/hooks/useEncryption';
@@ -23,6 +24,7 @@ export const useInterviewSession = () => {
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { encryptAndStore } = useEncryption();
   const { user } = useAuth();
@@ -123,9 +125,12 @@ export const useInterviewSession = () => {
     }
   };
 
-  const endSession = () => {
+  const endSession = async () => {
     if (session) {
-      updateSessionStatus('completed');
+      await updateSessionStatus('completed');
+      
+      // Refetch dashboard data to reflect any new entities or updates
+      queryClient.invalidateQueries({ queryKey: ['entities'] });
     }
     setSession(null);
     setTranscript([]);
