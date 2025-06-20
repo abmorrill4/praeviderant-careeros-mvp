@@ -1,7 +1,8 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useEncryption } from '@/hooks/useEncryption';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface InterviewSession {
   sessionId: string;
@@ -23,6 +24,8 @@ export const useInterviewSession = () => {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { encryptAndStore } = useEncryption();
+  const { user } = useAuth();
 
   const createSession = async () => {
     setIsLoading(true);
@@ -56,15 +59,22 @@ export const useInterviewSession = () => {
   };
 
   const addTranscriptEntry = async (speaker: 'user' | 'assistant', content: string, timestampMs?: number) => {
-    if (!session) return;
+    if (!session || !user) return;
 
     try {
+      // Encrypt the sensitive transcript content before storing
+      const encryptionResult = await encryptAndStore(content, user.id);
+      
+      if (!encryptionResult.success) {
+        throw new Error('Failed to encrypt transcript content');
+      }
+
       const { data, error } = await supabase
         .from('interview_transcripts')
         .insert({
           session_id: session.sessionId,
           speaker,
-          content,
+          content: `[ENCRYPTED:${encryptionResult.encrypted_id}]`, // Store reference to encrypted data
           timestamp_ms: timestampMs,
         })
         .select()
@@ -79,7 +89,7 @@ export const useInterviewSession = () => {
       const typedEntry: TranscriptEntry = {
         id: data.id,
         speaker: data.speaker as 'user' | 'assistant',
-        content: data.content,
+        content: content, // Keep original content in memory for display
         timestamp_ms: data.timestamp_ms,
         created_at: data.created_at,
       };
@@ -87,6 +97,11 @@ export const useInterviewSession = () => {
       setTranscript(prev => [...prev, typedEntry]);
     } catch (error) {
       console.error('Error adding transcript entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save transcript securely. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
