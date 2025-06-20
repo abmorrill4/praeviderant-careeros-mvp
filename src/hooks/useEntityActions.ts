@@ -11,7 +11,7 @@ export function useEntityActions<T extends VersionedEntity>(tableName: EntityTyp
     try {
       await updateEntity.mutateAsync({
         logicalEntityId: item.logical_entity_id,
-        updates: { is_active: true } as Partial<EntityData<T>>,
+        updates: {} as Partial<EntityData<T>>, // Empty updates since we're just activating
         source: 'user_acceptance'
       });
       
