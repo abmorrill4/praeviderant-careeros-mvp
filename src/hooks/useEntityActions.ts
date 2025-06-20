@@ -11,7 +11,7 @@ export function useEntityActions<T extends VersionedEntity>(tableName: EntityTyp
     try {
       await updateEntity.mutateAsync({
         logicalEntityId: item.logical_entity_id,
-        updates: { is_active: true } as any, // Use 'as any' to bypass the type check since is_active is a valid field
+        updates: { is_active: true } as any,
         source: 'user_acceptance'
       });
       
@@ -29,12 +29,26 @@ export function useEntityActions<T extends VersionedEntity>(tableName: EntityTyp
     }
   };
 
-  const handleEdit = (item: VersionedEntity) => {
-    // TODO: Open edit modal/form
-    toast({
-      title: "Edit functionality",
-      description: "Edit functionality will be implemented soon.",
-    });
+  const handleEdit = async (item: VersionedEntity, updates: Record<string, any>) => {
+    try {
+      await updateEntity.mutateAsync({
+        logicalEntityId: item.logical_entity_id,
+        updates,
+        source: 'USER_MANUAL'
+      });
+      
+      toast({
+        title: "Item updated",
+        description: "Your changes have been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save your changes. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return { handleAccept, handleEdit };

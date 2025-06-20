@@ -43,6 +43,13 @@ import {
 import { useLatestEntities } from "@/hooks/useVersionedEntities";
 import { useEntityActions } from "@/hooks/useEntityActions";
 import type { WorkExperience, Education, Skill, Project, Certification } from "@/types/versioned-entities";
+import {
+  workExperienceFields,
+  educationFields,
+  skillFields,
+  projectFields,
+  certificationFields
+} from "@/components/profile/entityFieldConfigs";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -115,6 +122,7 @@ const Dashboard = () => {
                 title="Work Experience"
                 icon={<Building className="w-5 h-5" />}
                 items={workExperience}
+                editFields={workExperienceFields}
                 onAccept={workActions.handleAccept}
                 onEdit={workActions.handleEdit}
                 renderItem={(item) => <WorkExperienceRenderer item={item as WorkExperience} />}
@@ -124,6 +132,7 @@ const Dashboard = () => {
                 title="Education"
                 icon={<GraduationCap className="w-5 h-5" />}
                 items={education}
+                editFields={educationFields}
                 onAccept={educationActions.handleAccept}
                 onEdit={educationActions.handleEdit}
                 renderItem={(item) => <EducationRenderer item={item as Education} />}
@@ -133,6 +142,7 @@ const Dashboard = () => {
                 title="Skills"
                 icon={<Award className="w-5 h-5" />}
                 items={skills}
+                editFields={skillFields}
                 onAccept={skillActions.handleAccept}
                 onEdit={skillActions.handleEdit}
                 renderItem={(item) => <SkillRenderer item={item as Skill} />}
@@ -142,6 +152,7 @@ const Dashboard = () => {
                 title="Projects"
                 icon={<Code className="w-5 h-5" />}
                 items={projects}
+                editFields={projectFields}
                 onAccept={projectActions.handleAccept}
                 onEdit={projectActions.handleEdit}
                 renderItem={(item) => <ProjectRenderer item={item as Project} />}
@@ -151,6 +162,7 @@ const Dashboard = () => {
                 title="Certifications"
                 icon={<Trophy className="w-5 h-5" />}
                 items={certifications}
+                editFields={certificationFields}
                 onAccept={certificationActions.handleAccept}
                 onEdit={certificationActions.handleEdit}
                 renderItem={(item) => <CertificationRenderer item={item as Certification} />}
