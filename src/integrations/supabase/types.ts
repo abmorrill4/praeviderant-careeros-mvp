@@ -39,6 +39,57 @@ export type Database = {
         }
         Relationships: []
       }
+      certification: {
+        Row: {
+          created_at: string
+          credential_id: string | null
+          credential_url: string | null
+          expiration_date: string | null
+          is_active: boolean
+          issue_date: string | null
+          issuing_organization: string
+          logical_entity_id: string
+          name: string
+          source: string | null
+          source_confidence: number | null
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          credential_id?: string | null
+          credential_url?: string | null
+          expiration_date?: string | null
+          is_active?: boolean
+          issue_date?: string | null
+          issuing_organization: string
+          logical_entity_id?: string
+          name: string
+          source?: string | null
+          source_confidence?: number | null
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          credential_id?: string | null
+          credential_url?: string | null
+          expiration_date?: string | null
+          is_active?: boolean
+          issue_date?: string | null
+          issuing_organization?: string
+          logical_entity_id?: string
+          name?: string
+          source?: string | null
+          source_confidence?: number | null
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       domain_values: {
         Row: {
           category: string
@@ -63,6 +114,60 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           value?: string
+        }
+        Relationships: []
+      }
+      education: {
+        Row: {
+          created_at: string
+          degree: string
+          description: string | null
+          end_date: string | null
+          field_of_study: string | null
+          gpa: string | null
+          institution: string
+          is_active: boolean
+          logical_entity_id: string
+          source: string | null
+          source_confidence: number | null
+          start_date: string | null
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          degree: string
+          description?: string | null
+          end_date?: string | null
+          field_of_study?: string | null
+          gpa?: string | null
+          institution: string
+          is_active?: boolean
+          logical_entity_id?: string
+          source?: string | null
+          source_confidence?: number | null
+          start_date?: string | null
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          degree?: string
+          description?: string | null
+          end_date?: string | null
+          field_of_study?: string | null
+          gpa?: string | null
+          institution?: string
+          is_active?: boolean
+          logical_entity_id?: string
+          source?: string | null
+          source_confidence?: number | null
+          start_date?: string | null
+          updated_at?: string
+          user_id?: string
+          version?: number
         }
         Relationships: []
       }
@@ -426,6 +531,60 @@ export type Database = {
           },
         ]
       }
+      project: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string | null
+          is_active: boolean
+          logical_entity_id: string
+          name: string
+          project_url: string | null
+          repository_url: string | null
+          source: string | null
+          source_confidence: number | null
+          start_date: string | null
+          technologies_used: string[] | null
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          is_active?: boolean
+          logical_entity_id?: string
+          name: string
+          project_url?: string | null
+          repository_url?: string | null
+          source?: string | null
+          source_confidence?: number | null
+          start_date?: string | null
+          technologies_used?: string[] | null
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          is_active?: boolean
+          logical_entity_id?: string
+          name?: string
+          project_url?: string | null
+          repository_url?: string | null
+          source?: string | null
+          source_confidence?: number | null
+          start_date?: string | null
+          technologies_used?: string[] | null
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       question_flows: {
         Row: {
           branch_condition_json: Json | null
@@ -459,6 +618,51 @@ export type Database = {
           phase?: Database["public"]["Enums"]["interview_phase"]
           question_text?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      skill: {
+        Row: {
+          category: string | null
+          created_at: string
+          is_active: boolean
+          logical_entity_id: string
+          name: string
+          proficiency_level: string | null
+          source: string | null
+          source_confidence: number | null
+          updated_at: string
+          user_id: string
+          version: number
+          years_of_experience: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          is_active?: boolean
+          logical_entity_id?: string
+          name: string
+          proficiency_level?: string | null
+          source?: string | null
+          source_confidence?: number | null
+          updated_at?: string
+          user_id: string
+          version?: number
+          years_of_experience?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          is_active?: boolean
+          logical_entity_id?: string
+          name?: string
+          proficiency_level?: string | null
+          source?: string | null
+          source_confidence?: number | null
+          updated_at?: string
+          user_id?: string
+          version?: number
+          years_of_experience?: number | null
         }
         Relationships: []
       }
@@ -522,6 +726,54 @@ export type Database = {
           stage?: string | null
           status?: string | null
           title?: string | null
+        }
+        Relationships: []
+      }
+      work_experience: {
+        Row: {
+          company: string
+          created_at: string
+          description: string | null
+          end_date: string | null
+          is_active: boolean
+          logical_entity_id: string
+          source: string | null
+          source_confidence: number | null
+          start_date: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          is_active?: boolean
+          logical_entity_id?: string
+          source?: string | null
+          source_confidence?: number | null
+          start_date?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          is_active?: boolean
+          logical_entity_id?: string
+          source?: string | null
+          source_confidence?: number | null
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
         }
         Relationships: []
       }
