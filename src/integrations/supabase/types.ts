@@ -9,36 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      career_profile: {
-        Row: {
-          created_at: string | null
-          current_company: string | null
-          current_title: string | null
-          id: string
-          summary: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          current_company?: string | null
-          current_title?: string | null
-          id?: string
-          summary?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          current_company?: string | null
-          current_title?: string | null
-          id?: string
-          summary?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       domain_values: {
         Row: {
           category: string
@@ -91,11 +61,8 @@ export type Database = {
         Row: {
           audio_file_url: string | null
           created_at: string
-          current_phase: string | null
-          current_question_id: string | null
           ended_at: string | null
           id: string
-          phase_data: Json | null
           session_id: string | null
           started_at: string | null
           status: string
@@ -105,11 +72,8 @@ export type Database = {
         Insert: {
           audio_file_url?: string | null
           created_at?: string
-          current_phase?: string | null
-          current_question_id?: string | null
           ended_at?: string | null
           id?: string
-          phase_data?: Json | null
           session_id?: string | null
           started_at?: string | null
           status?: string
@@ -119,11 +83,8 @@ export type Database = {
         Update: {
           audio_file_url?: string | null
           created_at?: string
-          current_phase?: string | null
-          current_question_id?: string | null
           ended_at?: string | null
           id?: string
-          phase_data?: Json | null
           session_id?: string | null
           started_at?: string | null
           status?: string
@@ -134,40 +95,28 @@ export type Database = {
       }
       interview_transcripts: {
         Row: {
-          ai_followup: string | null
           content: string
           created_at: string
           id: string
-          question_id: string | null
           session_id: string
           speaker: string
-          structured_response: Json | null
           timestamp_ms: number | null
-          user_answer: string | null
         }
         Insert: {
-          ai_followup?: string | null
           content: string
           created_at?: string
           id?: string
-          question_id?: string | null
           session_id: string
           speaker: string
-          structured_response?: Json | null
           timestamp_ms?: number | null
-          user_answer?: string | null
         }
         Update: {
-          ai_followup?: string | null
           content?: string
           created_at?: string
           id?: string
-          question_id?: string | null
           session_id?: string
           speaker?: string
-          structured_response?: Json | null
           timestamp_ms?: number | null
-          user_answer?: string | null
         }
         Relationships: [
           {
@@ -220,10 +169,8 @@ export type Database = {
           extracted_context: Json | null
           id: string
           interview_type: string
-          processed: boolean | null
           started_at: string | null
           status: string
-          summary: string | null
           transcript: string | null
           updated_at: string
           user_id: string
@@ -235,10 +182,8 @@ export type Database = {
           extracted_context?: Json | null
           id?: string
           interview_type: string
-          processed?: boolean | null
           started_at?: string | null
           status?: string
-          summary?: string | null
           transcript?: string | null
           updated_at?: string
           user_id: string
@@ -250,10 +195,8 @@ export type Database = {
           extracted_context?: Json | null
           id?: string
           interview_type?: string
-          processed?: boolean | null
           started_at?: string | null
           status?: string
-          summary?: string | null
           transcript?: string | null
           updated_at?: string
           user_id?: string
@@ -296,95 +239,6 @@ export type Database = {
         }
         Relationships: []
       }
-      jobs: {
-        Row: {
-          company: string
-          created_at: string | null
-          description: string | null
-          end_date: string | null
-          id: string
-          impact: string | null
-          start_date: string | null
-          title: string
-          tools_used: string[] | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          company: string
-          created_at?: string | null
-          description?: string | null
-          end_date?: string | null
-          id?: string
-          impact?: string | null
-          start_date?: string | null
-          title: string
-          tools_used?: string[] | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          company?: string
-          created_at?: string | null
-          description?: string | null
-          end_date?: string | null
-          id?: string
-          impact?: string | null
-          start_date?: string | null
-          title?: string
-          tools_used?: string[] | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      profile_deltas: {
-        Row: {
-          created_at: string | null
-          entity_type: string
-          field: string | null
-          id: string
-          new_value: string | null
-          original_value: string | null
-          source_interview: string
-          status: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          entity_type: string
-          field?: string | null
-          id?: string
-          new_value?: string | null
-          original_value?: string | null
-          source_interview: string
-          status?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          entity_type?: string
-          field?: string | null
-          id?: string
-          new_value?: string | null
-          original_value?: string | null
-          source_interview?: string
-          status?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profile_deltas_source_interview_fkey"
-            columns: ["source_interview"]
-            isOneToOne: false
-            referencedRelation: "interviews"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           created_at: string
@@ -425,66 +279,6 @@ export type Database = {
             referencedColumns: ["code"]
           },
         ]
-      }
-      question_flows: {
-        Row: {
-          branch_condition_json: Json | null
-          created_at: string
-          followup_trigger_keywords: string[] | null
-          id: string
-          metadata: Json | null
-          order_num: number
-          phase: Database["public"]["Enums"]["interview_phase"]
-          question_text: string
-          updated_at: string
-        }
-        Insert: {
-          branch_condition_json?: Json | null
-          created_at?: string
-          followup_trigger_keywords?: string[] | null
-          id?: string
-          metadata?: Json | null
-          order_num: number
-          phase: Database["public"]["Enums"]["interview_phase"]
-          question_text: string
-          updated_at?: string
-        }
-        Update: {
-          branch_condition_json?: Json | null
-          created_at?: string
-          followup_trigger_keywords?: string[] | null
-          id?: string
-          metadata?: Json | null
-          order_num?: number
-          phase?: Database["public"]["Enums"]["interview_phase"]
-          question_text?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      system_prompts: {
-        Row: {
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          label: string
-          prompt: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          label: string
-          prompt: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          label?: string
-          prompt?: string
-        }
-        Relationships: []
       }
       user_interest: {
         Row: {
@@ -534,22 +328,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_interview_context: {
-        Args: { p_user_id: string }
-        Returns: {
-          active_interview: Json
-          career_profile: Json
-          job_history: Json
-          recent_summaries: Json
-        }[]
-      }
       mark_expired_invitations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }
     Enums: {
-      interview_phase: "warmup" | "identity" | "impact" | "deep_dive"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -664,8 +449,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      interview_phase: ["warmup", "identity", "impact", "deep_dive"],
-    },
+    Enums: {},
   },
 } as const

@@ -7,7 +7,7 @@ const ThemeToggle = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="flex items-center space-x-3">
+    <div className="fixed top-6 right-6 z-50 flex items-center space-x-3">
       <Sun className={`h-4 w-4 transition-opacity ${theme === 'light' ? 'opacity-100' : 'opacity-50'}`} />
       <Switch
         checked={theme === 'dark'}

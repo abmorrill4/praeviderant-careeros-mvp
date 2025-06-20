@@ -11,123 +11,36 @@ interface InterviewSession {
 
 interface TranscriptEntry {
   id: string;
-  speaker: 'user' | 'assistant' | 'system';
+  speaker: 'user' | 'assistant';
   content: string;
   timestamp_ms?: number;
   created_at: string;
-  type?: 'info' | 'warning' | 'success';
-}
-
-interface InterviewContext {
-  activeInterview: any;
-  careerProfile: any;
-  jobHistory: any[];
-  recentSummaries: string[];
 }
 
 export const useInterviewSession = () => {
   const [session, setSession] = useState<InterviewSession | null>(null);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [interviewContext, setInterviewContext] = useState<InterviewContext | null>(null);
-  const [isResumedSession, setIsResumedSession] = useState(false);
   const { toast } = useToast();
 
-  const fetchInterviewContext = async () => {
-    try {
-      const { data, error } = await supabase.rpc('get_interview_context', {
-        p_user_id: (await supabase.auth.getUser()).data.user?.id
-      });
-
-      if (error) {
-        console.error('Error fetching interview context:', error);
-        return null;
-      }
-
-      if (data && data.length > 0) {
-        const contextData = data[0];
-        
-        const context: InterviewContext = {
-          activeInterview: contextData.active_interview === 'null' ? null : contextData.active_interview,
-          careerProfile: contextData.career_profile === 'null' ? null : contextData.career_profile,
-          jobHistory: Array.isArray(contextData.job_history) ? contextData.job_history : [],
-          recentSummaries: Array.isArray(contextData.recent_summaries) 
-            ? contextData.recent_summaries.filter((summary): summary is string => typeof summary === 'string')
-            : []
-        };
-        
-        return context;
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Error in fetchInterviewContext:', error);
-      return null;
-    }
-  };
-
-  const createSession = async (resumeInterview = false) => {
+  const createSession = async () => {
     setIsLoading(true);
     try {
-      const context = await fetchInterviewContext();
-      setInterviewContext(context);
-
-      if (resumeInterview && context?.activeInterview && typeof context.activeInterview === 'object' && context.activeInterview.id) {
-        setIsResumedSession(true);
-        
-        const { data: transcriptData, error: transcriptError } = await supabase
-          .from('interview_transcripts')
-          .select('*')
-          .eq('session_id', context.activeInterview.id)
-          .order('created_at', { ascending: true });
-
-        if (!transcriptError && transcriptData) {
-          const formattedTranscript: TranscriptEntry[] = transcriptData.map(entry => ({
-            id: entry.id,
-            speaker: entry.speaker as 'user' | 'assistant',
-            content: entry.content,
-            timestamp_ms: entry.timestamp_ms,
-            created_at: entry.created_at,
-          }));
-          setTranscript(formattedTranscript);
-        }
-
-        await supabase
-          .from('interviews')
-          .update({ status: 'resumed' })
-          .eq('id', context.activeInterview.id);
-
-        toast({
-          title: "Interview Resumed",
-          description: "Continuing your previous interview session.",
-        });
-      } else {
-        setIsResumedSession(false);
-        setTranscript([]);
-      }
-
-      const { data, error } = await supabase.functions.invoke('create-interview-session', {
-        body: { 
-          resumeMode: resumeInterview,
-          context: context 
-        }
-      });
+      const { data, error } = await supabase.functions.invoke('create-interview-session');
       
       if (error) {
         throw error;
       }
 
       setSession(data);
+      setTranscript([]);
       
-      if (!resumeInterview) {
-        toast({
-          title: "Session Created",
-          description: "Your interview session has been created successfully.",
-        });
-      }
+      toast({
+        title: "Session Created",
+        description: "Your interview session has been created successfully.",
+      });
       
       return data;
-      
     } catch (error) {
       console.error('Error creating session:', error);
       toast({
@@ -141,39 +54,10 @@ export const useInterviewSession = () => {
     }
   };
 
-  const checkForActiveInterview = async () => {
-    try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return null;
-
-      const { data, error } = await supabase
-        .from('interviews')
-        .select('*')
-        .eq('user_id', user.user.id)
-        .in('status', ['in_progress', 'resumed'])
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking for active interview:', error);
-        return null;
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error in checkForActiveInterview:', error);
-      return null;
-    }
-  };
-
   const addTranscriptEntry = async (speaker: 'user' | 'assistant', content: string, timestampMs?: number) => {
-    try {
-      if (!session) {
-        console.warn('No active session for transcript entry');
-        return;
-      }
+    if (!session) return;
 
+    try {
       const { data, error } = await supabase
         .from('interview_transcripts')
         .insert({
@@ -190,6 +74,7 @@ export const useInterviewSession = () => {
         return;
       }
 
+      // Type cast the database result to match our TranscriptEntry interface
       const typedEntry: TranscriptEntry = {
         id: data.id,
         speaker: data.speaker as 'user' | 'assistant',
@@ -202,18 +87,6 @@ export const useInterviewSession = () => {
     } catch (error) {
       console.error('Error adding transcript entry:', error);
     }
-  };
-
-  const addSystemMessage = async (message: string, type: 'info' | 'warning' | 'success' = 'info') => {
-    const systemEntry: TranscriptEntry = {
-      id: `system-${Date.now()}`,
-      speaker: 'system',
-      content: message,
-      created_at: new Date().toISOString(),
-      type,
-    };
-
-    setTranscript(prev => [...prev, systemEntry]);
   };
 
   const updateSessionStatus = async (status: 'active' | 'completed' | 'failed') => {
@@ -240,21 +113,14 @@ export const useInterviewSession = () => {
     }
     setSession(null);
     setTranscript([]);
-    setInterviewContext(null);
-    setIsResumedSession(false);
   };
 
   return {
     session,
     transcript,
     isLoading,
-    interviewContext,
-    isResumedSession,
-    isDemoMode: false, // Demo mode removed
     createSession,
-    checkForActiveInterview,
     addTranscriptEntry,
-    addSystemMessage,
     updateSessionStatus,
     endSession,
   };

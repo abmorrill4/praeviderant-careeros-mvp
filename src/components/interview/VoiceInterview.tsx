@@ -1,153 +1,284 @@
 
-import { useState, useEffect } from 'react';
-import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useInterviewSession } from '@/hooks/useInterviewSession';
-import { useInterviewModes } from '@/hooks/useInterviewModes';
-import StatusBanner from './StatusBanner';
-import CollapsibleDataSidebar from './CollapsibleDataSidebar';
-import StreamlinedInterviewInterface from './StreamlinedInterviewInterface';
+import { WebRTCAudioManager } from '@/utils/webrtcAudio';
+import { 
+  Mic, 
+  MicOff, 
+  Volume2, 
+  VolumeX, 
+  Play, 
+  Square,
+  Loader2 
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const VoiceInterview = () => {
-  const { user } = useAuth();
   const { theme } = useTheme();
-  const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-
+  const { toast } = useToast();
   const {
     session,
     transcript,
     isLoading,
-    interviewContext,
-    isResumedSession,
     createSession,
     addTranscriptEntry,
-    addSystemMessage,
+    updateSessionStatus,
     endSession,
   } = useInterviewSession();
 
-  const {
-    mode,
-    isVoiceAvailable,
-    isProcessing,
-    micEnabled,
-    isRecording,
-    toggleMode,
-    toggleMicrophone,
-    startRecording,
-    stopRecording,
-  } = useInterviewModes();
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [micEnabled, setMicEnabled] = useState(true);
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [connectionState, setConnectionState] = useState<RTCPeerConnectionState>('new');
+  
+  const audioManagerRef = useRef<WebRTCAudioManager | null>(null);
 
-  // Auto-start interview session when component mounts
-  useEffect(() => {
-    const autoStartInterview = async () => {
-      if (user && !isConnected && !isConnecting) {
-        setIsConnecting(true);
-        try {
-          await createSession(false);
-          setIsConnected(true);
-          await addSystemMessage("Interview session created", "success");
-        } catch (error) {
-          console.error('Failed to auto-start interview:', error);
-        } finally {
-          setIsConnecting(false);
+  const handleStartInterview = async () => {
+    try {
+      setIsConnecting(true);
+      
+      // Create session
+      const sessionData = await createSession();
+      
+      // Initialize WebRTC
+      audioManagerRef.current = new WebRTCAudioManager();
+      
+      await audioManagerRef.current.initialize(
+        sessionData.clientSecret,
+        handleDataChannelMessage,
+        handleConnectionStateChange
+      );
+
+      await updateSessionStatus('active');
+      setIsConnected(true);
+      
+      toast({
+        title: "Interview Started",
+        description: "You can now speak with the AI interviewer.",
+      });
+      
+    } catch (error) {
+      console.error('Failed to start interview:', error);
+      toast({
+        title: "Connection Failed",
+        description: "Failed to start the interview. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleStopInterview = () => {
+    if (audioManagerRef.current) {
+      audioManagerRef.current.disconnect();
+      audioManagerRef.current = null;
+    }
+    
+    setIsConnected(false);
+    setConnectionState('new');
+    endSession();
+    
+    toast({
+      title: "Interview Ended",
+      description: "Your interview session has been saved.",
+    });
+  };
+
+  const handleDataChannelMessage = (data: any) => {
+    console.log('Received message:', data.type);
+    
+    switch (data.type) {
+      case 'conversation.item.created':
+        if (data.item?.content && data.item.content.length > 0) {
+          const content = data.item.content[0];
+          if (content.type === 'text') {
+            addTranscriptEntry('assistant', content.text);
+          }
         }
+        break;
+        
+      case 'conversation.item.input_audio_transcription.completed':
+        if (data.transcript) {
+          addTranscriptEntry('user', data.transcript);
+        }
+        break;
+        
+      case 'error':
+        console.error('OpenAI error:', data.error);
+        toast({
+          title: "AI Error",
+          description: data.error.message || "An error occurred with the AI service.",
+          variant: "destructive",
+        });
+        break;
+    }
+  };
+
+  const handleConnectionStateChange = (state: RTCPeerConnectionState) => {
+    setConnectionState(state);
+    
+    if (state === 'failed' || state === 'disconnected') {
+      setIsConnected(false);
+      toast({
+        title: "Connection Lost",
+        description: "The interview connection was lost.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleMicrophone = () => {
+    if (audioManagerRef.current) {
+      const newState = !micEnabled;
+      audioManagerRef.current.setMicrophoneEnabled(newState);
+      setMicEnabled(newState);
+    }
+  };
+
+  const toggleAudio = () => {
+    if (audioManagerRef.current) {
+      const newState = !audioEnabled;
+      audioManagerRef.current.setAudioOutputEnabled(newState);
+      setAudioEnabled(newState);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioManagerRef.current) {
+        audioManagerRef.current.disconnect();
       }
     };
-    
-    autoStartInterview();
-  }, [user, isConnected, isConnecting, createSession, addSystemMessage]);
+  }, []);
 
-  const handleEndInterview = () => {
-    setIsConnected(false);
-    endSession();
-  };
-
-  const handleSendMessage = async (message: string) => {
-    if (!isConnected || !session) return;
-    await addTranscriptEntry('user', message);
-  };
-
-  const handleStartRecording = () => {
-    if (isVoiceAvailable && micEnabled) {
-      startRecording();
+  const getConnectionStatusColor = () => {
+    switch (connectionState) {
+      case 'connected': return 'text-green-500';
+      case 'connecting': return 'text-yellow-500';
+      case 'failed': case 'disconnected': return 'text-red-500';
+      default: return theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light';
     }
-  };
-
-  const handleStopRecording = () => {
-    if (isRecording) {
-      stopRecording();
-    }
-  };
-
-  // Create sample data for CollapsibleDataSidebar
-  const structuredData = [
-    {
-      id: '1',
-      type: 'company' as const,
-      value: 'Sample Company Inc',
-      status: 'new' as const,
-      confidence: 0.95,
-    }
-  ];
-
-  const handleConfirm = (id: string) => {
-    console.log('Confirming data item:', id);
-  };
-
-  const handleEdit = (id: string, newValue: string) => {
-    console.log('Editing data item:', id, newValue);
-  };
-
-  const handleRemove = (id: string) => {
-    console.log('Removing data item:', id);
   };
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-bg-dark' : 'bg-career-bg-light'}`}>
-      <div className="container mx-auto px-4 py-8">
-        {/* Status Banner */}
-        {isConnecting && (
-          <StatusBanner
-            type="connecting"
-            message="Setting up your interview session..."
-            visible={true}
-            onDismiss={() => {}}
-          />
-        )}
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Main Interview Interface */}
-          <div className="lg:col-span-3">
-            <StreamlinedInterviewInterface
-              sessionId={session?.sessionId || null}
-              isConnected={isConnected}
-              mode={mode}
-              isVoiceAvailable={isVoiceAvailable}
-              isProcessing={isProcessing}
-              micEnabled={micEnabled}
-              isRecording={isRecording}
-              onSendMessage={handleSendMessage}
-              onStartRecording={handleStartRecording}
-              onStopRecording={handleStopRecording}
-              onModeToggle={toggleMode}
-              onMicToggle={toggleMicrophone}
-              onEndInterview={handleEndInterview}
-            />
+    <div className="space-y-6">
+      {/* Controls */}
+      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+        <CardHeader>
+          <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center justify-between`}>
+            <span>Voice Interview Controls</span>
+            <span className={`text-sm font-normal ${getConnectionStatusColor()}`}>
+              {connectionState}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-4 items-center">
+            {!isConnected ? (
+              <Button
+                onClick={handleStartInterview}
+                disabled={isLoading || isConnecting}
+                className="bg-career-accent hover:bg-career-accent-dark text-white"
+              >
+                {isConnecting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-2" />
+                    Start Interview
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleStopInterview}
+                variant="destructive"
+              >
+                <Square className="w-4 h-4 mr-2" />
+                End Interview
+              </Button>
+            )}
+            
+            {isConnected && (
+              <>
+                <Button
+                  onClick={toggleMicrophone}
+                  variant={micEnabled ? "default" : "destructive"}
+                  size="sm"
+                >
+                  {micEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                </Button>
+                
+                <Button
+                  onClick={toggleAudio}
+                  variant={audioEnabled ? "default" : "destructive"}
+                  size="sm"
+                >
+                  {audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                </Button>
+              </>
+            )}
           </div>
+          
+          {isConnected && (
+            <div className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              💡 Speak naturally - the AI will respond when you finish talking.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-          {/* Data Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            <CollapsibleDataSidebar
-              data={structuredData}
-              onConfirm={handleConfirm}
-              onEdit={handleEdit}
-              onRemove={handleRemove}
-            />
+      {/* Transcript */}
+      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+        <CardHeader>
+          <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            Interview Transcript
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {transcript.length === 0 ? (
+              <div className={`text-center py-8 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                {isConnected ? 
+                  "Transcript will appear here as you speak..." : 
+                  "Start the interview to see the conversation transcript."
+                }
+              </div>
+            ) : (
+              transcript.map((entry, index) => (
+                <div
+                  key={entry.id || index}
+                  className={`p-3 rounded-lg ${
+                    entry.speaker === 'user'
+                      ? theme === 'dark'
+                        ? 'bg-career-accent/20 ml-8'
+                        : 'bg-career-accent/10 ml-8'
+                      : theme === 'dark'
+                        ? 'bg-career-gray-dark/20 mr-8'
+                        : 'bg-career-gray-light/20 mr-8'
+                  }`}
+                >
+                  <div className={`text-xs font-medium mb-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    {entry.speaker === 'user' ? 'You' : 'AI Interviewer'}
+                  </div>
+                  <div className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    {entry.content}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
