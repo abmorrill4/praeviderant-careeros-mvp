@@ -43,6 +43,7 @@ const SimpleVoiceInterview = () => {
       
       await webrtcRef.current.connect(
         sessionData.clientSecret,
+        sessionData.systemPrompt,
         handleMessage,
         handleConnectionState
       );

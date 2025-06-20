@@ -52,6 +52,22 @@ serve(async (req) => {
 
     console.log('Creating interview session for user:', user.id);
 
+    // Fetch the active system prompt from the database
+    const { data: systemPrompt, error: promptError } = await supabase
+      .from('system_prompts')
+      .select('prompt')
+      .eq('is_active', true)
+      .single();
+
+    if (promptError) {
+      console.error('Error fetching system prompt:', promptError);
+      // Fallback to default prompt if no active prompt is found
+    }
+
+    const instructions = systemPrompt?.prompt || 'You are a friendly, professional career interviewer. Ask thoughtful questions about the user\'s background, experience, and career goals. Keep questions conversational and ask one at a time. Be encouraging and show genuine interest in their responses.';
+
+    console.log('Using system prompt:', instructions.substring(0, 100) + '...');
+
     // Create session with OpenAI Realtime API
     const openAIResponse = await fetch('https://api.openai.com/v1/realtime/sessions', {
       method: 'POST',
@@ -62,6 +78,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-realtime-preview-2024-12-17',
         voice: 'alloy',
+        instructions: instructions,
       }),
     });
 
@@ -102,6 +119,7 @@ serve(async (req) => {
       sessionId: sessionData.id,
       openAISessionId: openAISession.id,
       clientSecret: openAISession.client_secret.value,
+      systemPrompt: instructions,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

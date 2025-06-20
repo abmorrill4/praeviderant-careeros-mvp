@@ -7,6 +7,7 @@ interface InterviewSession {
   sessionId: string;
   openAISessionId: string;
   clientSecret: string;
+  systemPrompt: string;
 }
 
 interface TranscriptEntry {

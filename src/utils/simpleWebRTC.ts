@@ -1,4 +1,3 @@
-
 export class SimpleWebRTCManager {
   private peerConnection: RTCPeerConnection | null = null;
   private dataChannel: RTCDataChannel | null = null;
@@ -12,7 +11,7 @@ export class SimpleWebRTCManager {
     this.remoteAudio.autoplay = true;
   }
 
-  async connect(clientSecret: string, onMessage?: (data: any) => void, onStateChange?: (state: RTCPeerConnectionState) => void) {
+  async connect(clientSecret: string, systemPrompt: string, onMessage?: (data: any) => void, onStateChange?: (state: RTCPeerConnectionState) => void) {
     this.onMessage = onMessage;
     this.onStateChange = onStateChange;
 
@@ -61,12 +60,12 @@ export class SimpleWebRTCManager {
     this.dataChannel = this.peerConnection.createDataChannel('oai-events');
     
     this.dataChannel.onopen = () => {
-      // Configure session and start interview immediately
+      // Configure session with the provided system prompt
       this.sendMessage({
         type: 'session.update',
         session: {
           modalities: ['text', 'audio'],
-          instructions: 'You are a friendly career interviewer. Start by greeting the user and asking them to introduce themselves and tell you about their background. Keep questions conversational and ask one at a time.',
+          instructions: systemPrompt,
           voice: 'alloy',
           input_audio_format: 'pcm16',
           output_audio_format: 'pcm16',
