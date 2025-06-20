@@ -1,15 +1,12 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Check, Edit, Calendar, MapPin, Building, GraduationCap, Award, Code, Trophy } from 'lucide-react';
-import { InlineEditForm } from './InlineEditForm';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import type { VersionedEntity, EntityData, EntityType } from '@/types/versioned-entities';
+import { ProfileItemDisplay } from './ProfileItemDisplay';
+import { ProfileItemEditor } from './ProfileItemEditor';
+import type { VersionedEntity, EntityData } from '@/types/versioned-entities';
 
 interface EditField {
   key: string;
@@ -41,72 +38,13 @@ export const ProfileDataSection = <T extends VersionedEntity>({
   const { theme } = useTheme();
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
-  const isPendingAIExtraction = (item: VersionedEntity) => 
-    item.source === 'AI_EXTRACTION' && !item.is_active;
-
   const handleEditClick = (item: T) => {
     setEditingItemId(`${item.logical_entity_id}-${item.version}`);
   };
 
-  const getTableNameFromTitle = (title: string): EntityType => {
-    const titleToTable: Record<string, EntityType> = {
-      'Work Experience': 'work_experience',
-      'Education': 'education',
-      'Skills': 'skill',
-      'Projects': 'project',
-      'Certifications': 'certification'
-    };
-    return titleToTable[title] || 'work_experience';
-  };
-
-  const handleEditSave = async (item: T, updates: Record<string, any>) => {
-    try {
-      // Get the table name based on the section title
-      const tableName = getTableNameFromTitle(title);
-      
-      // Refetch the latest version of the item to check for conflicts
-      const { data: latestItem, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .eq('logical_entity_id', item.logical_entity_id)
-        .eq('is_active', true)
-        .order('version', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error) {
-        console.error('Error fetching latest item version:', error);
-        toast({
-          title: "Error",
-          description: "Failed to verify item version. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check for version conflict
-      if (latestItem.version !== item.version) {
-        toast({
-          title: "Conflict Detected",
-          description: "This item was updated by another process. Please cancel, and the list will refresh with the latest data.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Versions match, proceed with the edit
-      // Type assertion here since we know the updates come from our form fields
-      // which are designed to match the entity structure
-      onEdit(item, updates as Partial<EntityData<T>>);
-      setEditingItemId(null);
-    } catch (error) {
-      console.error('Error in handleEditSave:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    }
+  const handleEditSave = (item: T, updates: Partial<EntityData<T>>) => {
+    onEdit(item, updates);
+    setEditingItemId(null);
   };
 
   const handleEditCancel = () => {
@@ -136,84 +74,22 @@ export const ProfileDataSection = <T extends VersionedEntity>({
               const isEditing = editingItemId === itemKey;
               
               return (
-                <div
-                  key={itemKey}
-                  className={`p-3 rounded-lg border transition-all ${
-                    isPendingAIExtraction(item)
-                      ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20'
-                      : theme === 'dark'
-                      ? 'border-career-text-dark/10 bg-career-background-dark/50'
-                      : 'border-career-text-light/10 bg-career-background-light/50'
-                  }`}
-                >
+                <div key={itemKey}>
                   {isEditing ? (
-                    <InlineEditForm
+                    <ProfileItemEditor
                       item={item}
-                      fields={editFields}
-                      onSave={(updates) => handleEditSave(item, updates)}
+                      editFields={editFields}
+                      title={title}
+                      onEdit={handleEditSave}
                       onCancel={handleEditCancel}
                     />
                   ) : (
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        {renderItem(item)}
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge 
-                            variant={item.is_active ? "default" : "secondary"}
-                            className="text-xs"
-                          >
-                            {item.is_active ? 'Active' : 'Pending'}
-                          </Badge>
-                          {item.source && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-xs cursor-help">
-                                  {item.source}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Source: {item.source}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                          {item.source_confidence && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-xs cursor-help">
-                                  {Math.round(item.source_confidence * 100)}% confidence
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>AI Confidence: {Math.round(item.source_confidence * 100)}%</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2 flex-shrink-0">
-                        {isPendingAIExtraction(item) && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onAccept(item)}
-                            className="text-green-600 border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20"
-                          >
-                            <Check className="w-3 h-3 mr-1" />
-                            Accept
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditClick(item)}
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                        >
-                          <Edit className="w-3 h-3 mr-1" />
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
+                    <ProfileItemDisplay
+                      item={item}
+                      onAccept={onAccept}
+                      onEdit={handleEditClick}
+                      renderItem={renderItem}
+                    />
                   )}
                 </div>
               );
