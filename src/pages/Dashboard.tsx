@@ -28,10 +28,12 @@ import {
   GraduationCap,
   Award,
   Code,
-  Trophy
+  Trophy,
+  Briefcase
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import AIInterviewPage from "@/components/interview/AIInterviewPage";
+import { ApplicationToolkit } from "@/components/ApplicationToolkit";
 import { ProfileDataSection } from "@/components/profile/ProfileDataSection";
 import { 
   WorkExperienceRenderer,
@@ -81,6 +83,7 @@ const Dashboard = () => {
   const menuItems = [
     { id: "profile", label: "Profile Data", icon: User },
     { id: "interview", label: "AI Interview", icon: Mic },
+    { id: "toolkit", label: "Application Toolkit", icon: Briefcase },
     { id: "resumes", label: "My Resumes", icon: FileText },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     { id: "team", label: "Team", icon: Users },
@@ -173,6 +176,9 @@ const Dashboard = () => {
 
       case "interview":
         return <AIInterviewPage />;
+      
+      case "toolkit":
+        return <ApplicationToolkit />;
       
       case "resumes":
         return (
