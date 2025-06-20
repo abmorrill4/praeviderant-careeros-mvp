@@ -1,13 +1,13 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { FileText, Mail, Briefcase } from 'lucide-react';
+import { JobDescriptionInput } from './application-toolkit/JobDescriptionInput';
+import { ResumeGenerator } from './application-toolkit/ResumeGenerator';
+import { CoverLetterGenerator } from './application-toolkit/CoverLetterGenerator';
+import { GeneratedContentDisplay } from './application-toolkit/GeneratedContentDisplay';
 
 export const ApplicationToolkit = () => {
   const { theme } = useTheme();
@@ -113,81 +113,29 @@ export const ApplicationToolkit = () => {
         </p>
       </div>
 
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
-        <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-            <Briefcase className="w-5 h-5" />
-            Job Description
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Textarea
-            placeholder="Paste the job description here..."
-            value={jobDescription}
-            onChange={(e) => setJobDescription(e.target.value)}
-            className="min-h-[200px]"
-          />
-          
-          <div className="flex gap-4">
-            <Button
-              onClick={handleGenerateResume}
-              disabled={isGeneratingResume || !jobDescription.trim()}
-              className="bg-career-accent hover:bg-career-accent-dark text-white flex items-center gap-2"
-            >
-              <FileText className="w-4 h-4" />
-              {isGeneratingResume ? 'Generating Resume...' : 'Generate Tailored Resume'}
-            </Button>
-            
-            <Button
-              onClick={handleGenerateCoverLetter}
-              disabled={!coverLetterEnabled || isGeneratingCoverLetter || !jobDescription.trim()}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Mail className="w-4 h-4" />
-              {isGeneratingCoverLetter ? 'Generating Cover Letter...' : 'Generate Tailored Cover Letter'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <JobDescriptionInput
+        jobDescription={jobDescription}
+        onChange={setJobDescription}
+      />
+      
+      <div className="flex gap-4">
+        <ResumeGenerator
+          onGenerate={handleGenerateResume}
+          isGenerating={isGeneratingResume}
+          disabled={!jobDescription.trim()}
+        />
+        
+        <CoverLetterGenerator
+          onGenerate={handleGenerateCoverLetter}
+          isGenerating={isGeneratingCoverLetter}
+          disabled={!coverLetterEnabled || !jobDescription.trim()}
+        />
+      </div>
 
-      {generatedResume && (
-        <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
-          <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-              <FileText className="w-5 h-5" />
-              Generated Resume
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`p-4 rounded-lg border ${theme === 'dark' ? 'bg-career-background-dark/50 border-career-text-dark/10' : 'bg-career-background-light/50 border-career-text-light/10'}`}>
-              <pre className={`text-sm whitespace-pre-wrap ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                {JSON.stringify(generatedResume, null, 2)}
-              </pre>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {generatedCoverLetter && (
-        <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
-          <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-              <Mail className="w-5 h-5" />
-              Generated Cover Letter
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`p-4 rounded-lg border ${theme === 'dark' ? 'bg-career-background-dark/50 border-career-text-dark/10' : 'bg-career-background-light/50 border-career-text-light/10'}`}>
-              <div className={`prose max-w-none ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                <pre className="whitespace-pre-wrap font-sans">
-                  {generatedCoverLetter}
-                </pre>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <GeneratedContentDisplay
+        generatedResume={generatedResume}
+        generatedCoverLetter={generatedCoverLetter}
+      />
     </div>
   );
 };
