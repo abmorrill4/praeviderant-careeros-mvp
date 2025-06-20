@@ -24,7 +24,6 @@ const VoiceInterview = () => {
     isLoading,
     interviewContext,
     isResumedSession,
-    isDemoMode,
     createSession,
     checkForActiveInterview,
     addTranscriptEntry,
@@ -96,13 +95,6 @@ const VoiceInterview = () => {
     
     // Add user message to transcript
     await addTranscriptEntry('user', message);
-    
-    // Simulate AI response (in demo mode)
-    if (isDemoMode) {
-      setTimeout(async () => {
-        await addTranscriptEntry('assistant', "Thanks for sharing! Could you tell me more about your specific achievements in that role?");
-      }, 1000);
-    }
   };
 
   const handleStartRecording = () => {
@@ -142,7 +134,6 @@ const VoiceInterview = () => {
 
   const getStatusMessage = () => {
     if (isConnecting) return "Connecting to interview session...";
-    if (isDemoMode) return "Running in demo mode - full functionality requires backend setup";
     if (isResumedSession) return "Interview session resumed";
     if (mode === 'voice') return "Voice mode active";
     return "Text mode active";
@@ -150,7 +141,6 @@ const VoiceInterview = () => {
 
   const getStatusType = (): 'connecting' | 'listening' | 'thinking' | 'switching' | 'error' | 'success' | 'info' => {
     if (isConnecting) return 'connecting';
-    if (isDemoMode) return 'info';
     if (isResumedSession) return 'success';
     return 'info';
   };
