@@ -19,10 +19,11 @@ export async function getLatestEntities<T extends VersionedEntity>(
 
   // Get only the latest version of each entity
   const latestEntities = new Map<string, T>();
-  data?.forEach((entity: T) => {
-    const existing = latestEntities.get(entity.logical_entity_id);
-    if (!existing || entity.version > existing.version) {
-      latestEntities.set(entity.logical_entity_id, entity);
+  data?.forEach((entity: any) => {
+    const typedEntity = entity as T;
+    const existing = latestEntities.get(typedEntity.logical_entity_id);
+    if (!existing || typedEntity.version > existing.version) {
+      latestEntities.set(typedEntity.logical_entity_id, typedEntity);
     }
   });
 
@@ -46,7 +47,7 @@ export async function createEntity<T extends VersionedEntity>(
 
   const { data, error } = await supabase
     .from(tableName)
-    .insert([newEntity])
+    .insert([newEntity as any])
     .select()
     .single();
 
@@ -79,18 +80,17 @@ export async function updateEntity<T extends VersionedEntity>(
     ...currentEntity,
     ...updates,
     logical_entity_id: logicalEntityId,
-    version: currentEntity.version + 1,
+    version: (currentEntity as any).version + 1,
     source: source || 'manual',
     source_confidence: sourceConfidence || 1.0,
   };
 
   // Remove the primary key fields that shouldn't be in the insert
-  delete newVersion.created_at;
-  delete newVersion.updated_at;
+  const { created_at, updated_at, ...insertData } = newVersion as any;
 
   const { data, error } = await supabase
     .from(tableName)
-    .insert([newVersion])
+    .insert([insertData])
     .select()
     .single();
 
@@ -120,19 +120,18 @@ export async function deleteEntity(
   const newVersion = {
     ...currentEntity,
     logical_entity_id: logicalEntityId,
-    version: currentEntity.version + 1,
+    version: (currentEntity as any).version + 1,
     is_active: false,
     source: source || 'manual',
     source_confidence: 1.0,
   };
 
   // Remove the primary key fields that shouldn't be in the insert
-  delete newVersion.created_at;
-  delete newVersion.updated_at;
+  const { created_at, updated_at, ...insertData } = newVersion as any;
 
   const { error } = await supabase
     .from(tableName)
-    .insert([newVersion]);
+    .insert([insertData]);
 
   if (error) throw error;
 }
@@ -149,7 +148,7 @@ export async function getEntityHistory<T extends VersionedEntity>(
     .order('version', { ascending: false });
 
   if (error) throw error;
-  return data as T[];
+  return (data as any[]).map(item => item as T);
 }
 
 // Function to get a specific version of an entity
