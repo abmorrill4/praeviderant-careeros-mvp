@@ -288,9 +288,13 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
           },
           {
             role: 'user',
-            content: `Please extract all text content from this resume PDF. File ID: ${fileId}`
+            content: [
+              { type: 'text', text: 'Please extract all text content from this resume PDF:' },
+              { type: 'file', file_id: fileId }
+            ]
           }
         ],
+        files: [fileId],
         max_tokens: 4000,
         temperature: 0
       }),
