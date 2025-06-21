@@ -392,42 +392,6 @@ export type Database = {
         }
         Relationships: []
       }
-      invitations: {
-        Row: {
-          code: string
-          created_at: string
-          expires_at: string
-          id: string
-          invited_by: string | null
-          invited_email: string | null
-          status: string
-          used_at: string | null
-          used_by: string | null
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          invited_by?: string | null
-          invited_email?: string | null
-          status?: string
-          used_at?: string | null
-          used_by?: string | null
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          invited_by?: string | null
-          invited_email?: string | null
-          status?: string
-          used_at?: string | null
-          used_by?: string | null
-        }
-        Relationships: []
-      }
       jobs: {
         Row: {
           company: string
@@ -559,7 +523,6 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
-          invitation_code: string | null
           name: string | null
           onboarding_completed: boolean | null
           onboarding_data: Json | null
@@ -570,7 +533,6 @@ export type Database = {
           created_at?: string
           email?: string | null
           id: string
-          invitation_code?: string | null
           name?: string | null
           onboarding_completed?: boolean | null
           onboarding_data?: Json | null
@@ -581,21 +543,12 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
-          invitation_code?: string | null
           name?: string | null
           onboarding_completed?: boolean | null
           onboarding_data?: Json | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_invitation_code_fkey"
-            columns: ["invitation_code"]
-            isOneToOne: false
-            referencedRelation: "invitations"
-            referencedColumns: ["code"]
-          },
-        ]
+        Relationships: []
       }
       project: {
         Row: {
@@ -896,10 +849,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_invitation_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
       get_interview_context: {
         Args: { p_user_id: string }
         Returns: {
@@ -915,10 +864,6 @@ export type Database = {
           table_name: string
           rows_deleted: number
         }[]
-      }
-      mark_expired_invitations: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
       test_user_deletion_dry_run: {
         Args: { target_user_id: string }

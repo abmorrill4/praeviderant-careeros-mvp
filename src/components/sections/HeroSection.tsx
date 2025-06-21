@@ -77,7 +77,7 @@ const HeroSection = ({ onRegisterInterest, onAuthSuccess }: HeroSectionProps) =>
                       onClick={() => handleFormToggle(true)}
                       className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-accent' : 'text-career-text-muted-light hover:text-career-accent'} text-sm transition-all duration-500 underline relative overflow-hidden group`}
                     >
-                      <span className="relative z-10">Already signed up? Log in here.</span>
+                      <span className="relative z-10">Ready to get started? Sign up here.</span>
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-career-accent to-transparent opacity-0 group-hover:opacity-10 translate-x-[-100%] group-hover:translate-x-[100%] transition-all duration-800 ease-out"></div>
                     </button>
                   </div>

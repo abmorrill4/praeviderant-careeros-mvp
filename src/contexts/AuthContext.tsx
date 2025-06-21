@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, name: string, invitationCode?: string) => Promise<{ user?: User; error: any }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ user?: User; error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -91,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signUp = async (email: string, password: string, name: string, invitationCode?: string) => {
+  const signUp = async (email: string, password: string, name: string) => {
     try {
       // Clean up any existing auth state
       await supabase.auth.signOut();
@@ -110,22 +111,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (error) throw error;
-      
-      // If we have an invitation code, mark it as used
-      if (invitationCode && data.user) {
-        const { error: inviteError } = await supabase
-          .from('invitations')
-          .update({
-            status: 'used',
-            used_by: data.user.id,
-            used_at: new Date().toISOString()
-          })
-          .eq('code', invitationCode.toUpperCase());
-        
-        if (inviteError) {
-          console.error('Error marking invitation as used:', inviteError);
-        }
-      }
       
       return { user: data.user, error: null };
     } catch (error: any) {

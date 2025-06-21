@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import InvitationInput from "@/components/InvitationInput";
 
 interface AuthFormProps {
   onSuccess?: () => void;
@@ -20,7 +19,6 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
     password: "", 
     confirmPassword: "" 
   });
-  const [validInvitationCode, setValidInvitationCode] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const { theme } = useTheme();
@@ -32,16 +30,6 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
 
     try {
       if (isSignUp) {
-        // Validate invitation code for sign up
-        if (!validInvitationCode) {
-          toast({
-            title: "Invitation code required",
-            description: "Please enter and verify a valid invitation code to create an account.",
-            variant: "destructive",
-          });
-          return;
-        }
-
         // Validate passwords match
         if (formData.password !== formData.confirmPassword) {
           toast({
@@ -64,8 +52,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
         const { user, error } = await signUp(
           formData.email, 
           formData.password, 
-          formData.name,
-          validInvitationCode
+          formData.name
         );
         
         if (error) {
@@ -146,7 +133,6 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
-    setValidInvitationCode(null);
     setFormData({ name: "", email: "", password: "", confirmPassword: "" });
   };
 
@@ -157,7 +143,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
           {isSignUp ? "Create Account" : "Welcome Back"}
         </h2>
         <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-          {isSignUp ? "Join Praeviderant with an invitation code" : "Sign in to your Praeviderant account"}
+          {isSignUp ? "Join Praeviderant today" : "Sign in to your Praeviderant account"}
         </p>
       </div>
 
@@ -184,13 +170,6 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
-        {isSignUp && (
-          <InvitationInput
-            onValidCode={setValidInvitationCode}
-            className="mb-3"
-          />
-        )}
-
         {isSignUp && (
           <div>
             <Label htmlFor="name" className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} text-xs font-medium mb-1 block`}>
@@ -259,7 +238,7 @@ const AuthForm = ({ onSuccess }: AuthFormProps) => {
 
         <Button
           type="submit"
-          disabled={isSubmitting || (isSignUp && !validInvitationCode)}
+          disabled={isSubmitting}
           className={`w-full h-10 bg-career-accent hover:bg-career-accent-dark text-white font-semibold neumorphic-button ${theme} border-0 text-sm mt-4`}
         >
           {isSubmitting 
