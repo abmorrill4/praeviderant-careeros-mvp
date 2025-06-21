@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import DataManagement from "./pages/DataManagement";
 import ResumeUpload from "./pages/ResumeUpload";
+import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -56,6 +57,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ResumeUpload />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/account"
+        element={
+          <ProtectedRoute>
+            <Account />
           </ProtectedRoute>
         }
       />

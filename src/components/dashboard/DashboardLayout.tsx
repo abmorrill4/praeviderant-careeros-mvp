@@ -22,8 +22,10 @@ import {
   FileText,
   Users,
   BarChart3,
-  Briefcase
+  Briefcase,
+  Settings
 } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
 
 interface DashboardLayoutProps {
@@ -39,6 +41,7 @@ const menuItems = [
   { id: "resumes", label: "My Resumes", icon: FileText },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "team", label: "Team", icon: Users },
+  { id: "account", label: "Account", icon: Settings, path: "/account" },
 ];
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
@@ -52,6 +55,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <SidebarProvider>
@@ -78,8 +84,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    onClick={() => onTabChange(item.id)}
-                    isActive={activeTab === item.id}
+                    onClick={() => {
+                      if (item.path) {
+                        navigate(item.path);
+                      } else {
+                        onTabChange(item.id);
+                      }
+                    }}
+                    isActive={item.path ? location.pathname === item.path : activeTab === item.id}
                     className="w-full justify-start"
                   >
                     <item.icon className="w-4 h-4" />
