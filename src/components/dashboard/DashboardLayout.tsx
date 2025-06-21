@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,9 @@ import {
   FileText,
   Users,
   BarChart3,
-  Briefcase
+  Briefcase,
+  Database,
+  Upload
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -39,6 +42,8 @@ const menuItems = [
   { id: "resumes", label: "My Resumes", icon: FileText },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "team", label: "Team", icon: Users },
+  { id: "data-management", label: "Data Management", icon: Database, path: "/data-management" },
+  { id: "resume-upload", label: "Resume Upload", icon: Upload, path: "/resume-upload" },
 ];
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
@@ -48,6 +53,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   const { user, signOut } = useAuth();
   const { theme } = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -78,8 +85,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    onClick={() => onTabChange(item.id)}
-                    isActive={activeTab === item.id}
+                    onClick={() => {
+                      if (item.path) {
+                        navigate(item.path);
+                      } else {
+                        onTabChange(item.id);
+                      }
+                    }}
+                    isActive={item.path ? location.pathname === item.path : activeTab === item.id}
                     className="w-full justify-start"
                   >
                     <item.icon className="w-4 h-4" />
