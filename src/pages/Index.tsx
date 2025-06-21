@@ -1,10 +1,9 @@
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "@/components/ThemeToggle";
-import InterestModal from "@/components/InterestModal";
 import HeroSection from "@/components/sections/HeroSection";
 import BeliefsSection from "@/components/sections/BeliefsSection";
 import HowItWorksSection from "@/components/sections/HowItWorksSection";
@@ -14,7 +13,6 @@ import FinalCTASection from "@/components/sections/FinalCTASection";
 import FooterSection from "@/components/sections/FooterSection";
 
 const Index = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const { user, loading } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -35,10 +33,6 @@ const Index = () => {
     );
   }
 
-  const handleRegisterInterest = () => {
-    setIsModalOpen(true);
-  };
-
   const handleAuthSuccess = () => {
     // User will be automatically redirected by the useEffect above
   };
@@ -49,7 +43,6 @@ const Index = () => {
       
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <HeroSection 
-          onRegisterInterest={handleRegisterInterest}
           onAuthSuccess={handleAuthSuccess}
         />
         
@@ -61,16 +54,10 @@ const Index = () => {
         
         <UseCasesSection />
         
-        <FinalCTASection onRegisterInterest={handleRegisterInterest} />
+        <FinalCTASection />
         
         <FooterSection />
       </div>
-
-      {/* Interest Registration Modal */}
-      <InterestModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
     </div>
   );
 };
