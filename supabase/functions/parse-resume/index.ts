@@ -242,19 +242,41 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
     throw new Error('OpenAI API key not configured');
   }
 
+  let fileId: string | null = null;
+
   try {
-    // Check if file is too large (limit to ~20MB for base64 encoding)
+    // Check if file is too large (OpenAI limit is 512MB, but we'll use 20MB as practical limit)
     if (fileData.size > 20 * 1024 * 1024) {
       throw new Error('PDF file is too large. Please upload a smaller file (max 20MB).');
     }
 
-    // Convert file to base64
-    const arrayBuffer = await fileData.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    console.log('Uploading PDF to OpenAI Files API');
 
-    console.log('Converting PDF to base64 and sending to OpenAI for text extraction');
+    // Step 1: Upload file to OpenAI Files API
+    const formData = new FormData();
+    formData.append('file', fileData, 'resume.pdf');
+    formData.append('purpose', 'assistants');
 
-    // Use GPT-4o-mini with vision capabilities to extract text from PDF
+    const uploadResponse = await fetch('https://api.openai.com/v1/files', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIKey}`,
+      },
+      body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json();
+      console.error('OpenAI file upload error:', errorData);
+      throw new Error(`OpenAI file upload error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const uploadData = await uploadResponse.json();
+    fileId = uploadData.id;
+
+    console.log('File uploaded to OpenAI with ID:', fileId);
+
+    // Step 2: Use the file with chat completions to extract text
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -262,11 +284,11 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: 'You are a resume text extraction specialist. Extract ALL text content from the provided PDF document. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content without any commentary or analysis. If you cannot read the document clearly, say "Unable to extract text from this document format."'
+            content: 'You are a resume text extraction specialist. Extract ALL text content from the provided PDF document. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content without any commentary or analysis.'
           },
           {
             role: 'user',
@@ -276,11 +298,8 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
                 text: 'Please extract all text content from this resume PDF. Return only the text content, maintaining the structure but without any analysis or commentary:' 
               },
               { 
-                type: 'image_url', 
-                image_url: { 
-                  url: `data:application/pdf;base64,${base64}`,
-                  detail: 'high'
-                } 
+                type: 'file_id', 
+                file_id: fileId 
               }
             ]
           }
@@ -308,11 +327,28 @@ async function extractPDFTextWithOpenAI(fileData: Blob): Promise<string> {
       throw new Error('Unable to extract readable text from PDF. The document may be scanned, corrupted, or in an unsupported format. Please try converting to a Word document or text file.');
     }
     
-    console.log('Successfully extracted text from PDF using OpenAI vision');
+    console.log('Successfully extracted text from PDF using OpenAI Files API');
     return extractedText;
+
   } catch (error) {
     console.error('PDF extraction error:', error);
     throw new Error(`Failed to extract text from PDF: ${error.message}`);
+  } finally {
+    // Clean up: Delete the uploaded file from OpenAI
+    if (fileId) {
+      try {
+        await fetch(`https://api.openai.com/v1/files/${fileId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${openAIKey}`,
+          },
+        });
+        console.log('Cleaned up uploaded file from OpenAI:', fileId);
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup uploaded file from OpenAI:', cleanupError);
+        // Don't throw here as the main operation succeeded
+      }
+    }
   }
 }
 
