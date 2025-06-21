@@ -9,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, name: string, invitationCode?: string) => Promise<{ user?: User; error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -35,6 +36,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Handle Google OAuth profile creation/update
+        if (event === 'SIGNED_IN' && session?.user) {
+          setTimeout(() => {
+            handleUserProfile(session.user);
+          }, 0);
+        }
       }
     );
 
@@ -49,15 +57,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  const handleUserProfile = async (user: User) => {
+    try {
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (!existingProfile) {
+        // Profile will be created automatically by the trigger
+        console.log('Profile will be created by trigger for user:', user.email);
+      } else {
+        // Update existing profile with latest data from OAuth
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            name: user.user_metadata?.name || user.user_metadata?.full_name || existingProfile.name,
+            email: user.email || existingProfile.email,
+            avatar_url: user.user_metadata?.picture || user.user_metadata?.avatar_url || existingProfile.avatar_url,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+        } else {
+          console.log('Profile updated successfully for user:', user.email);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling user profile:', error);
+    }
+  };
+
   const signUp = async (email: string, password: string, name: string, invitationCode?: string) => {
     try {
       // Clean up any existing auth state
       await supabase.auth.signOut();
       
+      const redirectUrl = `${window.location.origin}/`;
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             name: name
           }
@@ -106,6 +152,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      // Clean up any existing auth state
+      await supabase.auth.signOut();
+      
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+        }
+      });
+      
+      return { error };
+    } catch (error: any) {
+      console.error('Google sign in error:', error);
+      return { error };
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -120,6 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
   };
 
