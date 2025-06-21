@@ -1,73 +1,138 @@
-# Welcome to your Lovable project
 
-## Project info
+# CareerOS - AI-Powered Career Intelligence Platform
 
-**URL**: https://lovable.dev/projects/250b0b36-c4ad-4418-b812-117787350e3d
+## Overview
 
-## How can I edit this code?
+CareerOS is a career intelligence platform that delivers structured, AI-powered voice interviews to capture deep user context and dynamically generate resumes in real-time. The goal is to demonstrate that comprehensive user context leads to superior career outputs compared to traditional form-based tools.
 
-There are several ways of editing your application.
+## Target Users
 
-**Use Lovable**
+- **Marcus** – Mid-career product manager looking for a new role
+- **Emily** – Career switcher entering tech
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/250b0b36-c4ad-4418-b812-117787350e3d) and start prompting.
+## MVP Features
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🎤 AI Interview Engine
+- Conducts structured interviews using OpenAI's real-time voice API
+- Captures comprehensive user data:
+  - Work history and experience
+  - Education background
+  - Skills and competencies
+  - Career goals and aspirations
+- Stores responses and extracted context in Supabase (PostgreSQL)
 
-**Use your preferred IDE**
+### 📄 Real-Time Resume Generation
+- Live resume generation during the interview process
+- Output format: Clean Markdown with professional styling
+- Automatically updates as users provide more context
+- Resume content stored securely in Supabase
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🎨 Visual Interview Interface
+- Clean, responsive frontend optimized for performance
+- Real-time voice transcription display
+- Retro audio waveform visualization
+- Context sidebar showing captured data in real-time
+- Minimal JavaScript footprint for optimal performance
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### ⚙️ API Key Configuration Panel
+- Secure admin UI for API key management
+- Supported integrations:
+  - OpenAI (required for voice + text generation)
+  - Perplexity (optional for enhanced research)
+  - GitHub (optional for version control)
+- Keys stored securely using Supabase Vault
 
-Follow these steps:
+## Tech Stack
+
+- **Frontend**: React + TypeScript + Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions, Vault)
+- **AI**: OpenAI real-time voice mode + text generation
+- **Voice Processing**: OpenAI real-time voice API
+- **Storage**: Supabase for all content and metadata
+- **UI Components**: shadcn/ui library
+
+## Project Setup
+
+### Prerequisites
+
+- Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Supabase account for backend services
+- OpenAI API key for AI functionality
+
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Navigate to project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Environment Setup
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Set up your Supabase project and obtain the URL and anon key
+2. Configure your OpenAI API key in the Supabase Vault
+3. Access the admin panel to configure additional API keys as needed
 
-**Use GitHub Codespaces**
+## Development
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Available Scripts
 
-## What technologies are used for this project?
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build locally
 
-This project is built with:
+### Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- `/src/components` - React components organized by feature
+- `/src/hooks` - Custom React hooks for state management
+- `/src/integrations` - Supabase client and type definitions
+- `/src/pages` - Top-level page components
+- `/supabase` - Database migrations and Edge Functions
 
-## How can I deploy this project?
+## Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/250b0b36-c4ad-4418-b812-117787350e3d) and click on Share -> Publish.
+### Using Lovable
+1. Open your [Lovable Project](https://lovable.dev/projects/250b0b36-c4ad-4418-b812-117787350e3d)
+2. Click Share → Publish for instant deployment
 
-## Can I connect a custom domain to my Lovable project?
+### Custom Domain
+Navigate to Project > Settings > Domains in Lovable to connect your custom domain.
 
-Yes, you can!
+## Contributing
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+This project prioritizes:
+- **Lightweight and intuitive** user experience
+- **Live, interactive** resume generation
+- **Minimal external dependencies**
+- **Simple user onboarding**
+- **Secure configuration storage**
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## MVP Goal
+
+> Prove that a deep-context, structured AI interview can produce more useful and accurate resumes than existing form-based tools.
+
+## Technologies Used
+
+- **Vite** - Build tool and development server
+- **TypeScript** - Type-safe JavaScript
+- **React** - Frontend framework
+- **shadcn-ui** - Component library
+- **Tailwind CSS** - Utility-first CSS framework
+- **Supabase** - Backend-as-a-Service
+- **OpenAI** - AI/ML capabilities
+
+## Support
+
+For questions or issues, please refer to the [Lovable documentation](https://docs.lovable.dev/) or join the [Lovable Discord community](https://discord.com/channels/1119885301872070706/1280461670979993613).
+
+---
+
+**Project URL**: https://lovable.dev/projects/250b0b36-c4ad-4418-b812-117787350e3d
