@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,7 +9,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import DataManagement from "./pages/DataManagement";
-import InvitationManagement from "./pages/InvitationManagement";
 import ResumeUpload from "./pages/ResumeUpload";
 import NotFound from "./pages/NotFound";
 import "./App.css";
@@ -50,14 +48,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DataManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/invitations"
-        element={
-          <ProtectedRoute>
-            <InvitationManagement />
           </ProtectedRoute>
         }
       />
