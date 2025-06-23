@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -179,12 +180,38 @@ serve(async (req) => {
     
     // Validate required parameters
     if (!requestBody.complexity || !requestBody.messages) {
-      throw new Error('Missing required parameters: complexity and messages');
+      console.error('Missing required parameters in request:', { 
+        hasComplexity: !!requestBody.complexity, 
+        hasMessages: !!requestBody.messages 
+      });
+      return new Response(
+        JSON.stringify({ error: "An unexpected error occurred. Please try again later." }),
+        {
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          },
+        }
+      );
     }
 
     // Validate complexity level
     if (!MODEL_CONFIG[requestBody.complexity]) {
-      throw new Error(`Invalid complexity level. Must be one of: ${Object.keys(MODEL_CONFIG).join(', ')}`);
+      console.error('Invalid complexity level provided:', { 
+        complexity: requestBody.complexity, 
+        validOptions: Object.keys(MODEL_CONFIG) 
+      });
+      return new Response(
+        JSON.stringify({ error: "An unexpected error occurred. Please try again later." }),
+        {
+          status: 400,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          },
+        }
+      );
     }
 
     const complexity = requestBody.complexity;
@@ -271,9 +298,20 @@ serve(async (req) => {
       console.error('OpenAI API error:', {
         status: response.status,
         statusText: response.statusText,
-        error: errorText
+        error: errorText,
+        model: config.model,
+        complexity: complexity
       });
-      throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
+      return new Response(
+        JSON.stringify({ error: "An unexpected error occurred. Please try again later." }),
+        {
+          status: 500,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          },
+        }
+      );
     }
 
     const result = await response.json();
@@ -283,7 +321,21 @@ serve(async (req) => {
     const responseContent = result.choices?.[0]?.message?.content;
     
     if (!responseContent) {
-      throw new Error('No response content received from OpenAI');
+      console.error('No response content received from OpenAI:', {
+        result: result,
+        model: config.model,
+        complexity: complexity
+      });
+      return new Response(
+        JSON.stringify({ error: "An unexpected error occurred. Please try again later." }),
+        {
+          status: 500,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          },
+        }
+      );
     }
 
     // Prepare response
@@ -327,14 +379,19 @@ serve(async (req) => {
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
+    
+    // Log detailed error information server-side for debugging
     console.error('Error in LLM proxy service:', {
       error: error.message,
-      processingTimeMs: processingTime
+      stack: error.stack,
+      processingTimeMs: processingTime,
+      timestamp: new Date().toISOString()
     });
 
+    // Return generic error message to client
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: "An unexpected error occurred. Please try again later.",
         metadata: {
           processing_time_ms: processingTime
         }
