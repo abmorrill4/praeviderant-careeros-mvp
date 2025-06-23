@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Handle Google OAuth profile creation/update
+        // Handle profile creation/update for OAuth and sign-ups
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(() => {
             handleUserProfile(session.user);
@@ -67,28 +67,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (!existingProfile) {
-        // Profile will be created automatically by the trigger
+        // Profile will be created automatically by the trigger with secure defaults
         console.log('Profile will be created by trigger for user:', user.email);
-      } else {
-        // Update existing profile with latest data from OAuth
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            name: user.user_metadata?.name || user.user_metadata?.full_name || existingProfile.name,
-            email: user.email || existingProfile.email,
-            avatar_url: user.user_metadata?.picture || user.user_metadata?.avatar_url || existingProfile.avatar_url,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id);
-
-        if (updateError) {
-          console.error('Error updating profile:', updateError);
-        } else {
-          console.log('Profile updated successfully for user:', user.email);
+        
+        // After trigger creates the profile, safely update with OAuth data if available
+        if (user.user_metadata) {
+          setTimeout(async () => {
+            await updateProfileWithOAuthData(user);
+          }, 100); // Small delay to ensure trigger completes
         }
+      } else {
+        // Update existing profile with latest OAuth data if available
+        await updateProfileWithOAuthData(user);
       }
     } catch (error) {
       console.error('Error handling user profile:', error);
+    }
+  };
+
+  const updateProfileWithOAuthData = async (user: User) => {
+    try {
+      // Only update if we have OAuth metadata and the fields are currently null/empty
+      if (user.user_metadata) {
+        const updates: any = {};
+        
+        // Safely extract name from various OAuth providers
+        const oauthName = user.user_metadata.name || 
+                         user.user_metadata.full_name || 
+                         user.user_metadata.display_name;
+        
+        // Safely extract avatar from various OAuth providers
+        const oauthAvatar = user.user_metadata.picture || 
+                           user.user_metadata.avatar_url ||
+                           user.user_metadata.image;
+
+        if (oauthName) {
+          updates.name = oauthName;
+        }
+        
+        if (oauthAvatar) {
+          updates.avatar_url = oauthAvatar;
+        }
+
+        // Only update if we have data to update
+        if (Object.keys(updates).length > 0) {
+          updates.updated_at = new Date().toISOString();
+          
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', user.id);
+
+          if (updateError) {
+            console.error('Error updating profile with OAuth data:', updateError);
+          } else {
+            console.log('Profile updated with OAuth data for user:', user.email);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error updating profile with OAuth data:', error);
     }
   };
 
@@ -111,6 +149,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (error) throw error;
+      
+      // After successful sign-up, update the profile with the provided name
+      if (data.user) {
+        setTimeout(async () => {
+          try {
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ 
+                name: name,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', data.user.id);
+            
+            if (updateError) {
+              console.error('Error updating profile with sign-up name:', updateError);
+            } else {
+              console.log('Profile updated with sign-up name for user:', data.user.email);
+            }
+          } catch (error) {
+            console.error('Error in sign-up profile update:', error);
+          }
+        }, 100); // Small delay to ensure trigger completes
+      }
       
       return { user: data.user, error: null };
     } catch (error: any) {
