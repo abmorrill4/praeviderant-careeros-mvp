@@ -865,6 +865,10 @@ export type Database = {
           rows_deleted: number
         }[]
       }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       test_user_deletion_dry_run: {
         Args: { target_user_id: string }
         Returns: {
