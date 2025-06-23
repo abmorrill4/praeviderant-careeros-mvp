@@ -8,6 +8,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting storage - maps user ID to request timestamps
+const rateLimitStore = new Map<string, number[]>();
+
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const MAX_REQUESTS = 5;
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const userRequests = rateLimitStore.get(userId) || [];
+  
+  // Remove timestamps older than the window
+  const validRequests = userRequests.filter(timestamp => now - timestamp < RATE_LIMIT_WINDOW_MS);
+  
+  // Check if user has exceeded the rate limit
+  if (validRequests.length >= MAX_REQUESTS) {
+    return false; // Rate limit exceeded
+  }
+  
+  // Add current request timestamp
+  validRequests.push(now);
+  rateLimitStore.set(userId, validRequests);
+  
+  return true; // Request allowed
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -47,6 +73,22 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check rate limit
+    if (!checkRateLimit(user.id)) {
+      console.log(`Rate limit exceeded for user: ${user.id}`);
+      return new Response(JSON.stringify({ 
+        error: 'Rate limit exceeded. Maximum 5 requests per minute allowed.',
+        retryAfter: 60
+      }), {
+        status: 429,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': '60'
+        },
       });
     }
 
