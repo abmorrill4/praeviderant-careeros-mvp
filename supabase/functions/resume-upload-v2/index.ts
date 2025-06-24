@@ -49,7 +49,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Processing resume upload request...');
+    console.log('=== Resume Upload V2 Starting ===');
+    console.log('Method:', req.method);
+    console.log('Headers:', Object.fromEntries(req.headers.entries()));
 
     // Get authorization header
     const authHeader = req.headers.get('Authorization');
@@ -61,18 +63,25 @@ serve(async (req) => {
       });
     }
 
+    console.log('Auth header present:', !!authHeader);
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    console.log('Supabase URL:', supabaseUrl);
+    console.log('Supabase Anon Key present:', !!supabaseAnonKey);
+
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
     // Get authenticated user
+    console.log('Getting authenticated user...');
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.error('Authentication error:', userError);
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      return new Response(JSON.stringify({ error: 'Unauthorized', details: userError?.message }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -81,15 +90,21 @@ serve(async (req) => {
     console.log('User authenticated:', user.id);
 
     // Parse form data
+    console.log('Parsing form data...');
     const formData = await req.formData();
     const file = formData.get('file') as File;
     const streamName = (formData.get('streamName') as string) || 'Default Resume';
     const tagsString = formData.get('tags') as string;
     
+    console.log('File present:', !!file);
+    console.log('Stream name:', streamName);
+    console.log('Tags string:', tagsString);
+
     let tags: string[] = [];
     if (tagsString) {
       try {
         tags = JSON.parse(tagsString);
+        console.log('Parsed tags:', tags);
       } catch (e) {
         console.error('Failed to parse tags:', e);
         tags = [];
@@ -97,14 +112,18 @@ serve(async (req) => {
     }
 
     if (!file) {
-      console.error('No file provided');
+      console.error('No file provided in form data');
       return new Response(JSON.stringify({ error: 'No file provided' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('File received:', file.name, 'Size:', file.size, 'Type:', file.type);
+    console.log('File details:', {
+      name: file.name,
+      size: file.size,
+      type: file.type
+    });
 
     // Validate file type
     const allowedTypes = [
@@ -141,6 +160,7 @@ serve(async (req) => {
     console.log('File hash generated:', fileHash);
 
     // Check for existing resume with same hash
+    console.log('Checking for duplicates...');
     const { data: existingVersion, error: duplicateError } = await supabase
       .from('resume_versions')
       .select(`
@@ -205,11 +225,13 @@ serve(async (req) => {
       }
 
       stream = newStream;
+      console.log('New stream created:', stream.id);
+    } else {
+      console.log('Using existing stream:', stream.id);
     }
 
-    console.log('Using stream:', stream.id);
-
     // Get next version number
+    console.log('Getting next version number...');
     const { data: latestVersion, error: versionError } = await supabase
       .from('resume_versions')
       .select('version_number')
@@ -306,7 +328,10 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Unexpected error in resume upload:', error);
+    console.error('=== Unexpected error in resume upload ===');
+    console.error('Error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
       details: error.message

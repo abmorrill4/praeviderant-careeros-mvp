@@ -11,6 +11,7 @@ import { FileText, Upload, Check, AlertCircle, Loader2, Plus, X, Eye } from 'luc
 import { useAuth } from '@/contexts/AuthContext';
 import { useResumeUpload, useResumeStreams } from '@/hooks/useResumeStreams';
 import { ParsedResumeEntities } from '@/components/ParsedResumeEntities';
+import { useToast } from '@/hooks/use-toast';
 
 interface UploadState {
   file: File | null;
@@ -24,6 +25,7 @@ export const ResumeUploadV2: React.FC = () => {
   const { user } = useAuth();
   const { data: streams, isLoading: streamsLoading } = useResumeStreams();
   const uploadMutation = useResumeUpload();
+  const { toast } = useToast();
   
   const [uploadState, setUploadState] = useState<UploadState>({
     file: null,
@@ -36,27 +38,52 @@ export const ResumeUploadV2: React.FC = () => {
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to upload resumes",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    if (acceptedFiles.length === 0) return;
+    if (acceptedFiles.length === 0) {
+      toast({
+        title: "No File Selected",
+        description: "Please select a valid file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const file = acceptedFiles[0];
+    console.log('File selected:', file.name, file.type, file.size);
     
     // Validate file type
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
     if (!allowedTypes.includes(file.type)) {
       console.error('Invalid file type:', file.type);
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a PDF, Word document, or text file",
+        variant: "destructive",
+      });
       return;
     }
 
     // Validate file size (50MB limit)
     if (file.size > 50 * 1024 * 1024) {
       console.error('File too large:', file.size);
+      toast({
+        title: "File Too Large",
+        description: "Please upload a file smaller than 50MB",
+        variant: "destructive",
+      });
       return;
     }
 
     setUploadState(prev => ({ ...prev, file }));
-  }, [user]);
+  }, [user, toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -88,9 +115,20 @@ export const ResumeUploadV2: React.FC = () => {
   };
 
   const handleUpload = async () => {
-    if (!uploadState.file) return;
+    if (!uploadState.file) {
+      toast({
+        title: "No File Selected",
+        description: "Please select a file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
 
     console.log('Starting upload process...');
+    console.log('File:', uploadState.file.name);
+    console.log('Stream:', uploadState.streamName);
+    console.log('Tags:', uploadState.tags);
+    
     setUploadState(prev => ({ ...prev, uploading: true }));
 
     try {
@@ -102,18 +140,28 @@ export const ResumeUploadV2: React.FC = () => {
 
       console.log('Upload result:', result);
 
-      // Reset form on success
-      setUploadState({
-        file: null,
-        streamName: 'Default Resume',
-        tags: [],
-        tagInput: '',
-        uploading: false
-      });
+      if (result.success) {
+        // Reset form on success
+        setUploadState({
+          file: null,
+          streamName: 'Default Resume',
+          tags: [],
+          tagInput: '',
+          uploading: false
+        });
+      } else {
+        setUploadState(prev => ({ ...prev, uploading: false }));
+      }
 
     } catch (error) {
       console.error('Upload error:', error);
       setUploadState(prev => ({ ...prev, uploading: false }));
+      
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : 'Failed to upload resume',
+        variant: "destructive",
+      });
     }
   };
 
@@ -274,8 +322,7 @@ export const ResumeUploadV2: React.FC = () => {
                     <>
                       <Upload className="w-4 h-4 mr-2" />
                       Upload Resume
-                    </>
-                  )}
+                    </Button>
                 </Button>
                 <Button
                   variant="outline"
