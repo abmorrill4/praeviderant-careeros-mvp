@@ -508,6 +508,50 @@ export type Database = {
         }
         Relationships: []
       }
+      parsed_resume_entities: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          field_name: string
+          id: string
+          model_version: string | null
+          raw_value: string | null
+          resume_version_id: string
+          source_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          field_name: string
+          id?: string
+          model_version?: string | null
+          raw_value?: string | null
+          resume_version_id: string
+          source_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          field_name?: string
+          id?: string
+          model_version?: string | null
+          raw_value?: string | null
+          resume_version_id?: string
+          source_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parsed_resume_entities_resume_version_id_fkey"
+            columns: ["resume_version_id"]
+            isOneToOne: false
+            referencedRelation: "resume_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_deltas: {
         Row: {
           created_at: string | null

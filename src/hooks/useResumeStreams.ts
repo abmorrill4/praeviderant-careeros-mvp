@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,6 +27,18 @@ export interface ResumeVersion {
   upload_metadata: any;
   resume_metadata: any;
   processing_status: 'pending' | 'processing' | 'completed' | 'failed';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ParsedResumeEntity {
+  id: string;
+  resume_version_id: string;
+  field_name: string;
+  raw_value: string;
+  confidence_score: number;
+  model_version: string;
+  source_type: string;
   created_at: string;
   updated_at: string;
 }
@@ -87,6 +98,32 @@ export function useResumeVersions(streamId?: string) {
   });
 }
 
+// Hook to get parsed entities for a resume version
+export function useParsedResumeEntities(versionId?: string) {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['parsed-resume-entities', versionId],
+    queryFn: async (): Promise<ParsedResumeEntity[]> => {
+      if (!versionId || !user) return [];
+      
+      const { data, error } = await supabase
+        .from('parsed_resume_entities')
+        .select('*')
+        .eq('resume_version_id', versionId)
+        .order('field_name');
+
+      if (error) {
+        console.error('Error fetching parsed entities:', error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!versionId && !!user,
+  });
+}
+
 // Hook to upload a new resume
 export function useResumeUpload() {
   const queryClient = useQueryClient();
@@ -123,7 +160,7 @@ export function useResumeUpload() {
 
       return data as UploadResponse;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data.isDuplicate) {
         toast({
           title: "Duplicate Resume Detected",
@@ -135,6 +172,32 @@ export function useResumeUpload() {
           title: "Resume Uploaded Successfully",
           description: `Added as version ${data.version?.version_number} to ${data.stream?.name}`,
         });
+
+        // Trigger structured parsing if we have a new version
+        if (data.version?.id) {
+          try {
+            console.log('Triggering structured parsing for version:', data.version.id);
+            const { error: parseError } = await supabase.functions.invoke('parse-resume-structured', {
+              body: { versionId: data.version.id }
+            });
+
+            if (parseError) {
+              console.error('Error triggering resume parsing:', parseError);
+              toast({
+                title: "Parsing Scheduled",
+                description: "Resume uploaded successfully. Parsing will continue in the background.",
+                variant: "default",
+              });
+            } else {
+              toast({
+                title: "Resume Processed",
+                description: "Resume uploaded and structured data extracted successfully!",
+              });
+            }
+          } catch (parseError) {
+            console.error('Error triggering parsing:', parseError);
+          }
+        }
       }
       
       // Invalidate queries to refresh the data
@@ -145,6 +208,44 @@ export function useResumeUpload() {
       toast({
         title: "Upload Failed",
         description: error instanceof Error ? error.message : 'Failed to upload resume',
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+// Hook to trigger manual parsing of a resume version
+export function useParseResumeVersion() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (versionId: string) => {
+      const { data, error } = await supabase.functions.invoke('parse-resume-structured', {
+        body: { versionId }
+      });
+
+      if (error) {
+        console.error('Error parsing resume version:', error);
+        throw error;
+      }
+
+      return data;
+    },
+    onSuccess: (data, versionId) => {
+      toast({
+        title: "Resume Parsed Successfully",
+        description: `Extracted ${data.entities_count || 0} data points from resume`,
+      });
+      
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ['parsed-resume-entities', versionId] });
+      queryClient.invalidateQueries({ queryKey: ['resume-streams'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Parsing Failed",
+        description: error instanceof Error ? error.message : 'Failed to parse resume',
         variant: "destructive",
       });
     },

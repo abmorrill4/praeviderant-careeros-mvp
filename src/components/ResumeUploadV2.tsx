@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
@@ -7,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Upload, Check, AlertCircle, Loader2, Plus, X } from 'lucide-react';
+import { FileText, Upload, Check, AlertCircle, Loader2, Plus, X, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResumeUpload, useResumeStreams } from '@/hooks/useResumeStreams';
+import { ParsedResumeEntities } from '@/components/ParsedResumeEntities';
 
 interface UploadState {
   file: File | null;
@@ -31,6 +31,8 @@ export const ResumeUploadV2: React.FC = () => {
     tagInput: '',
     uploading: false
   });
+
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (!user) return;
@@ -135,7 +137,7 @@ export const ResumeUploadV2: React.FC = () => {
             Upload Resume (Version 2.0)
           </CardTitle>
           <CardDescription>
-            Upload your resume with advanced versioning and duplicate detection.
+            Upload your resume with advanced versioning, duplicate detection, and AI-powered data extraction.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -287,26 +289,68 @@ export const ResumeUploadV2: React.FC = () => {
           <CardHeader>
             <CardTitle>Your Resume Streams</CardTitle>
             <CardDescription>
-              Manage your organized resume collections
+              Manage your organized resume collections and view extracted data
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {streams.map((stream) => (
-                <div key={stream.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">{stream.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {stream.resume_versions?.length || 0} version(s)
-                    </p>
+                <div key={stream.id}>
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <h4 className="font-medium">{stream.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {stream.resume_versions?.length || 0} version(s)
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {stream.tags.map((tag, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    {stream.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
+                  
+                  {/* Show versions with parsed data */}
+                  {stream.resume_versions && stream.resume_versions.length > 0 && (
+                    <div className="ml-4 mt-2 space-y-2">
+                      {stream.resume_versions.map((version) => (
+                        <div key={version.id} className="border-l-2 border-muted pl-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium">
+                                Version {version.version_number} - {version.file_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Status: {version.processing_status}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => 
+                                setSelectedVersionId(
+                                  selectedVersionId === version.id ? null : version.id
+                                )
+                              }
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          
+                          {selectedVersionId === version.id && (
+                            <div className="mt-4">
+                              <ParsedResumeEntities 
+                                versionId={version.id}
+                                processingStatus={version.processing_status}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
