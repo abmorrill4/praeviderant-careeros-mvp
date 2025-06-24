@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from '@/hooks/use-toast';
 import { 
   CheckCircle, 
   XCircle, 
@@ -23,9 +24,12 @@ import {
   Eye,
   RefreshCw,
   Filter,
-  Search
+  Search,
+  Zap,
+  Bell
 } from 'lucide-react';
 import { useResumeTimeline, useResumeTimelineList } from '@/hooks/useResumeTimeline';
+import { supabase } from '@/integrations/supabase/client';
 import type { TimelineStage, TimelineFilters } from '@/types/resume-timeline';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -66,9 +70,72 @@ export const ResumeTimeline: React.FC<ResumeTimelineProps> = ({
   const [selectedResumeId, setSelectedResumeId] = useState(resumeVersionId);
   const [filters, setFilters] = useState<TimelineFilters>({});
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
+  const [realTimeEnabled, setRealTimeEnabled] = useState(true);
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
 
   const { data: timelineData, isLoading, error, refetch } = useResumeTimeline(selectedResumeId, filters);
   const { data: resumeList } = useResumeTimelineList(filters);
+
+  // Real-time updates using Supabase realtime
+  useEffect(() => {
+    if (!realTimeEnabled || !selectedResumeId) return;
+
+    const channel = supabase
+      .channel('timeline-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'job_logs',
+        },
+        (payload) => {
+          console.log('Real-time job log update:', payload);
+          setLastUpdateTime(new Date());
+          refetch();
+          
+          // Show toast notification for important updates
+          if (payload.eventType === 'INSERT' && payload.new?.level === 'error') {
+            toast({
+              title: 'Job Error Detected',
+              description: `Error in ${payload.new.stage}: ${payload.new.message}`,
+              variant: 'destructive',
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'normalization_jobs',
+        },
+        () => {
+          console.log('Normalization job update');
+          setLastUpdateTime(new Date());
+          refetch();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'enrichment_jobs',
+        },
+        () => {
+          console.log('Enrichment job update');
+          setLastUpdateTime(new Date());
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [realTimeEnabled, selectedResumeId, refetch]);
 
   const handleFilterChange = (key: keyof TimelineFilters, value: string) => {
     setFilters(prev => ({
@@ -103,6 +170,18 @@ export const ResumeTimeline: React.FC<ResumeTimelineProps> = ({
     const hours = Math.floor(minutes / 60);
     return `${hours}h ${minutes % 60}m`;
   };
+
+  // Auto-refresh every 30 seconds when real-time is disabled
+  useEffect(() => {
+    if (realTimeEnabled) return;
+    
+    const interval = setInterval(() => {
+      refetch();
+      setLastUpdateTime(new Date());
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [realTimeEnabled, refetch]);
 
   if (isLoading) {
     return (
@@ -215,10 +294,24 @@ export const ResumeTimeline: React.FC<ResumeTimelineProps> = ({
                   </Badge>
                 </CardDescription>
               </div>
-              <Button variant="outline" size="sm" onClick={() => refetch()}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRealTimeEnabled(!realTimeEnabled)}
+                  className={realTimeEnabled ? 'text-green-600' : 'text-gray-600'}
+                >
+                  {realTimeEnabled ? <Zap className="w-4 h-4 mr-2" /> : <Bell className="w-4 h-4 mr-2" />}
+                  {realTimeEnabled ? 'Live' : 'Manual'}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Last updated: {formatDistanceToNow(lastUpdateTime, { addSuffix: true })}
             </div>
           </CardHeader>
           <CardContent>

@@ -26,7 +26,8 @@ import {
   Briefcase,
   Database,
   Upload,
-  Settings
+  Settings,
+  Activity
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -45,6 +46,7 @@ const menuItems = [
   { id: "team", label: "Team", icon: Users },
   { id: "data-management", label: "Data Management", icon: Database, path: "/data-management" },
   { id: "resume-upload", label: "Resume Upload", icon: Upload, path: "/resume-upload" },
+  { id: "resume-timeline", label: "Processing Timeline", icon: Activity, path: "/resume-timeline" },
   { id: "entity-graph-admin", label: "Entity Graph Admin", icon: Settings, path: "/entity-graph-admin" },
 ];
 

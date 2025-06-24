@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import DataManagement from "./pages/DataManagement";
 import ResumeUpload from "./pages/ResumeUpload";
 import ResumeUploadV2 from "./pages/ResumeUploadV2";
+import ResumeTimelinePage from "./pages/ResumeTimelinePage";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -66,6 +67,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ResumeUploadV2 />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/resume-timeline"
+        element={
+          <ProtectedRoute>
+            <ResumeTimelinePage />
           </ProtectedRoute>
         }
       />
