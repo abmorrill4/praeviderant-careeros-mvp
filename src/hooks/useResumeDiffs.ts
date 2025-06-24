@@ -30,7 +30,7 @@ export function useResumeDiffs(versionId?: string) {
         ...row,
         diff_type: row.diff_type as ResumeDiff['diff_type'],
         metadata: row.metadata as Record<string, any>,
-        embedding_vector: row.embedding_vector as number[] | undefined
+        embedding_vector: row.embedding_vector ? (row.embedding_vector as unknown as number[]) : undefined
       }));
     },
     enabled: !!versionId && !!user,
