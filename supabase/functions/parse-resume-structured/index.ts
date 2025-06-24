@@ -12,16 +12,124 @@ interface ParseRequest {
   versionId: string;
 }
 
-// Extract text from PDF using a simple text extraction approach
-async function extractTextFromPDF(fileBuffer: ArrayBuffer): Promise<string> {
-  // For now, we'll use a simple approach to extract text from PDF
-  // In a production environment, you might want to use a more sophisticated PDF parser
-  const uint8Array = new Uint8Array(fileBuffer);
-  const text = new TextDecoder().decode(uint8Array);
-  
-  // Simple extraction - look for readable text patterns
-  const textMatches = text.match(/[a-zA-Z\s]+/g);
-  return textMatches ? textMatches.join(' ').substring(0, 10000) : '';
+// Extract text from PDF using OpenAI Files API
+async function extractPDFTextWithOpenAI(fileBuffer: ArrayBuffer): Promise<string> {
+  const openAIKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openAIKey) {
+    throw new Error('OpenAI API key not configured');
+  }
+
+  let uploadedFileId: string | null = null;
+
+  try {
+    // Check if file is too large (OpenAI limit is 512MB, but we'll use reasonable limit)
+    if (fileBuffer.byteLength > 50 * 1024 * 1024) {
+      throw new Error('PDF file is too large. Please upload a smaller file (max 50MB).');
+    }
+
+    console.log('Uploading PDF to OpenAI Files API');
+
+    // Convert ArrayBuffer to File
+    const fileBlob = new Blob([fileBuffer], { type: 'application/pdf' });
+
+    // Step 1: Upload file to OpenAI Files API
+    const formData = new FormData();
+    formData.append('file', fileBlob, 'resume.pdf');
+    formData.append('purpose', 'assistants');
+
+    const uploadResponse = await fetch('https://api.openai.com/v1/files', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIKey}`,
+      },
+      body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json();
+      console.error('OpenAI file upload error:', errorData);
+      throw new Error(`OpenAI file upload error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const uploadData = await uploadResponse.json();
+    uploadedFileId = uploadData.id;
+
+    console.log('File uploaded to OpenAI with ID:', uploadedFileId);
+
+    // Step 2: Use the file with chat completions to extract text
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a resume text extraction specialist. Extract ALL text content from the provided PDF document. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content without any commentary or analysis.'
+          },
+          {
+            role: 'user',
+            content: [
+              { 
+                type: 'text', 
+                text: 'Please extract all text content from this resume PDF. Return only the text content, maintaining the structure but without any analysis or commentary:' 
+              },
+              { 
+                type: 'file',
+                file_id: uploadedFileId
+              }
+            ]
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    const extractedText = data.choices[0]?.message?.content || '';
+    
+    // Check for common error responses from OpenAI
+    if (extractedText.includes("I cannot process") || 
+        extractedText.includes("I'm sorry, but I cannot") ||
+        extractedText.includes("Unable to extract text") ||
+        extractedText.includes("cannot read") ||
+        extractedText.trim().length < 10) {
+      throw new Error('Unable to extract readable text from PDF. The document may be scanned, corrupted, or in an unsupported format. Please try converting to a Word document or text file.');
+    }
+    
+    console.log('Successfully extracted text from PDF using OpenAI Files API');
+    return extractedText;
+
+  } catch (error) {
+    console.error('PDF extraction error:', error);
+    throw new Error(`Failed to extract text from PDF: ${error.message}`);
+  } finally {
+    // Clean up: Delete the uploaded file from OpenAI
+    if (uploadedFileId) {
+      try {
+        await fetch(`https://api.openai.com/v1/files/${uploadedFileId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${openAIKey}`,
+          },
+        });
+        console.log('Cleaned up uploaded file from OpenAI:', uploadedFileId);
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup uploaded file from OpenAI:', cleanupError);
+        // Don't throw here as the main operation succeeded
+      }
+    }
+  }
 }
 
 // Extract text from different file types
@@ -32,7 +140,7 @@ async function extractTextFromFile(fileBuffer: ArrayBuffer, mimeType: string): P
         return new TextDecoder().decode(fileBuffer);
       
       case 'application/pdf':
-        return await extractTextFromPDF(fileBuffer);
+        return await extractPDFTextWithOpenAI(fileBuffer);
       
       case 'application/msword':
       case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
@@ -46,7 +154,7 @@ async function extractTextFromFile(fileBuffer: ArrayBuffer, mimeType: string): P
     }
   } catch (error) {
     console.error('Error extracting text:', error);
-    throw new Error(`Failed to extract text from ${mimeType} file`);
+    throw new Error(`Failed to extract text from ${mimeType} file: ${error.message}`);
   }
 }
 
@@ -176,7 +284,9 @@ async function storeParsedEntities(supabase: any, versionId: string, parsedData:
         resume_version_id: versionId,
         field_name: 'name',
         raw_value: personalInfo.name,
-        confidence_score: 0.9
+        confidence_score: 0.9,
+        model_version: 'gpt-4o-mini',
+        source_type: 'ai_extraction'
       });
     }
     if (personalInfo.email) {
@@ -184,7 +294,9 @@ async function storeParsedEntities(supabase: any, versionId: string, parsedData:
         resume_version_id: versionId,
         field_name: 'email',
         raw_value: personalInfo.email,
-        confidence_score: 0.95
+        confidence_score: 0.95,
+        model_version: 'gpt-4o-mini',
+        source_type: 'ai_extraction'
       });
     }
     if (personalInfo.phone) {
@@ -192,7 +304,9 @@ async function storeParsedEntities(supabase: any, versionId: string, parsedData:
         resume_version_id: versionId,
         field_name: 'phone',
         raw_value: personalInfo.phone,
-        confidence_score: 0.9
+        confidence_score: 0.9,
+        model_version: 'gpt-4o-mini',
+        source_type: 'ai_extraction'
       });
     }
     if (personalInfo.location) {
@@ -200,7 +314,9 @@ async function storeParsedEntities(supabase: any, versionId: string, parsedData:
         resume_version_id: versionId,
         field_name: 'location',
         raw_value: personalInfo.location,
-        confidence_score: 0.85
+        confidence_score: 0.85,
+        model_version: 'gpt-4o-mini',
+        source_type: 'ai_extraction'
       });
     }
   }
@@ -211,7 +327,9 @@ async function storeParsedEntities(supabase: any, versionId: string, parsedData:
       resume_version_id: versionId,
       field_name: 'summary',
       raw_value: parsedData.summary,
-      confidence_score: 0.8
+      confidence_score: 0.8,
+      model_version: 'gpt-4o-mini',
+      source_type: 'ai_extraction'
     });
   }
 
@@ -222,7 +340,9 @@ async function storeParsedEntities(supabase: any, versionId: string, parsedData:
         resume_version_id: versionId,
         field_name: `work_experience_${index}`,
         raw_value: JSON.stringify(job),
-        confidence_score: 0.85
+        confidence_score: 0.85,
+        model_version: 'gpt-4o-mini',
+        source_type: 'ai_extraction'
       });
     });
   }
@@ -234,7 +354,9 @@ async function storeParsedEntities(supabase: any, versionId: string, parsedData:
         resume_version_id: versionId,
         field_name: `education_${index}`,
         raw_value: JSON.stringify(edu),
-        confidence_score: 0.85
+        confidence_score: 0.85,
+        model_version: 'gpt-4o-mini',
+        source_type: 'ai_extraction'
       });
     });
   }
@@ -246,7 +368,9 @@ async function storeParsedEntities(supabase: any, versionId: string, parsedData:
         resume_version_id: versionId,
         field_name: `skill_${index}`,
         raw_value: JSON.stringify(skill),
-        confidence_score: 0.8
+        confidence_score: 0.8,
+        model_version: 'gpt-4o-mini',
+        source_type: 'ai_extraction'
       });
     });
   }
@@ -258,7 +382,9 @@ async function storeParsedEntities(supabase: any, versionId: string, parsedData:
         resume_version_id: versionId,
         field_name: `project_${index}`,
         raw_value: JSON.stringify(project),
-        confidence_score: 0.8
+        confidence_score: 0.8,
+        model_version: 'gpt-4o-mini',
+        source_type: 'ai_extraction'
       });
     });
   }
@@ -270,7 +396,9 @@ async function storeParsedEntities(supabase: any, versionId: string, parsedData:
         resume_version_id: versionId,
         field_name: `certification_${index}`,
         raw_value: JSON.stringify(cert),
-        confidence_score: 0.85
+        confidence_score: 0.85,
+        model_version: 'gpt-4o-mini',
+        source_type: 'ai_extraction'
       });
     });
   }
@@ -298,6 +426,7 @@ serve(async (req) => {
   }
 
   try {
+    console.log('=== Parse Resume Structured Starting ===');
     const { versionId }: ParseRequest = await req.json();
 
     if (!versionId) {
@@ -306,6 +435,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log('Processing version ID:', versionId);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -330,6 +461,8 @@ serve(async (req) => {
       });
     }
 
+    console.log('Found version:', version.file_name, 'Type:', version.mime_type);
+
     // Update processing status to processing
     await supabase
       .from('resume_versions')
@@ -338,6 +471,7 @@ serve(async (req) => {
 
     try {
       // Download file from storage
+      console.log('Downloading file from storage:', version.file_path);
       const { data: fileData, error: downloadError } = await supabase.storage
         .from('user-resumes')
         .download(version.file_path);
@@ -346,10 +480,13 @@ serve(async (req) => {
         throw new Error(`Failed to download file: ${downloadError?.message}`);
       }
 
+      console.log('File downloaded, size:', fileData.size);
+
       // Convert to ArrayBuffer
       const fileBuffer = await fileData.arrayBuffer();
 
       // Extract text from file
+      console.log('Extracting text from file...');
       const extractedText = await extractTextFromFile(fileBuffer, version.mime_type);
 
       if (!extractedText.trim()) {
@@ -359,9 +496,11 @@ serve(async (req) => {
       console.log('Extracted text length:', extractedText.length);
 
       // Parse with OpenAI
+      console.log('Parsing with OpenAI...');
       const parsedData = await parseResumeWithOpenAI(extractedText);
 
       // Store parsed entities
+      console.log('Storing parsed entities...');
       const entityCount = await storeParsedEntities(
         supabase, 
         versionId, 
@@ -382,6 +521,8 @@ serve(async (req) => {
           }
         })
         .eq('id', versionId);
+
+      console.log('Processing completed successfully');
 
       return new Response(JSON.stringify({
         success: true,
