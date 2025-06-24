@@ -4,10 +4,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Brain, RefreshCw, Eye, Target } from 'lucide-react';
+import { Loader2, Brain, RefreshCw, Eye, Target, Sparkles } from 'lucide-react';
 import { useParsedResumeEntities, useParseResumeVersion } from '@/hooks/useResumeStreams';
 import { ResumeDiffAnalysis } from '@/components/ResumeDiffAnalysis';
 import { EntityNormalization } from '@/components/EntityNormalization';
+import { CareerEnrichment } from '@/components/CareerEnrichment';
 import type { ParsedResumeEntity } from '@/hooks/useResumeStreams';
 
 interface ParsedResumeEntitiesProps {
@@ -135,10 +136,14 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="extracted" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="extracted" className="flex items-center gap-2">
             <Brain className="w-4 h-4" />
             Extracted Data
+          </TabsTrigger>
+          <TabsTrigger value="enrichment" className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            Career Insights
           </TabsTrigger>
           <TabsTrigger value="normalization" className="flex items-center gap-2">
             <Target className="w-4 h-4" />
@@ -146,7 +151,7 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
           </TabsTrigger>
           <TabsTrigger value="analysis" className="flex items-center gap-2">
             <Eye className="w-4 h-4" />
-            Semantic Analysis
+            Analysis
           </TabsTrigger>
         </TabsList>
 
@@ -216,6 +221,10 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="enrichment">
+          <CareerEnrichment versionId={versionId} />
         </TabsContent>
 
         <TabsContent value="normalization">

@@ -9,6 +9,121 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      career_enrichment: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          id: string
+          leadership_explanation: string | null
+          leadership_score: number
+          model_version: string | null
+          persona_explanation: string | null
+          persona_type: string
+          resume_version_id: string | null
+          role_archetype: string
+          role_archetype_explanation: string | null
+          scope_explanation: string | null
+          scope_score: number
+          technical_depth_explanation: string | null
+          technical_depth_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          leadership_explanation?: string | null
+          leadership_score: number
+          model_version?: string | null
+          persona_explanation?: string | null
+          persona_type: string
+          resume_version_id?: string | null
+          role_archetype: string
+          role_archetype_explanation?: string | null
+          scope_explanation?: string | null
+          scope_score: number
+          technical_depth_explanation?: string | null
+          technical_depth_score: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          leadership_explanation?: string | null
+          leadership_score?: number
+          model_version?: string | null
+          persona_explanation?: string | null
+          persona_type?: string
+          resume_version_id?: string | null
+          role_archetype?: string
+          role_archetype_explanation?: string | null
+          scope_explanation?: string | null
+          scope_score?: number
+          technical_depth_explanation?: string | null
+          technical_depth_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_enrichment_resume_version_id_fkey"
+            columns: ["resume_version_id"]
+            isOneToOne: false
+            referencedRelation: "resume_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      career_narratives: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          id: string
+          model_version: string | null
+          narrative_explanation: string | null
+          narrative_text: string
+          narrative_type: string
+          resume_version_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          model_version?: string | null
+          narrative_explanation?: string | null
+          narrative_text: string
+          narrative_type: string
+          resume_version_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          model_version?: string | null
+          narrative_explanation?: string | null
+          narrative_text?: string
+          narrative_type?: string
+          resume_version_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_narratives_resume_version_id_fkey"
+            columns: ["resume_version_id"]
+            isOneToOne: false
+            referencedRelation: "resume_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       career_profile: {
         Row: {
           created_at: string | null
@@ -197,6 +312,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      enrichment_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          job_type: string
+          resume_version_id: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_type?: string
+          resume_version_id: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          job_type?: string
+          resume_version_id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrichment_jobs_resume_version_id_fkey"
+            columns: ["resume_version_id"]
+            isOneToOne: false
+            referencedRelation: "resume_versions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       interest_registrations: {
         Row: {

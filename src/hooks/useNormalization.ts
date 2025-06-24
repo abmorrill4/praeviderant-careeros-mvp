@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,7 +38,8 @@ export function useNormalizedEntities(entityType?: string) {
         ...row,
         aliases: row.aliases || [],
         metadata: row.metadata as Record<string, any>,
-        embedding_vector: row.embedding_vector ? (row.embedding_vector as unknown as number[]) : undefined
+        embedding_vector: row.embedding_vector ? (row.embedding_vector as unknown as number[]) : undefined,
+        review_status: (row.review_status as 'approved' | 'pending' | 'flagged') || 'approved'
       }));
     },
     enabled: !!user,
@@ -69,7 +69,10 @@ export function useResumeEntityLinks(versionId?: string) {
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(row => ({
+        ...row,
+        match_method: row.match_method as 'embedding' | 'fuzzy' | 'llm' | 'manual'
+      }));
     },
     enabled: !!versionId && !!user,
   });
@@ -100,7 +103,10 @@ export function useNormalizationJobs(versionId?: string) {
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(row => ({
+        ...row,
+        status: row.status as 'pending' | 'running' | 'completed' | 'failed'
+      }));
     },
     enabled: !!user,
   });
