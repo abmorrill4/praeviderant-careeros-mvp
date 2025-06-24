@@ -722,6 +722,72 @@ export type Database = {
         }
         Relationships: []
       }
+      resume_diffs: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          diff_type: string
+          embedding_vector: string | null
+          id: string
+          justification: string
+          metadata: Json | null
+          parsed_entity_id: string
+          profile_entity_id: string | null
+          profile_entity_type: string | null
+          requires_review: boolean | null
+          resume_version_id: string
+          similarity_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          diff_type: string
+          embedding_vector?: string | null
+          id?: string
+          justification: string
+          metadata?: Json | null
+          parsed_entity_id: string
+          profile_entity_id?: string | null
+          profile_entity_type?: string | null
+          requires_review?: boolean | null
+          resume_version_id: string
+          similarity_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          diff_type?: string
+          embedding_vector?: string | null
+          id?: string
+          justification?: string
+          metadata?: Json | null
+          parsed_entity_id?: string
+          profile_entity_id?: string | null
+          profile_entity_type?: string | null
+          requires_review?: boolean | null
+          resume_version_id?: string
+          similarity_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resume_diffs_parsed_entity_id_fkey"
+            columns: ["parsed_entity_id"]
+            isOneToOne: false
+            referencedRelation: "parsed_resume_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resume_diffs_resume_version_id_fkey"
+            columns: ["resume_version_id"]
+            isOneToOne: false
+            referencedRelation: "resume_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resume_streams: {
         Row: {
           auto_tagged: boolean | null
@@ -928,6 +994,48 @@ export type Database = {
         }
         Relationships: []
       }
+      user_confirmed_profile: {
+        Row: {
+          confidence_score: number | null
+          confirmed_value: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          field_name: string
+          id: string
+          last_confirmed_at: string
+          source: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          confirmed_value: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          field_name: string
+          id?: string
+          last_confirmed_at?: string
+          source?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          confirmed_value?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          field_name?: string
+          id?: string
+          last_confirmed_at?: string
+          source?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_interest: {
         Row: {
           beta: boolean | null
@@ -1020,6 +1128,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
       get_interview_context: {
         Args: { p_user_id: string }
         Returns: {
@@ -1029,6 +1141,22 @@ export type Database = {
           recent_summaries: Json
         }[]
       }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
       handle_user_deletion: {
         Args: { target_user_id: string }
         Returns: {
@@ -1036,9 +1164,57 @@ export type Database = {
           rows_deleted: number
         }[]
       }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: string
+      }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
       test_user_deletion_dry_run: {
         Args: { target_user_id: string }
@@ -1046,6 +1222,30 @@ export type Database = {
           table_name: string
           rows_to_delete: number
         }[]
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
       }
     }
     Enums: {

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Brain, RefreshCw, Eye } from 'lucide-react';
 import { useParsedResumeEntities, useParseResumeVersion } from '@/hooks/useResumeStreams';
+import { ResumeDiffAnalysis } from '@/components/ResumeDiffAnalysis';
 import type { ParsedResumeEntity } from '@/hooks/useResumeStreams';
 
 interface ParsedResumeEntitiesProps {
@@ -19,6 +20,7 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
 }) => {
   const { data: entities, isLoading, refetch } = useParsedResumeEntities(versionId);
   const parseResumeMutation = useParseResumeVersion();
+  const [showDiffAnalysis, setShowDiffAnalysis] = React.useState(false);
 
   const handleRetryParsing = () => {
     parseResumeMutation.mutate(versionId);
@@ -130,70 +132,91 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Brain className="w-5 h-5" />
-          Extracted Data ({entities.length} items)
-        </CardTitle>
-        <CardDescription>
-          Structured data extracted using AI with confidence scores
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {Object.entries(groupedEntities).map(([section, sectionEntities]) => (
-          <div key={section}>
-            <h3 className="font-medium mb-3 capitalize">
-              {section.replace(/_/g, ' ')}
-            </h3>
-            <div className="space-y-2">
-              {sectionEntities.map((entity) => (
-                <div 
-                  key={entity.id} 
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium">
-                        {formatFieldName(entity.field_name)}
-                      </span>
-                      <Badge 
-                        variant="secondary" 
-                        className={`text-xs ${getConfidenceColor(entity.confidence_score)}`}
-                      >
-                        {Math.round(entity.confidence_score * 100)}% confidence
-                      </Badge>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="w-5 h-5" />
+            Extracted Data ({entities.length} items)
+          </CardTitle>
+          <CardDescription>
+            Structured data extracted using AI with confidence scores
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {Object.entries(groupedEntities).map(([section, sectionEntities]) => (
+            <div key={section}>
+              <h3 className="font-medium mb-3 capitalize">
+                {section.replace(/_/g, ' ')}
+              </h3>
+              <div className="space-y-2">
+                {sectionEntities.map((entity) => (
+                  <div 
+                    key={entity.id} 
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium">
+                          {formatFieldName(entity.field_name)}
+                        </span>
+                        <Badge 
+                          variant="secondary" 
+                          className={`text-xs ${getConfidenceColor(entity.confidence_score)}`}
+                        >
+                          {Math.round(entity.confidence_score * 100)}% confidence
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {entity.raw_value.length > 100 
+                          ? `${entity.raw_value.substring(0, 100)}...`
+                          : entity.raw_value
+                        }
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {entity.raw_value.length > 100 
-                        ? `${entity.raw_value.substring(0, 100)}...`
-                        : entity.raw_value
-                      }
-                    </p>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              {section !== Object.keys(groupedEntities)[Object.keys(groupedEntities).length - 1] && (
+                <Separator className="mt-4" />
+              )}
             </div>
-            {section !== Object.keys(groupedEntities)[Object.keys(groupedEntities).length - 1] && (
-              <Separator className="mt-4" />
-            )}
+          ))}
+          
+          <div className="flex justify-between items-center pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Extracted by {entities[0]?.model_version} • {entities[0]?.source_type}
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowDiffAnalysis(!showDiffAnalysis)}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                {showDiffAnalysis ? 'Hide' : 'Show'} Semantic Analysis
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => refetch()}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </div>
-        ))}
-        
-        <div className="flex justify-between items-center pt-4 border-t">
-          <div className="text-sm text-muted-foreground">
-            Extracted by {entities[0]?.model_version} • {entities[0]?.source_type}
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => refetch()}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Semantic Diff Analysis Component */}
+      {showDiffAnalysis && (
+        <ResumeDiffAnalysis 
+          versionId={versionId}
+          onToggleVisibility={() => setShowDiffAnalysis(!showDiffAnalysis)}
+          isVisible={showDiffAnalysis}
+        />
+      )}
+    </div>
   );
 };
