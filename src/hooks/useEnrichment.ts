@@ -59,7 +59,10 @@ export function useCareerNarratives(versionId?: string) {
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(row => ({
+        ...row,
+        narrative_type: row.narrative_type as CareerNarrative['narrative_type']
+      }));
     },
     enabled: !!versionId && !!user,
   });
@@ -91,7 +94,10 @@ export function useEnrichmentJobs(versionId?: string) {
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(row => ({
+        ...row,
+        status: row.status as EnrichmentJob['status']
+      }));
     },
     enabled: !!user,
   });
