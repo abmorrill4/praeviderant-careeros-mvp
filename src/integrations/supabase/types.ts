@@ -670,6 +670,75 @@ export type Database = {
         }
         Relationships: []
       }
+      merge_decisions: {
+        Row: {
+          confidence_score: number | null
+          confirmed_value: string
+          created_at: string
+          decision_type: string
+          field_name: string
+          id: string
+          justification: string | null
+          override_value: string | null
+          parsed_entity_id: string
+          parsed_value: string
+          profile_entity_id: string | null
+          profile_entity_type: string | null
+          resume_version_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          confirmed_value: string
+          created_at?: string
+          decision_type: string
+          field_name: string
+          id?: string
+          justification?: string | null
+          override_value?: string | null
+          parsed_entity_id: string
+          parsed_value: string
+          profile_entity_id?: string | null
+          profile_entity_type?: string | null
+          resume_version_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          confirmed_value?: string
+          created_at?: string
+          decision_type?: string
+          field_name?: string
+          id?: string
+          justification?: string | null
+          override_value?: string | null
+          parsed_entity_id?: string
+          parsed_value?: string
+          profile_entity_id?: string | null
+          profile_entity_type?: string | null
+          resume_version_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merge_decisions_parsed_entity_id_fkey"
+            columns: ["parsed_entity_id"]
+            isOneToOne: false
+            referencedRelation: "parsed_resume_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merge_decisions_resume_version_id_fkey"
+            columns: ["resume_version_id"]
+            isOneToOne: false
+            referencedRelation: "resume_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       normalization_jobs: {
         Row: {
           completed_at: string | null

@@ -59,22 +59,22 @@ export function useMergeDecisions(versionId?: string) {
     queryFn: async (): Promise<MergeDecision[]> => {
       if (!versionId || !user) return [];
       
-      const { data, error } = await supabase
-        .from('merge_decisions')
-        .select('*')
-        .eq('resume_version_id', versionId)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      try {
+        // Use the edge function to query merge decisions
+        const { data, error } = await supabase.functions.invoke('select-merge-decisions', {
+          body: { versionId, userId: user.id }
+        });
 
-      if (error) {
-        console.error('Error fetching merge decisions:', error);
-        throw error;
+        if (error) {
+          console.error('Error fetching merge decisions:', error);
+          return [];
+        }
+
+        return (data || []) as MergeDecision[];
+      } catch (error) {
+        console.error('Error calling merge decisions function:', error);
+        return [];
       }
-
-      return (data || []).map(row => ({
-        ...row,
-        decision_type: row.decision_type as MergeDecision['decision_type']
-      }));
     },
     enabled: !!versionId && !!user,
   });
@@ -114,9 +114,9 @@ export function useCreateMergeDecision() {
     }) => {
       if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
-        .from('merge_decisions')
-        .upsert({
+      // Use the edge function to create merge decision
+      const { data, error } = await supabase.functions.invoke('create-merge-decision', {
+        body: {
           user_id: user.id,
           resume_version_id: versionId,
           parsed_entity_id: parsedEntityId,
@@ -129,9 +129,8 @@ export function useCreateMergeDecision() {
           override_value: overrideValue,
           justification: justification,
           confidence_score: confidenceScore
-        })
-        .select()
-        .single();
+        }
+      });
 
       if (error) {
         console.error('Error creating merge decision:', error);
