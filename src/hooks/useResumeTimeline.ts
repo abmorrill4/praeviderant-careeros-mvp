@@ -28,14 +28,33 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
         return null;
       }
 
-      // Get job logs for this resume version
-      const { data: jobLogs, error: logsError } = await supabase
-        .from('job_logs')
-        .select('*')
-        .order('created_at', { ascending: true });
+      // Get the most recent job for this user (created around the same time as the resume)
+      const { data: relatedJob, error: jobError } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (logsError) {
-        console.error('Error fetching job logs:', logsError);
+      if (jobError) {
+        console.error('Error fetching related job:', jobError);
+      }
+
+      // Get job logs for this job if it exists
+      let jobLogs: any[] = [];
+      if (relatedJob) {
+        const { data: logs, error: logsError } = await supabase
+          .from('job_logs')
+          .select('*')
+          .eq('job_id', relatedJob.id)
+          .order('created_at', { ascending: true });
+
+        if (logsError) {
+          console.error('Error fetching job logs:', logsError);
+        } else {
+          jobLogs = logs || [];
+        }
       }
 
       // Get normalization jobs
@@ -63,7 +82,7 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
       // Process the data into timeline stages
       const stages: TimelineStage[] = PIPELINE_STAGES.map(stageConfig => {
         // Filter job logs for this stage
-        const stageLogs = (jobLogs || []).filter(log => 
+        const stageLogs = jobLogs.filter(log => 
           log.stage === stageConfig.name
         );
 
@@ -80,6 +99,7 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
         let completedAt: string | undefined;
         let errorMessage: string | undefined;
 
+        // Determine status based on job records
         if (relatedJobs.length > 0) {
           const latestJob = relatedJobs[relatedJobs.length - 1];
           
@@ -105,14 +125,14 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
           }
         }
 
-        // Special handling for upload stage
+        // Special handling for upload stage (always completed if version exists)
         if (stageConfig.name === 'upload') {
           status = 'completed';
           startedAt = resumeVersion.created_at;
           completedAt = resumeVersion.created_at;
         }
 
-        // Special handling for parse stage
+        // Special handling for parse stage based on resume version status
         if (stageConfig.name === 'parse' && resumeVersion.processing_status) {
           switch (resumeVersion.processing_status) {
             case 'pending':
@@ -130,8 +150,25 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
             case 'failed':
               status = 'failed';
               startedAt = resumeVersion.updated_at;
+              errorMessage = resumeVersion.resume_metadata?.error_message;
               break;
           }
+        }
+
+        // If we have logs for this stage but no specific job status, infer from logs
+        if (stageLogs.length > 0 && status === 'pending') {
+          const hasError = stageLogs.some(log => log.level === 'error');
+          const hasInfo = stageLogs.some(log => log.level === 'info');
+          
+          if (hasError) {
+            status = 'failed';
+            errorMessage = stageLogs.find(log => log.level === 'error')?.message;
+          } else if (hasInfo) {
+            status = 'completed';
+          }
+          
+          startedAt = stageLogs[0]?.created_at;
+          completedAt = stageLogs[stageLogs.length - 1]?.created_at;
         }
 
         return {

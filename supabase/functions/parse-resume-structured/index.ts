@@ -12,6 +12,34 @@ interface ParseRequest {
   versionId: string;
 }
 
+// Helper function to log job progress
+async function logJobProgress(supabase: any, versionId: string, stage: string, level: string, message: string, metadata: any = {}) {
+  try {
+    // Find the job associated with this version
+    const { data: jobData } = await supabase
+      .from('jobs')
+      .select('id')
+      .eq('user_id', metadata.user_id || null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (jobData) {
+      await supabase
+        .from('job_logs')
+        .insert({
+          job_id: jobData.id,
+          stage,
+          level,
+          message,
+          metadata: { ...metadata, version_id: versionId }
+        });
+    }
+  } catch (error) {
+    console.warn('Failed to log job progress:', error);
+  }
+}
+
 // Extract text from PDF using OpenAI Assistant API
 async function extractPDFTextWithOpenAI(fileBuffer: ArrayBuffer): Promise<string> {
   const openAIKey = Deno.env.get('OPENAI_API_KEY');
@@ -608,6 +636,12 @@ serve(async (req) => {
       .update({ processing_status: 'processing' })
       .eq('id', versionId);
 
+    // Log parsing start
+    await logJobProgress(supabase, versionId, 'parse', 'info', 'Resume parsing in progress', {
+      user_id: version.resume_streams.user_id,
+      file_name: version.file_name
+    });
+
     try {
       // Download file from storage
       console.log('Downloading file from storage:', version.file_path);
@@ -626,6 +660,11 @@ serve(async (req) => {
 
       // Extract text from file
       console.log('Extracting text from file...');
+      await logJobProgress(supabase, versionId, 'parse', 'info', 'Extracting text from file', {
+        user_id: version.resume_streams.user_id,
+        mime_type: version.mime_type
+      });
+
       const extractedText = await extractTextFromFile(fileBuffer, version.mime_type);
 
       if (!extractedText.trim()) {
@@ -633,13 +672,25 @@ serve(async (req) => {
       }
 
       console.log('Extracted text length:', extractedText.length);
+      await logJobProgress(supabase, versionId, 'parse', 'info', `Successfully extracted ${extractedText.length} characters of text`, {
+        user_id: version.resume_streams.user_id,
+        extracted_length: extractedText.length
+      });
 
       // Parse with OpenAI
       console.log('Parsing with OpenAI...');
+      await logJobProgress(supabase, versionId, 'parse', 'info', 'Parsing resume content with AI', {
+        user_id: version.resume_streams.user_id
+      });
+
       const parsedData = await parseResumeWithOpenAI(extractedText);
 
       // Store parsed entities
       console.log('Storing parsed entities...');
+      await logJobProgress(supabase, versionId, 'parse', 'info', 'Storing parsed entities', {
+        user_id: version.resume_streams.user_id
+      });
+
       const entityCount = await storeParsedEntities(
         supabase, 
         versionId, 
@@ -660,6 +711,12 @@ serve(async (req) => {
           }
         })
         .eq('id', versionId);
+
+      // Log completion
+      await logJobProgress(supabase, versionId, 'parse', 'info', `Resume parsing completed successfully. Extracted ${entityCount} entities.`, {
+        user_id: version.resume_streams.user_id,
+        entities_extracted: entityCount
+      });
 
       console.log('Processing completed successfully');
 
@@ -687,6 +744,12 @@ serve(async (req) => {
           }
         })
         .eq('id', versionId);
+
+      // Log the error
+      await logJobProgress(supabase, versionId, 'parse', 'error', `Resume parsing failed: ${processingError.message}`, {
+        user_id: version.resume_streams.user_id,
+        error: processingError.message
+      });
 
       throw processingError;
     }
