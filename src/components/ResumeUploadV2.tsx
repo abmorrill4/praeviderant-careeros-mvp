@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Upload, Check, AlertCircle, Loader2, Plus, X, Eye } from 'lucide-react';
+import { FileText, Upload, Loader2, Plus, X, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResumeUpload, useResumeStreams } from '@/hooks/useResumeStreams';
 import { ParsedResumeEntities } from '@/components/ParsedResumeEntities';
