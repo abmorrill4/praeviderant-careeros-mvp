@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Database, Trash2, Eye } from 'lucide-react';
+import { AlertTriangle, Database, Trash2, Eye, RefreshCw } from 'lucide-react';
 import { useUserDeletion } from '@/hooks/useUserDeletion';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -17,14 +17,21 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const DataManagement = () => {
+  const { user } = useAuth();
   const { isLoading, deletionPreview, previewDataDeletion, deleteUserData } = useUserDeletion();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationText, setConfirmationText] = useState('');
 
   const handlePreview = async () => {
-    await previewDataDeletion();
+    console.log('Preview button clicked, user:', user?.id);
+    try {
+      await previewDataDeletion();
+    } catch (error) {
+      console.error('Preview failed:', error);
+    }
   };
 
   const handleDelete = async () => {
@@ -37,6 +44,24 @@ export const DataManagement = () => {
   };
 
   const totalRowsToDelete = deletionPreview.reduce((sum, item) => sum + item.rows_to_delete, 0);
+
+  if (!user) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Database className="h-5 w-5" />
+              Data Management
+            </CardTitle>
+            <CardDescription>
+              Please log in to manage your data
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -71,8 +96,17 @@ export const DataManagement = () => {
                 variant="outline"
                 className="flex items-center gap-2"
               >
-                <Eye className="h-4 w-4" />
-                {isLoading ? 'Loading...' : 'Preview Deletion'}
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Loading Preview...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4" />
+                    Preview Deletion
+                  </>
+                )}
               </Button>
             </div>
 
@@ -82,16 +116,23 @@ export const DataManagement = () => {
                   Deletion Preview
                   <Badge variant="secondary">{totalRowsToDelete} total records</Badge>
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
                   {deletionPreview.map((item, index) => (
                     <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
-                      <span className="text-sm font-medium">{item.table_name}</span>
+                      <span className="text-sm font-medium capitalize">
+                        {item.table_name.replace(/_/g, ' ')}
+                      </span>
                       <Badge variant={item.rows_to_delete > 0 ? "destructive" : "secondary"}>
                         {item.rows_to_delete} records
                       </Badge>
                     </div>
                   ))}
                 </div>
+                {totalRowsToDelete === 0 && (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <p>No data found to delete. Your account appears to be empty.</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -105,7 +146,7 @@ export const DataManagement = () => {
                 <AlertDialogTrigger asChild>
                   <Button 
                     variant="destructive" 
-                    disabled={isLoading || deletionPreview.length === 0}
+                    disabled={isLoading}
                     className="flex items-center gap-2"
                   >
                     <Trash2 className="h-4 w-4" />

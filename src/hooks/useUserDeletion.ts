@@ -30,19 +30,42 @@ export const useUserDeletion = () => {
       return;
     }
 
+    console.log('Starting data deletion preview for user:', user.id);
     setIsLoading(true);
+    
     try {
       const { data, error } = await supabase.rpc('test_user_deletion_dry_run', {
         target_user_id: user.id
       });
 
+      console.log('Preview data response:', data);
+      console.log('Preview error:', error);
+
       if (error) {
         console.error('Error previewing data deletion:', error);
+        toast({
+          title: "Preview Error",
+          description: `Failed to preview data deletion: ${error.message}`,
+          variant: "destructive",
+        });
         throw error;
       }
 
-      setDeletionPreview(data || []);
-      return data;
+      // Transform the data to match our interface
+      const previewData = (data || []).map((item: any) => ({
+        table_name: item.table_name,
+        rows_to_delete: Number(item.rows_to_delete)
+      }));
+
+      console.log('Transformed preview data:', previewData);
+      setDeletionPreview(previewData);
+      
+      toast({
+        title: "Preview Complete",
+        description: `Found data across ${previewData.length} tables to review.`,
+      });
+
+      return previewData;
     } catch (error: any) {
       console.error('Error previewing data deletion:', error);
       toast({
