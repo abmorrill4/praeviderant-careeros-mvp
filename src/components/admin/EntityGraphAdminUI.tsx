@@ -6,316 +6,332 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertTriangle, Users, Merge, Edit3, Trash2, Search, RefreshCw } from 'lucide-react';
-import { useUnresolvedEntities, useSimilarEntities, useMergeEntities } from '@/hooks/useEntityGraph';
-import type { UnresolvedEntity, SimilarEntity } from '@/types/entity-graph';
+import { AlertTriangle, Database, FileText, Merge, Search, Filter } from 'lucide-react';
+import { useUnresolvedEntities, useSimilarEntities, useMergeEntities, useUpdateEntityStatus, useDeleteEntity } from '@/hooks/useEntityGraph';
+import { PromptTemplateManager } from './PromptTemplateManager';
+import type { UnresolvedEntity } from '@/types/entity-graph';
 
 const EntityGraphAdminUI: React.FC = () => {
-  const [selectedEntityType, setSelectedEntityType] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedEntity, setSelectedEntity] = useState<UnresolvedEntity | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
 
-  const { 
-    data: unresolvedEntities = [], 
-    isLoading: loadingUnresolved, 
-    refetch: refetchUnresolved 
-  } = useUnresolvedEntities();
+  const { data: unresolvedEntities, isLoading } = useUnresolvedEntities();
+  const { data: similarEntities } = useSimilarEntities(selectedEntity?.id);
+  const mergeMutation = useMergeEntities();
+  const updateStatusMutation = useUpdateEntityStatus();
+  const deleteEntityMutation = useDeleteEntity();
 
-  const { 
-    data: similarEntities = [], 
-    isLoading: loadingSimilar 
-  } = useSimilarEntities(selectedEntity?.id);
-
-  const mergeEntitiesMutation = useMergeEntities();
-
-  const filteredEntities = unresolvedEntities.filter(entity => {
-    const matchesType = selectedEntityType === 'all' || entity.entity_type === selectedEntityType;
-    const matchesSearch = searchTerm === '' || 
-      entity.canonical_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entity.aliases.some(alias => alias.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesType && matchesSearch;
-  });
-
-  const entityTypes = Array.from(new Set(unresolvedEntities.map(e => e.entity_type)));
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'flagged': return 'bg-red-100 text-red-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  // Filter entities based on search and filters
+  const filteredEntities = unresolvedEntities?.filter(entity => {
+    const matchesSearch = entity.canonical_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         entity.aliases.some(alias => alias.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesStatus = statusFilter === 'all' || entity.review_status === statusFilter;
+    const matchesType = typeFilter === 'all' || entity.entity_type === typeFilter;
+    
+    return matchesSearch && matchesStatus && matchesType;
+  }) || [];
 
   const handleMergeEntities = async (sourceId: string, targetId: string) => {
-    await mergeEntitiesMutation.mutateAsync({
-      sourceEntityId: sourceId,
-      targetEntityId: targetId
-    });
-    refetchUnresolved();
+    await mergeMutation.mutateAsync({ sourceEntityId: sourceId, targetEntityId: targetId });
     setSelectedEntity(null);
   };
 
+  const handleUpdateStatus = async (entityId: string, status: 'approved' | 'pending' | 'flagged') => {
+    await updateStatusMutation.mutateAsync({ entityId, status });
+  };
+
+  const handleDeleteEntity = async (entityId: string) => {
+    await deleteEntityMutation.mutateAsync(entityId);
+    if (selectedEntity?.id === entityId) {
+      setSelectedEntity(null);
+    }
+  };
+
+  // Get unique entity types for filter
+  const entityTypes = [...new Set(unresolvedEntities?.map(e => e.entity_type) || [])];
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Entity Graph Administration</h1>
           <p className="text-muted-foreground">
-            Moderate and manage unresolved entities across the system
+            Manage normalized entities, resolve conflicts, and configure prompt templates
           </p>
         </div>
-        <Button onClick={() => refetchUnresolved()} disabled={loadingUnresolved}>
-          <RefreshCw className={`w-4 h-4 mr-2 ${loadingUnresolved ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total Unresolved</CardDescription>
-            <CardTitle className="text-2xl">{unresolvedEntities.length}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Pending Review</CardDescription>
-            <CardTitle className="text-2xl">
-              {unresolvedEntities.filter(e => e.review_status === 'pending').length}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Flagged</CardDescription>
-            <CardTitle className="text-2xl">
-              {unresolvedEntities.filter(e => e.review_status === 'flagged').length}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Entity Types</CardDescription>
-            <CardTitle className="text-2xl">{entityTypes.length}</CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
+      <Tabs defaultValue="entities" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="entities" className="flex items-center gap-2">
+            <Database className="w-4 h-4" />
+            Entity Management
+          </TabsTrigger>
+          <TabsTrigger value="prompts" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Prompt Templates
+          </TabsTrigger>
+        </TabsList>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search entities..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <Select value={selectedEntityType} onValueChange={setSelectedEntityType}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {entityTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[600px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Entity</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>References</TableHead>
-                  <TableHead>Users</TableHead>
-                  <TableHead>Confidence</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEntities.map((entity) => (
-                  <TableRow key={entity.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{entity.canonical_name}</div>
-                        {entity.aliases.length > 0 && (
-                          <div className="text-sm text-muted-foreground">
-                            Aliases: {entity.aliases.join(', ')}
-                          </div>
-                        )}
+        <TabsContent value="entities">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Filters and Entity List */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Filters */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Filters</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Search</label>
+                      <div className="relative">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search entities..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-8"
+                        />
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{entity.entity_type}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(entity.review_status)}>
-                        {entity.review_status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{entity.reference_count}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        {entity.referencing_users?.length || 0}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm">
-                          {Math.round((entity.confidence_score || 0) * 100)}%
-                        </div>
-                        {(entity.confidence_score || 0) < 0.5 && (
-                          <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setSelectedEntity(entity)}
-                            >
-                              <Search className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl">
-                            <DialogHeader>
-                              <DialogTitle>Entity Details & Similar Matches</DialogTitle>
-                              <DialogDescription>
-                                Review and manage "{entity.canonical_name}"
-                              </DialogDescription>
-                            </DialogHeader>
-                            <EntityDetailsDialog 
-                              entity={entity}
-                              similarEntities={similarEntities}
-                              onMerge={handleMergeEntities}
-                              isLoading={loadingSimilar || mergeEntitiesMutation.isPending}
-                            />
-                          </DialogContent>
-                        </Dialog>
-                        <Button size="sm" variant="outline">
-                          <Edit3 className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-interface EntityDetailsDialogProps {
-  entity: UnresolvedEntity;
-  similarEntities: SimilarEntity[];
-  onMerge: (sourceId: string, targetId: string) => void;
-  isLoading: boolean;
-}
-
-const EntityDetailsDialog: React.FC<EntityDetailsDialogProps> = ({
-  entity,
-  similarEntities,
-  onMerge,
-  isLoading
-}) => {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Entity Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div>
-              <span className="font-medium">Name:</span> {entity.canonical_name}
-            </div>
-            <div>
-              <span className="font-medium">Type:</span> {entity.entity_type}
-            </div>
-            <div>
-              <span className="font-medium">Aliases:</span> {entity.aliases.join(', ') || 'None'}
-            </div>
-            <div>
-              <span className="font-medium">References:</span> {entity.reference_count}
-            </div>
-            <div>
-              <span className="font-medium">Users:</span> {entity.referencing_users?.length || 0}
-            </div>
-            <div>
-              <span className="font-medium">Confidence:</span> {Math.round((entity.confidence_score || 0) * 100)}%
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Similar Entities</CardTitle>
-            <CardDescription>
-              Potential matches for merging or disambiguation
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-4">Loading similar entities...</div>
-            ) : similarEntities.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                No similar entities found
-              </div>
-            ) : (
-              <ScrollArea className="h-48">
-                <div className="space-y-2">
-                  {similarEntities.map((similar) => (
-                    <div
-                      key={similar.id}
-                      className="flex items-center justify-between p-2 border rounded"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium">{similar.canonical_name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Similarity: {Math.round((similar.similarity_score || 0) * 100)}%
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => onMerge(entity.id, similar.id)}
-                        disabled={isLoading}
-                      >
-                        <Merge className="w-4 h-4 mr-1" />
-                        Merge
-                      </Button>
                     </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Status</label>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Statuses</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="flagged">Flagged</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Type</label>
+                      <Select value={typeFilter} onValueChange={setTypeFilter}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          {entityTypes.map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Entity List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Database className="w-5 h-5" />
+                    Unresolved Entities ({filteredEntities.length})
+                  </CardTitle>
+                  <CardDescription>
+                    Entities requiring review or normalization
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {filteredEntities.map((entity) => (
+                      <div
+                        key={entity.id}
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          selectedEntity?.id === entity.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                        }`}
+                        onClick={() => setSelectedEntity(entity)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">{entity.canonical_name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {entity.entity_type} • {entity.reference_count} references
+                            </p>
+                            {entity.aliases.length > 0 && (
+                              <div className="flex gap-1 mt-2">
+                                {entity.aliases.slice(0, 3).map((alias, i) => (
+                                  <Badge key={i} variant="outline" className="text-xs">
+                                    {alias}
+                                  </Badge>
+                                ))}
+                                {entity.aliases.length > 3 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{entity.aliases.length - 3} more
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={
+                                entity.review_status === 'approved' ? 'default' :
+                                entity.review_status === 'flagged' ? 'destructive' : 'secondary'
+                              }
+                            >
+                              {entity.review_status}
+                            </Badge>
+                            <Badge variant="outline">
+                              {Math.round(entity.confidence_score * 100)}%
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {filteredEntities.length === 0 && (
+                      <div className="text-center py-8">
+                        <Database className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-muted-foreground">No entities match your filters</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Entity Details */}
+            <div className="space-y-4">
+              {selectedEntity ? (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{selectedEntity.canonical_name}</CardTitle>
+                      <CardDescription>Entity Details</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Type</label>
+                        <p className="text-sm text-muted-foreground">{selectedEntity.entity_type}</p>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">References</label>
+                        <p className="text-sm text-muted-foreground">{selectedEntity.reference_count} occurrences</p>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Confidence</label>
+                        <p className="text-sm text-muted-foreground">{Math.round(selectedEntity.confidence_score * 100)}%</p>
+                      </div>
+
+                      {selectedEntity.aliases.length > 0 && (
+                        <div>
+                          <label className="text-sm font-medium">Aliases</label>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {selectedEntity.aliases.map((alias, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {alias}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleUpdateStatus(selectedEntity.id, 'approved')}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleUpdateStatus(selectedEntity.id, 'flagged')}
+                          disabled={updateStatusMutation.isPending}
+                        >
+                          Flag
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteEntity(selectedEntity.id)}
+                          disabled={deleteEntityMutation.isPending}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {similarEntities && similarEntities.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Merge className="w-4 h-4" />
+                          Similar Entities
+                        </CardTitle>
+                        <CardDescription>
+                          Potential merge candidates
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {similarEntities.map((similar) => (
+                            <div key={similar.id} className="p-3 border rounded-lg">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-medium">{similar.canonical_name}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {Math.round(similar.similarity_score * 100)}% similarity
+                                  </p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleMergeEntities(selectedEntity.id, similar.id)}
+                                  disabled={mergeMutation.isPending}
+                                >
+                                  Merge
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              ) : (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <Database className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">
+                      Select an entity to view details and similar entities
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="prompts">
+          <PromptTemplateManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

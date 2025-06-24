@@ -25,7 +25,8 @@ import {
   BarChart3,
   Briefcase,
   Database,
-  Upload
+  Upload,
+  Settings
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -44,6 +45,7 @@ const menuItems = [
   { id: "team", label: "Team", icon: Users },
   { id: "data-management", label: "Data Management", icon: Database, path: "/data-management" },
   { id: "resume-upload", label: "Resume Upload", icon: Upload, path: "/resume-upload" },
+  { id: "entity-graph-admin", label: "Entity Graph Admin", icon: Settings, path: "/entity-graph-admin" },
 ];
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({

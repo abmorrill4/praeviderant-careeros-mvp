@@ -592,6 +592,44 @@ export type Database = {
           },
         ]
       }
+      job_prompt_usage: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          job_type: string
+          prompt_category: string
+          prompt_template_id: string
+          prompt_version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          job_type: string
+          prompt_category: string
+          prompt_template_id: string
+          prompt_version: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          job_type?: string
+          prompt_category?: string
+          prompt_template_id?: string
+          prompt_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_prompt_usage_prompt_template_id_fkey"
+            columns: ["prompt_template_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           company: string
@@ -1008,6 +1046,42 @@ export type Database = {
           technologies_used?: string[] | null
           updated_at?: string
           user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      prompt_templates: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          metadata: Json | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json | null
+          updated_at?: string
           version?: number
         }
         Relationships: []
