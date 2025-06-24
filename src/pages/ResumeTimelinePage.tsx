@@ -18,6 +18,11 @@ const ResumeTimelinePage = () => {
   const [selectedResumeId, setSelectedResumeId] = useState<string>('');
   const { data: resumeList, isLoading, error } = useResumeTimelineList(filters);
 
+  console.log('ResumeTimelinePage - User:', user?.id);
+  console.log('ResumeTimelinePage - Loading:', isLoading);
+  console.log('ResumeTimelinePage - Error:', error);
+  console.log('ResumeTimelinePage - Resume List:', resumeList);
+
   if (!user) {
     return <Navigate to="/" replace />;
   }
@@ -25,6 +30,7 @@ const ResumeTimelinePage = () => {
   // Auto-select first resume if available
   useEffect(() => {
     if (resumeList && resumeList.length > 0 && !selectedResumeId) {
+      console.log('Auto-selecting first resume:', resumeList[0].id);
       setSelectedResumeId(resumeList[0].id);
     }
   }, [resumeList, selectedResumeId]);
@@ -46,10 +52,12 @@ const ResumeTimelinePage = () => {
   };
 
   const handleResumeSelect = (resumeId: string) => {
+    console.log('Selecting resume:', resumeId);
     setSelectedResumeId(resumeId);
   };
 
   if (isLoading) {
+    console.log('Showing loading state');
     return (
       <DashboardLayout activeTab="resume-timeline" onTabChange={() => {}}>
         <div className="flex items-center justify-center h-64">
@@ -63,12 +71,13 @@ const ResumeTimelinePage = () => {
   }
 
   if (error) {
+    console.error('Showing error state:', error);
     return (
       <DashboardLayout activeTab="resume-timeline" onTabChange={() => {}}>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <AlertTriangle className="w-8 h-8 mx-auto mb-4 text-red-500" />
-            <p className="text-red-600 mb-4">Error loading resume data</p>
+            <p className="text-red-600 mb-4">Error loading resume data: {error.message}</p>
             <Button onClick={() => window.location.reload()}>
               Try Again
             </Button>
@@ -79,6 +88,7 @@ const ResumeTimelinePage = () => {
   }
 
   if (!resumeList || resumeList.length === 0) {
+    console.log('Showing empty state');
     return (
       <DashboardLayout activeTab="resume-timeline" onTabChange={() => {}}>
         <div className="space-y-6">
@@ -106,6 +116,9 @@ const ResumeTimelinePage = () => {
       </DashboardLayout>
     );
   }
+
+  console.log('Rendering main timeline page with', resumeList.length, 'resumes');
+  console.log('Selected resume ID:', selectedResumeId);
 
   return (
     <DashboardLayout activeTab="resume-timeline" onTabChange={() => {}}>

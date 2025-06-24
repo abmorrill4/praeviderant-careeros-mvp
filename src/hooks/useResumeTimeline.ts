@@ -13,6 +13,8 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
     queryFn: async (): Promise<ResumeTimelineData | null> => {
       if (!resumeVersionId || !user) return null;
 
+      console.log('Fetching timeline for resume version:', resumeVersionId);
+
       // Get resume version info
       const { data: resumeVersion, error: versionError } = await supabase
         .from('resume_versions')
@@ -28,6 +30,8 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
         return null;
       }
 
+      console.log('Resume version found:', resumeVersion);
+
       // Get the most recent job for this user (created around the same time as the resume)
       const { data: relatedJob, error: jobError } = await supabase
         .from('jobs')
@@ -40,6 +44,8 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
       if (jobError) {
         console.error('Error fetching related job:', jobError);
       }
+
+      console.log('Related job:', relatedJob);
 
       // Get job logs for this job if it exists
       let jobLogs: any[] = [];
@@ -54,6 +60,7 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
           console.error('Error fetching job logs:', logsError);
         } else {
           jobLogs = logs || [];
+          console.log('Job logs found:', jobLogs.length);
         }
       }
 
@@ -68,6 +75,8 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
         console.error('Error fetching normalization jobs:', normError);
       }
 
+      console.log('Normalization jobs:', normalizationJobs?.length || 0);
+
       // Get enrichment jobs
       const { data: enrichmentJobs, error: enrichError } = await supabase
         .from('enrichment_jobs')
@@ -78,6 +87,8 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
       if (enrichError) {
         console.error('Error fetching enrichment jobs:', enrichError);
       }
+
+      console.log('Enrichment jobs:', enrichmentJobs?.length || 0);
 
       // Process the data into timeline stages
       const stages: TimelineStage[] = PIPELINE_STAGES.map(stageConfig => {
@@ -150,7 +161,11 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
             case 'failed':
               status = 'failed';
               startedAt = resumeVersion.updated_at;
-              errorMessage = resumeVersion.resume_metadata?.error_message;
+              // Safely handle JSON metadata
+              if (resumeVersion.resume_metadata && typeof resumeVersion.resume_metadata === 'object') {
+                const metadata = resumeVersion.resume_metadata as Record<string, any>;
+                errorMessage = metadata.error_message;
+              }
               break;
           }
         }
@@ -212,7 +227,7 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
         overallStatus = 'pending';
       }
 
-      return {
+      const timelineData = {
         resumeVersionId,
         userId: resumeVersion.resume_streams.user_id,
         stages,
@@ -220,6 +235,10 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
         createdAt: resumeVersion.created_at,
         lastUpdated: resumeVersion.updated_at,
       };
+
+      console.log('Timeline data created:', timelineData);
+
+      return timelineData;
     },
     enabled: !!resumeVersionId && !!user,
     refetchInterval: 5000, // Refresh every 5 seconds for live updates
@@ -233,6 +252,8 @@ export function useResumeTimelineList(filters?: TimelineFilters) {
     queryKey: ['resume-timeline-list', filters],
     queryFn: async () => {
       if (!user) return [];
+
+      console.log('Fetching resume timeline list for user:', user.id);
 
       let query = supabase
         .from('resume_versions')
@@ -262,6 +283,8 @@ export function useResumeTimelineList(filters?: TimelineFilters) {
         console.error('Error fetching resume timeline list:', error);
         throw error;
       }
+
+      console.log('Resume timeline list fetched:', data?.length || 0, 'items');
 
       return data || [];
     },
