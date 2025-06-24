@@ -1157,6 +1157,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "resume_entity_links_normalized_entity_id_fkey"
+            columns: ["normalized_entity_id"]
+            isOneToOne: false
+            referencedRelation: "unresolved_entities_stats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "resume_entity_links_parsed_entity_id_fkey"
             columns: ["parsed_entity_id"]
             isOneToOne: false
@@ -1502,12 +1509,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      unresolved_entities_stats: {
+        Row: {
+          aliases: string[] | null
+          avg_match_score: number | null
+          canonical_name: string | null
+          confidence_score: number | null
+          created_at: string | null
+          entity_type: string | null
+          id: string | null
+          reference_count: number | null
+          referencing_users: string[] | null
+          review_status: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
+      }
+      find_similar_entities: {
+        Args: { p_entity_id: string; p_similarity_threshold?: number }
+        Returns: {
+          id: string
+          entity_type: string
+          canonical_name: string
+          aliases: string[]
+          confidence_score: number
+          similarity_score: number
+        }[]
       }
       get_interview_context: {
         Args: { p_user_id: string }
@@ -1580,6 +1613,14 @@ export type Database = {
       l2_normalize: {
         Args: { "": string } | { "": unknown } | { "": unknown }
         Returns: string
+      }
+      merge_normalized_entities: {
+        Args: {
+          p_source_entity_id: string
+          p_target_entity_id: string
+          p_admin_user_id: string
+        }
+        Returns: boolean
       }
       sparsevec_out: {
         Args: { "": unknown }
