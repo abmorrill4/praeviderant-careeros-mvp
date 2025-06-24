@@ -322,7 +322,8 @@ export const ResumeUploadV2: React.FC = () => {
                     <>
                       <Upload className="w-4 h-4 mr-2" />
                       Upload Resume
-                    </Button>
+                    </>
+                  )}
                 </Button>
                 <Button
                   variant="outline"
