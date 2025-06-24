@@ -47,32 +47,19 @@ export function useResumeStreams() {
   
   return useQuery({
     queryKey: ['resume-streams', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<ResumeStream[]> => {
       if (!user) return [];
       
-      const { data, error } = await supabase
-        .from('resume_streams')
-        .select(`
-          *,
-          resume_versions (
-            id,
-            version_number,
-            file_name,
-            file_size,
-            mime_type,
-            processing_status,
-            created_at
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('resume-stream-operations', {
+        body: { operation: 'get_user_resume_streams' }
+      });
 
       if (error) {
         console.error('Error fetching resume streams:', error);
         throw error;
       }
 
-      return data as ResumeStream[];
+      return (data || []) as ResumeStream[];
     },
     enabled: !!user?.id,
   });
@@ -82,21 +69,19 @@ export function useResumeStreams() {
 export function useResumeVersions(streamId?: string) {
   return useQuery({
     queryKey: ['resume-versions', streamId],
-    queryFn: async () => {
+    queryFn: async (): Promise<ResumeVersion[]> => {
       if (!streamId) return [];
       
-      const { data, error } = await supabase
-        .from('resume_versions')
-        .select('*')
-        .eq('stream_id', streamId)
-        .order('version_number', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('resume-stream-operations', {
+        body: { operation: 'get_stream_versions', stream_id: streamId }
+      });
 
       if (error) {
         console.error('Error fetching resume versions:', error);
         throw error;
       }
 
-      return data as ResumeVersion[];
+      return (data || []) as ResumeVersion[];
     },
     enabled: !!streamId,
   });
@@ -186,17 +171,14 @@ export function useCreateResumeStream() {
         throw new Error('User not authenticated');
       }
 
-      const { data, error } = await supabase
-        .from('resume_streams')
-        .insert({
-          user_id: user.id,
+      const { data, error } = await supabase.functions.invoke('resume-stream-operations', {
+        body: {
+          operation: 'create_resume_stream',
           name,
           description,
-          tags,
-          auto_tagged: false
-        })
-        .select()
-        .single();
+          tags
+        }
+      });
 
       if (error) {
         console.error('Error creating resume stream:', error);
@@ -237,12 +219,13 @@ export function useUpdateResumeStream() {
       streamId: string;
       updates: Partial<Pick<ResumeStream, 'name' | 'description' | 'tags'>>;
     }) => {
-      const { data, error } = await supabase
-        .from('resume_streams')
-        .update(updates)
-        .eq('id', streamId)
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke('resume-stream-operations', {
+        body: {
+          operation: 'update_resume_stream',
+          stream_id: streamId,
+          ...updates
+        }
+      });
 
       if (error) {
         console.error('Error updating resume stream:', error);

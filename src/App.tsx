@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,6 +11,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import DataManagement from "./pages/DataManagement";
 import ResumeUpload from "./pages/ResumeUpload";
+import ResumeUploadV2 from "./pages/ResumeUploadV2";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -56,6 +58,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ResumeUpload />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/resume-upload-v2"
+        element={
+          <ProtectedRoute>
+            <ResumeUploadV2 />
           </ProtectedRoute>
         }
       />

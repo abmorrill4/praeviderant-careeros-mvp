@@ -392,6 +392,44 @@ export type Database = {
         }
         Relationships: []
       }
+      job_logs: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          level: string
+          message: string
+          metadata: Json | null
+          stage: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          level?: string
+          message: string
+          metadata?: Json | null
+          stage: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           company: string
@@ -640,6 +678,39 @@ export type Database = {
         }
         Relationships: []
       }
+      resume_streams: {
+        Row: {
+          auto_tagged: boolean | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_tagged?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_tagged?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       resume_uploads: {
         Row: {
           created_at: string
@@ -687,6 +758,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      resume_versions: {
+        Row: {
+          created_at: string
+          file_hash: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          processing_status: string
+          resume_metadata: Json | null
+          stream_id: string
+          updated_at: string
+          upload_metadata: Json | null
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          file_hash: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          mime_type: string
+          processing_status?: string
+          resume_metadata?: Json | null
+          stream_id: string
+          updated_at?: string
+          upload_metadata?: Json | null
+          version_number?: number
+        }
+        Update: {
+          created_at?: string
+          file_hash?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          processing_status?: string
+          resume_metadata?: Json | null
+          stream_id?: string
+          updated_at?: string
+          upload_metadata?: Json | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resume_versions_stream_id_fkey"
+            columns: ["stream_id"]
+            isOneToOne: false
+            referencedRelation: "resume_streams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       skill: {
         Row: {
