@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Check, X, Edit3, ArrowRight, AlertTriangle, Info } from 'lucide-react';
+import { Check, X, Edit3, ArrowRight, AlertTriangle, Info, Zap } from 'lucide-react';
 import { useMergeReviewItems, useCreateMergeDecision } from '@/hooks/useMergeDecisions';
 import { useUserConfirmedProfile } from '@/hooks/useResumeDiffs';
+import { useApplyMergeDecisions } from '@/hooks/useApplyMergeDecisions';
 import type { MergeReviewItem } from '@/types/merge-decisions';
 
 interface MergeReviewPanelProps {
@@ -197,6 +197,7 @@ export const MergeReviewPanel: React.FC<MergeReviewPanelProps> = ({ versionId })
   const { data: reviewItems = [], isLoading: loadingItems } = useMergeReviewItems(versionId);
   const { data: confirmedProfile = [] } = useUserConfirmedProfile();
   const createDecisionMutation = useCreateMergeDecision();
+  const applyDecisionsMutation = useApplyMergeDecisions();
 
   const handleDecision = async (
     parsedEntityId: string,
@@ -224,6 +225,13 @@ export const MergeReviewPanel: React.FC<MergeReviewPanelProps> = ({ versionId })
       overrideValue,
       justification: item.justification,
       confidenceScore: item.confidenceScore
+    });
+  };
+
+  const handleApplyAllDecisions = async () => {
+    await applyDecisionsMutation.mutateAsync({
+      versionId,
+      applyAll: true
     });
   };
 
@@ -265,10 +273,22 @@ export const MergeReviewPanel: React.FC<MergeReviewPanelProps> = ({ versionId })
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Merge Review</CardTitle>
-        <CardDescription>
-          Review and validate changes before updating your profile ({reviewItems.length} items)
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Merge Review</CardTitle>
+            <CardDescription>
+              Review and validate changes before updating your profile ({reviewItems.length} items)
+            </CardDescription>
+          </div>
+          <Button
+            onClick={handleApplyAllDecisions}
+            disabled={applyDecisionsMutation.isPending}
+            className="flex items-center gap-2"
+          >
+            <Zap className="w-4 h-4" />
+            {applyDecisionsMutation.isPending ? 'Applying...' : 'Apply All Decisions'}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[600px] pr-4">
