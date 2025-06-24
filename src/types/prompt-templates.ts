@@ -1,11 +1,13 @@
 
+import type { Json } from '@/integrations/supabase/types';
+
 export interface PromptTemplate {
   id: string;
   category: string;
   version: number;
   content: string;
   description?: string;
-  metadata?: Record<string, any>;
+  metadata?: Json;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -25,13 +27,13 @@ export interface CreatePromptTemplateRequest {
   category: string;
   content: string;
   description?: string;
-  metadata?: Record<string, any>;
+  metadata?: Json;
 }
 
 export interface UpdatePromptTemplateRequest {
   content?: string;
   description?: string;
-  metadata?: Record<string, any>;
+  metadata?: Json;
   is_active?: boolean;
 }
 
