@@ -8,12 +8,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface ResumeUploadRequest {
-  file: File;
-  streamName?: string;
-  tags?: string[];
-}
-
 interface ResumeStream {
   id: string;
   user_id: string;
@@ -211,12 +205,16 @@ serve(async (req) => {
       });
     }
 
+    console.log('Processing file upload:', file.name);
+
     // Generate file hash
     const fileHash = await generateFileHash(file);
+    console.log('Generated file hash:', fileHash);
 
     // Check for duplicate
     const existingVersion = await checkDuplicateResume(supabase, user.id, fileHash);
     if (existingVersion) {
+      console.log('Duplicate resume detected');
       return new Response(JSON.stringify({
         success: true,
         isDuplicate: true,
@@ -229,13 +227,16 @@ serve(async (req) => {
 
     // Get or create stream
     const stream = await getOrCreateStream(supabase, user.id, streamName, tags);
+    console.log('Using stream:', stream.id);
 
     // Get next version number
     const versionNumber = await getNextVersionNumber(supabase, stream.id);
+    console.log('Version number:', versionNumber);
 
     // Create file path
     const fileExtension = file.name.split('.').pop();
     const fileName = `${user.id}/stream-${stream.id}/v${versionNumber}-${Date.now()}.${fileExtension}`;
+    console.log('File path:', fileName);
 
     // Upload file to storage
     const { data: uploadData, error: uploadError } = await supabase.storage
@@ -248,12 +249,15 @@ serve(async (req) => {
     if (uploadError) {
       console.error('Storage upload error:', uploadError);
       return new Response(JSON.stringify({ 
-        error: 'Failed to upload file to storage' 
+        error: 'Failed to upload file to storage',
+        details: uploadError.message
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log('File uploaded to storage:', uploadData.path);
 
     // Create resume version record
     const { data: versionData, error: versionError } = await supabase
@@ -285,17 +289,15 @@ serve(async (req) => {
         .remove([fileName]);
 
       return new Response(JSON.stringify({ 
-        error: 'Failed to create version record' 
+        error: 'Failed to create version record',
+        details: versionError.message
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Trigger resume processing (you can implement this later)
-    // await supabase.functions.invoke('process-resume', {
-    //   body: { versionId: versionData.id }
-    // });
+    console.log('Resume version created:', versionData.id);
 
     return new Response(JSON.stringify({
       success: true,
@@ -310,7 +312,8 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in resume upload function:', error);
     return new Response(JSON.stringify({ 
-      error: 'Internal server error' 
+      error: 'Internal server error',
+      details: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

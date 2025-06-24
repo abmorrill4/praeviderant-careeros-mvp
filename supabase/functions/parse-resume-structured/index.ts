@@ -1,95 +1,296 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const RESUME_EXTRACTION_SCHEMA = {
-  type: "object",
-  properties: {
-    personal_info: {
-      type: "object",
-      properties: {
-        full_name: { type: "string" },
-        email: { type: "string" },
-        phone: { type: "string" },
-        location: { type: "string" },
-        linkedin_url: { type: "string" },
-        portfolio_url: { type: "string" }
-      }
-    },
-    work_experience: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          job_title: { type: "string" },
-          company_name: { type: "string" },
-          start_date: { type: "string" },
-          end_date: { type: "string" },
-          description: { type: "string" },
-          technologies: { type: "array", items: { type: "string" } },
-          achievements: { type: "array", items: { type: "string" } }
-        }
-      }
-    },
-    education: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          degree: { type: "string" },
-          institution: { type: "string" },
-          field_of_study: { type: "string" },
-          graduation_date: { type: "string" },
-          gpa: { type: "string" }
-        }
-      }
-    },
-    skills: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          category: { type: "string" },
-          proficiency: { type: "string" }
-        }
-      }
-    },
-    projects: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          description: { type: "string" },
-          technologies: { type: "array", items: { type: "string" } },
-          url: { type: "string" },
-          repository_url: { type: "string" }
-        }
-      }
-    },
-    certifications: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          issuer: { type: "string" },
-          issue_date: { type: "string" },
-          expiration_date: { type: "string" },
-          credential_id: { type: "string" }
-        }
-      }
+interface ParseRequest {
+  versionId: string;
+}
+
+// Extract text from PDF using a simple text extraction approach
+async function extractTextFromPDF(fileBuffer: ArrayBuffer): Promise<string> {
+  // For now, we'll use a simple approach to extract text from PDF
+  // In a production environment, you might want to use a more sophisticated PDF parser
+  const uint8Array = new Uint8Array(fileBuffer);
+  const text = new TextDecoder().decode(uint8Array);
+  
+  // Simple extraction - look for readable text patterns
+  const textMatches = text.match(/[a-zA-Z\s]+/g);
+  return textMatches ? textMatches.join(' ').substring(0, 10000) : '';
+}
+
+// Extract text from different file types
+async function extractTextFromFile(fileBuffer: ArrayBuffer, mimeType: string): Promise<string> {
+  try {
+    switch (mimeType) {
+      case 'text/plain':
+        return new TextDecoder().decode(fileBuffer);
+      
+      case 'application/pdf':
+        return await extractTextFromPDF(fileBuffer);
+      
+      case 'application/msword':
+      case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        // For Word docs, we'll do basic text extraction
+        const docText = new TextDecoder().decode(fileBuffer);
+        const readableText = docText.match(/[a-zA-Z\s\.\,\;\:\!\?]+/g);
+        return readableText ? readableText.join(' ').substring(0, 10000) : '';
+      
+      default:
+        throw new Error(`Unsupported file type: ${mimeType}`);
     }
+  } catch (error) {
+    console.error('Error extracting text:', error);
+    throw new Error(`Failed to extract text from ${mimeType} file`);
+  }
+}
+
+// Parse resume using OpenAI
+async function parseResumeWithOpenAI(extractedText: string): Promise<any> {
+  const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openaiApiKey) {
+    throw new Error('OpenAI API key not configured');
+  }
+
+  const prompt = `
+Parse the following resume text and extract structured information. Return a JSON object with the following structure:
+
+{
+  "personal_info": {
+    "name": "Full Name",
+    "email": "email@example.com",
+    "phone": "phone number",
+    "location": "city, state/country"
   },
-  required: []
-};
+  "summary": "Professional summary or objective",
+  "work_experience": [
+    {
+      "title": "Job Title",
+      "company": "Company Name",
+      "start_date": "YYYY-MM or YYYY",
+      "end_date": "YYYY-MM or YYYY or Present",
+      "description": "Job description and achievements"
+    }
+  ],
+  "education": [
+    {
+      "degree": "Degree Type",
+      "institution": "Institution Name",
+      "field_of_study": "Field of Study",
+      "start_date": "YYYY",
+      "end_date": "YYYY",
+      "gpa": "GPA if mentioned"
+    }
+  ],
+  "skills": [
+    {
+      "name": "Skill Name",
+      "category": "Technical/Soft/Language/etc",
+      "proficiency_level": "Beginner/Intermediate/Advanced/Expert"
+    }
+  ],
+  "projects": [
+    {
+      "name": "Project Name",
+      "description": "Project description",
+      "technologies_used": ["tech1", "tech2"],
+      "start_date": "YYYY-MM",
+      "end_date": "YYYY-MM"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Certification Name",
+      "issuing_organization": "Organization",
+      "issue_date": "YYYY-MM",
+      "expiration_date": "YYYY-MM or null"
+    }
+  ]
+}
+
+Only include sections that have actual data. If a section is empty or not found, omit it from the response.
+
+Resume text:
+${extractedText}
+`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a resume parsing expert. Extract structured information from resume text and return valid JSON only. Do not include any explanatory text, just the JSON object.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('OpenAI API error:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const content = result.choices[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('No content returned from OpenAI');
+    }
+
+    return JSON.parse(content);
+  } catch (error) {
+    console.error('Error calling OpenAI API:', error);
+    throw error;
+  }
+}
+
+// Store parsed entities
+async function storeParsedEntities(supabase: any, versionId: string, parsedData: any, userId: string): Promise<number> {
+  let entityCount = 0;
+  const entities = [];
+
+  // Process personal info
+  if (parsedData.personal_info) {
+    const personalInfo = parsedData.personal_info;
+    if (personalInfo.name) {
+      entities.push({
+        resume_version_id: versionId,
+        field_name: 'name',
+        raw_value: personalInfo.name,
+        confidence_score: 0.9
+      });
+    }
+    if (personalInfo.email) {
+      entities.push({
+        resume_version_id: versionId,
+        field_name: 'email',
+        raw_value: personalInfo.email,
+        confidence_score: 0.95
+      });
+    }
+    if (personalInfo.phone) {
+      entities.push({
+        resume_version_id: versionId,
+        field_name: 'phone',
+        raw_value: personalInfo.phone,
+        confidence_score: 0.9
+      });
+    }
+    if (personalInfo.location) {
+      entities.push({
+        resume_version_id: versionId,
+        field_name: 'location',
+        raw_value: personalInfo.location,
+        confidence_score: 0.85
+      });
+    }
+  }
+
+  // Process summary
+  if (parsedData.summary) {
+    entities.push({
+      resume_version_id: versionId,
+      field_name: 'summary',
+      raw_value: parsedData.summary,
+      confidence_score: 0.8
+    });
+  }
+
+  // Process work experience
+  if (parsedData.work_experience && Array.isArray(parsedData.work_experience)) {
+    parsedData.work_experience.forEach((job: any, index: number) => {
+      entities.push({
+        resume_version_id: versionId,
+        field_name: `work_experience_${index}`,
+        raw_value: JSON.stringify(job),
+        confidence_score: 0.85
+      });
+    });
+  }
+
+  // Process education
+  if (parsedData.education && Array.isArray(parsedData.education)) {
+    parsedData.education.forEach((edu: any, index: number) => {
+      entities.push({
+        resume_version_id: versionId,
+        field_name: `education_${index}`,
+        raw_value: JSON.stringify(edu),
+        confidence_score: 0.85
+      });
+    });
+  }
+
+  // Process skills
+  if (parsedData.skills && Array.isArray(parsedData.skills)) {
+    parsedData.skills.forEach((skill: any, index: number) => {
+      entities.push({
+        resume_version_id: versionId,
+        field_name: `skill_${index}`,
+        raw_value: JSON.stringify(skill),
+        confidence_score: 0.8
+      });
+    });
+  }
+
+  // Process projects
+  if (parsedData.projects && Array.isArray(parsedData.projects)) {
+    parsedData.projects.forEach((project: any, index: number) => {
+      entities.push({
+        resume_version_id: versionId,
+        field_name: `project_${index}`,
+        raw_value: JSON.stringify(project),
+        confidence_score: 0.8
+      });
+    });
+  }
+
+  // Process certifications
+  if (parsedData.certifications && Array.isArray(parsedData.certifications)) {
+    parsedData.certifications.forEach((cert: any, index: number) => {
+      entities.push({
+        resume_version_id: versionId,
+        field_name: `certification_${index}`,
+        raw_value: JSON.stringify(cert),
+        confidence_score: 0.85
+      });
+    });
+  }
+
+  // Insert all entities
+  if (entities.length > 0) {
+    const { error } = await supabase
+      .from('parsed_resume_entities')
+      .insert(entities);
+
+    if (error) {
+      console.error('Error inserting parsed entities:', error);
+      throw error;
+    }
+
+    entityCount = entities.length;
+  }
+
+  return entityCount;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -97,371 +298,127 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    const { versionId } = await req.json();
+    const { versionId }: ParseRequest = await req.json();
 
     if (!versionId) {
-      throw new Error('Version ID is required');
+      return new Response(JSON.stringify({ error: 'Version ID is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    console.log('Processing resume version:', versionId);
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get the resume version and file
+    // Get resume version details
     const { data: version, error: versionError } = await supabase
       .from('resume_versions')
-      .select('*')
+      .select(`
+        *,
+        resume_streams!inner(user_id)
+      `)
       .eq('id', versionId)
       .single();
 
     if (versionError || !version) {
-      throw new Error(`Version not found: ${versionError?.message}`);
+      console.error('Error fetching resume version:', versionError);
+      return new Response(JSON.stringify({ error: 'Resume version not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Update processing status
+    // Update processing status to processing
     await supabase
       .from('resume_versions')
       .update({ processing_status: 'processing' })
       .eq('id', versionId);
 
-    // Download file from storage
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from('user-resumes')
-      .download(version.file_path);
+    try {
+      // Download file from storage
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('user-resumes')
+        .download(version.file_path);
 
-    if (downloadError) {
-      throw new Error(`Failed to download file: ${downloadError.message}`);
-    }
+      if (downloadError || !fileData) {
+        throw new Error(`Failed to download file: ${downloadError?.message}`);
+      }
 
-    // Extract text based on file type
-    let extractedText = '';
-    if (version.mime_type === 'application/pdf') {
-      extractedText = await extractPDFText(fileData);
-    } else if (version.mime_type.includes('text/')) {
-      extractedText = await fileData.text();
-    } else {
-      throw new Error(`Unsupported file type: ${version.mime_type}`);
-    }
+      // Convert to ArrayBuffer
+      const fileBuffer = await fileData.arrayBuffer();
 
-    if (!extractedText || extractedText.trim().length === 0) {
-      throw new Error('No text content could be extracted from the document');
-    }
+      // Extract text from file
+      const extractedText = await extractTextFromFile(fileBuffer, version.mime_type);
 
-    // Parse with OpenAI function calling
-    const structuredData = await parseResumeWithFunctionCalls(extractedText);
+      if (!extractedText.trim()) {
+        throw new Error('No text could be extracted from the file');
+      }
 
-    // Store parsed entities with provenance
-    await storeStructuredData(supabase, versionId, structuredData);
+      console.log('Extracted text length:', extractedText.length);
 
-    // Update version status
-    await supabase
-      .from('resume_versions')
-      .update({ 
-        processing_status: 'completed',
-        resume_metadata: {
-          ...version.resume_metadata,
-          structured_data_extracted: true,
-          extraction_timestamp: new Date().toISOString()
-        }
-      })
-      .eq('id', versionId);
+      // Parse with OpenAI
+      const parsedData = await parseResumeWithOpenAI(extractedText);
 
-    console.log('Resume parsing completed successfully');
+      // Store parsed entities
+      const entityCount = await storeParsedEntities(
+        supabase, 
+        versionId, 
+        parsedData, 
+        version.resume_streams.user_id
+      );
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
+      // Update resume version with parsed data and status
+      await supabase
+        .from('resume_versions')
+        .update({
+          processing_status: 'completed',
+          resume_metadata: {
+            ...version.resume_metadata,
+            parsed_data: parsedData,
+            processing_completed_at: new Date().toISOString(),
+            entities_extracted: entityCount
+          }
+        })
+        .eq('id', versionId);
+
+      return new Response(JSON.stringify({
+        success: true,
         message: 'Resume parsed successfully',
-        entities_count: await countStoredEntities(supabase, versionId)
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+        entities_count: entityCount,
+        parsed_data: parsedData
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
+    } catch (processingError) {
+      console.error('Processing error:', processingError);
+      
+      // Update status to failed
+      await supabase
+        .from('resume_versions')
+        .update({ 
+          processing_status: 'failed',
+          resume_metadata: {
+            ...version.resume_metadata,
+            error_message: processingError.message,
+            processing_failed_at: new Date().toISOString()
+          }
+        })
+        .eq('id', versionId);
+
+      throw processingError;
+    }
 
   } catch (error) {
-    console.error('Error parsing resume:', error);
-
-    // Update error status if we have versionId
-    const requestBody = await req.clone().json().catch(() => ({}));
-    if (requestBody.versionId) {
-      try {
-        const supabase = createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        );
-
-        await supabase
-          .from('resume_versions')
-          .update({ processing_status: 'failed' })
-          .eq('id', requestBody.versionId);
-      } catch (dbError) {
-        console.error('Failed to update error status:', dbError);
-      }
-    }
-
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
-    );
+    console.error('Error in parse-resume-structured:', error);
+    return new Response(JSON.stringify({
+      error: 'Internal server error',
+      message: error.message
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
-
-async function extractPDFText(fileData: Blob): Promise<string> {
-  const openAIKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAIKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  let fileId: string | null = null;
-
-  try {
-    if (fileData.size > 20 * 1024 * 1024) {
-      throw new Error('PDF file is too large. Please upload a smaller file (max 20MB).');
-    }
-
-    // Upload file to OpenAI Files API
-    const formData = new FormData();
-    formData.append('file', fileData, 'resume.pdf');
-    formData.append('purpose', 'assistants');
-
-    const uploadResponse = await fetch('https://api.openai.com/v1/files', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIKey}`,
-      },
-      body: formData,
-    });
-
-    if (!uploadResponse.ok) {
-      const errorData = await uploadResponse.json();
-      throw new Error(`OpenAI file upload error: ${errorData.error?.message || 'Unknown error'}`);
-    }
-
-    const uploadData = await uploadResponse.json();
-    fileId = uploadData.id;
-
-    // Extract text using GPT-4o
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'Extract ALL text content from the provided PDF document. Return only the extracted text without any commentary.'
-          },
-          {
-            role: 'user',
-            content: [
-              { 
-                type: 'text', 
-                text: 'Please extract all text content from this resume PDF:' 
-              },
-              { 
-                type: 'file_id', 
-                file_id: fileId 
-              }
-            ]
-          }
-        ],
-        max_tokens: 4000,
-        temperature: 0
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
-    }
-
-    const data = await response.json();
-    const extractedText = data.choices[0]?.message?.content || '';
-    
-    if (extractedText.trim().length < 10) {
-      throw new Error('Unable to extract readable text from PDF.');
-    }
-    
-    return extractedText;
-
-  } finally {
-    // Clean up uploaded file
-    if (fileId) {
-      try {
-        await fetch(`https://api.openai.com/v1/files/${fileId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${openAIKey}`,
-          },
-        });
-      } catch (cleanupError) {
-        console.warn('Failed to cleanup uploaded file from OpenAI:', cleanupError);
-      }
-    }
-  }
-}
-
-async function parseResumeWithFunctionCalls(text: string): Promise<any> {
-  const openAIKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAIKey) {
-    throw new Error('OpenAI API key not configured');
-  }
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a resume parsing specialist. Extract structured data from the provided resume text using the extract_resume_data function.'
-        },
-        {
-          role: 'user',
-          content: `Parse this resume text and extract structured data:\n\n${text}`
-        }
-      ],
-      functions: [
-        {
-          name: 'extract_resume_data',
-          description: 'Extract structured data from resume text',
-          parameters: RESUME_EXTRACTION_SCHEMA
-        }
-      ],
-      function_call: { name: 'extract_resume_data' },
-      temperature: 0
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
-  }
-
-  const data = await response.json();
-  const functionCall = data.choices[0]?.message?.function_call;
-  
-  if (!functionCall || functionCall.name !== 'extract_resume_data') {
-    throw new Error('Failed to get structured data from OpenAI function call');
-  }
-
-  try {
-    return JSON.parse(functionCall.arguments);
-  } catch (parseError) {
-    console.error('Error parsing function call arguments:', parseError);
-    throw new Error('Failed to parse structured data from resume');
-  }
-}
-
-async function storeStructuredData(supabase: any, versionId: string, data: any): Promise<void> {
-  const entities = [];
-
-  // Helper function to add entities with flattened structure
-  const addEntity = (fieldName: string, value: any, confidenceScore = 0.9) => {
-    if (value === null || value === undefined) return;
-    
-    entities.push({
-      resume_version_id: versionId,
-      field_name: fieldName,
-      raw_value: typeof value === 'string' ? value : JSON.stringify(value),
-      confidence_score: confidenceScore,
-      model_version: 'gpt-4o-mini',
-      source_type: 'openai_function_call'
-    });
-  };
-
-  // Process personal info
-  if (data.personal_info) {
-    Object.entries(data.personal_info).forEach(([key, value]) => {
-      if (value) addEntity(`personal_info.${key}`, value);
-    });
-  }
-
-  // Process work experience
-  if (data.work_experience && Array.isArray(data.work_experience)) {
-    data.work_experience.forEach((exp: any, index: number) => {
-      Object.entries(exp).forEach(([key, value]) => {
-        if (value) addEntity(`work_experience.${index}.${key}`, value);
-      });
-    });
-  }
-
-  // Process education
-  if (data.education && Array.isArray(data.education)) {
-    data.education.forEach((edu: any, index: number) => {
-      Object.entries(edu).forEach(([key, value]) => {
-        if (value) addEntity(`education.${index}.${key}`, value);
-      });
-    });
-  }
-
-  // Process skills
-  if (data.skills && Array.isArray(data.skills)) {
-    data.skills.forEach((skill: any, index: number) => {
-      Object.entries(skill).forEach(([key, value]) => {
-        if (value) addEntity(`skills.${index}.${key}`, value);
-      });
-    });
-  }
-
-  // Process projects
-  if (data.projects && Array.isArray(data.projects)) {
-    data.projects.forEach((project: any, index: number) => {
-      Object.entries(project).forEach(([key, value]) => {
-        if (value) addEntity(`projects.${index}.${key}`, value);
-      });
-    });
-  }
-
-  // Process certifications
-  if (data.certifications && Array.isArray(data.certifications)) {
-    data.certifications.forEach((cert: any, index: number) => {
-      Object.entries(cert).forEach(([key, value]) => {
-        if (value) addEntity(`certifications.${index}.${key}`, value);
-      });
-    });
-  }
-
-  // Batch insert entities
-  if (entities.length > 0) {
-    const { error } = await supabase
-      .from('parsed_resume_entities')
-      .insert(entities);
-
-    if (error) {
-      console.error('Error storing parsed entities:', error);
-      throw new Error('Failed to store parsed resume entities');
-    }
-
-    console.log(`Stored ${entities.length} parsed entities`);
-  }
-}
-
-async function countStoredEntities(supabase: any, versionId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from('parsed_resume_entities')
-    .select('*', { count: 'exact', head: true })
-    .eq('resume_version_id', versionId);
-
-  if (error) {
-    console.error('Error counting entities:', error);
-    return 0;
-  }
-
-  return count || 0;
-}

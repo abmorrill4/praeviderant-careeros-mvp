@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
@@ -44,11 +45,13 @@ export const ResumeUploadV2: React.FC = () => {
     // Validate file type
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
     if (!allowedTypes.includes(file.type)) {
+      console.error('Invalid file type:', file.type);
       return;
     }
 
     // Validate file size (50MB limit)
     if (file.size > 50 * 1024 * 1024) {
+      console.error('File too large:', file.size);
       return;
     }
 
@@ -87,14 +90,17 @@ export const ResumeUploadV2: React.FC = () => {
   const handleUpload = async () => {
     if (!uploadState.file) return;
 
+    console.log('Starting upload process...');
     setUploadState(prev => ({ ...prev, uploading: true }));
 
     try {
-      await uploadMutation.mutateAsync({
+      const result = await uploadMutation.mutateAsync({
         file: uploadState.file,
         streamName: uploadState.streamName,
         tags: uploadState.tags
       });
+
+      console.log('Upload result:', result);
 
       // Reset form on success
       setUploadState({
@@ -106,6 +112,7 @@ export const ResumeUploadV2: React.FC = () => {
       });
 
     } catch (error) {
+      console.error('Upload error:', error);
       setUploadState(prev => ({ ...prev, uploading: false }));
     }
   };
