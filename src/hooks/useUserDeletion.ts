@@ -89,20 +89,32 @@ export const useUserDeletion = () => {
       return;
     }
 
+    console.log('Starting data deletion for user:', user.id);
     setIsLoading(true);
+    
     try {
       const { data, error } = await supabase.rpc('handle_user_deletion', {
         target_user_id: user.id
       });
 
+      console.log('Deletion data response:', data);
+      console.log('Deletion error:', error);
+
       if (error) {
         console.error('Error deleting user data:', error);
+        toast({
+          title: "Deletion Error",
+          description: `Failed to delete your data: ${error.message}`,
+          variant: "destructive",
+        });
         throw error;
       }
 
+      const totalDeleted = (data || []).reduce((sum: number, item: any) => sum + Number(item.rows_deleted), 0);
+
       toast({
         title: "Data Deletion Complete",
-        description: "Your data has been successfully deleted. You will be signed out.",
+        description: `Successfully deleted ${totalDeleted} records across ${data?.length || 0} tables. You will be signed out.`,
         variant: "default",
       });
 

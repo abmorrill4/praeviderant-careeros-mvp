@@ -139,7 +139,7 @@ export const DataManagement = () => {
             <div className="border-t pt-4">
               <h3 className="text-lg font-semibold mb-2 text-destructive">Delete All Data</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Permanently delete all your data from CareerOS. This action cannot be undone.
+                Permanently delete all your data from Praeviderant. This action cannot be undone.
               </p>
               
               <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
