@@ -508,6 +508,101 @@ export type Database = {
         }
         Relationships: []
       }
+      normalization_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          entity_type: string | null
+          error_message: string | null
+          id: string
+          matched_entities: number | null
+          orphaned_entities: number | null
+          processed_entities: number | null
+          resume_version_id: string | null
+          started_at: string | null
+          status: string
+          total_entities: number | null
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          matched_entities?: number | null
+          orphaned_entities?: number | null
+          processed_entities?: number | null
+          resume_version_id?: string | null
+          started_at?: string | null
+          status?: string
+          total_entities?: number | null
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          entity_type?: string | null
+          error_message?: string | null
+          id?: string
+          matched_entities?: number | null
+          orphaned_entities?: number | null
+          processed_entities?: number | null
+          resume_version_id?: string | null
+          started_at?: string | null
+          status?: string
+          total_entities?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "normalization_jobs_resume_version_id_fkey"
+            columns: ["resume_version_id"]
+            isOneToOne: false
+            referencedRelation: "resume_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      normalized_entities: {
+        Row: {
+          aliases: string[] | null
+          canonical_name: string
+          confidence_score: number | null
+          created_at: string
+          embedding_vector: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          review_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          aliases?: string[] | null
+          canonical_name: string
+          confidence_score?: number | null
+          created_at?: string
+          embedding_vector?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          review_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aliases?: string[] | null
+          canonical_name?: string
+          confidence_score?: number | null
+          created_at?: string
+          embedding_vector?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          review_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parsed_resume_entities: {
         Row: {
           confidence_score: number | null
@@ -784,6 +879,57 @@ export type Database = {
             columns: ["resume_version_id"]
             isOneToOne: false
             referencedRelation: "resume_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resume_entity_links: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          id: string
+          match_method: string
+          match_score: number
+          normalized_entity_id: string
+          parsed_entity_id: string
+          review_required: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          match_method: string
+          match_score: number
+          normalized_entity_id: string
+          parsed_entity_id: string
+          review_required?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          match_method?: string
+          match_score?: number
+          normalized_entity_id?: string
+          parsed_entity_id?: string
+          review_required?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resume_entity_links_normalized_entity_id_fkey"
+            columns: ["normalized_entity_id"]
+            isOneToOne: false
+            referencedRelation: "normalized_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resume_entity_links_parsed_entity_id_fkey"
+            columns: ["parsed_entity_id"]
+            isOneToOne: false
+            referencedRelation: "parsed_resume_entities"
             referencedColumns: ["id"]
           },
         ]

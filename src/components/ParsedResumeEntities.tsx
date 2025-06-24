@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Brain, RefreshCw, Eye } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Brain, RefreshCw, Eye, Target } from 'lucide-react';
 import { useParsedResumeEntities, useParseResumeVersion } from '@/hooks/useResumeStreams';
 import { ResumeDiffAnalysis } from '@/components/ResumeDiffAnalysis';
+import { EntityNormalization } from '@/components/EntityNormalization';
 import type { ParsedResumeEntity } from '@/hooks/useResumeStreams';
 
 interface ParsedResumeEntitiesProps {
@@ -133,90 +134,102 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5" />
-            Extracted Data ({entities.length} items)
-          </CardTitle>
-          <CardDescription>
-            Structured data extracted using AI with confidence scores
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {Object.entries(groupedEntities).map(([section, sectionEntities]) => (
-            <div key={section}>
-              <h3 className="font-medium mb-3 capitalize">
-                {section.replace(/_/g, ' ')}
-              </h3>
-              <div className="space-y-2">
-                {sectionEntities.map((entity) => (
-                  <div 
-                    key={entity.id} 
-                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium">
-                          {formatFieldName(entity.field_name)}
-                        </span>
-                        <Badge 
-                          variant="secondary" 
-                          className={`text-xs ${getConfidenceColor(entity.confidence_score)}`}
-                        >
-                          {Math.round(entity.confidence_score * 100)}% confidence
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {entity.raw_value.length > 100 
-                          ? `${entity.raw_value.substring(0, 100)}...`
-                          : entity.raw_value
-                        }
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {section !== Object.keys(groupedEntities)[Object.keys(groupedEntities).length - 1] && (
-                <Separator className="mt-4" />
-              )}
-            </div>
-          ))}
-          
-          <div className="flex justify-between items-center pt-4 border-t">
-            <div className="text-sm text-muted-foreground">
-              Extracted by {entities[0]?.model_version} • {entities[0]?.source_type}
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowDiffAnalysis(!showDiffAnalysis)}
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                {showDiffAnalysis ? 'Hide' : 'Show'} Semantic Analysis
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => refetch()}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="extracted" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="extracted" className="flex items-center gap-2">
+            <Brain className="w-4 h-4" />
+            Extracted Data
+          </TabsTrigger>
+          <TabsTrigger value="normalization" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            Normalization
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="flex items-center gap-2">
+            <Eye className="w-4 h-4" />
+            Semantic Analysis
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Semantic Diff Analysis Component */}
-      {showDiffAnalysis && (
-        <ResumeDiffAnalysis 
-          versionId={versionId}
-          onToggleVisibility={() => setShowDiffAnalysis(!showDiffAnalysis)}
-          isVisible={showDiffAnalysis}
-        />
-      )}
+        <TabsContent value="extracted" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="w-5 h-5" />
+                Extracted Data ({entities.length} items)
+              </CardTitle>
+              <CardDescription>
+                Structured data extracted using AI with confidence scores
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {Object.entries(groupedEntities).map(([section, sectionEntities]) => (
+                <div key={section}>
+                  <h3 className="font-medium mb-3 capitalize">
+                    {section.replace(/_/g, ' ')}
+                  </h3>
+                  <div className="space-y-2">
+                    {sectionEntities.map((entity) => (
+                      <div 
+                        key={entity.id} 
+                        className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium">
+                              {formatFieldName(entity.field_name)}
+                            </span>
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${getConfidenceColor(entity.confidence_score)}`}
+                            >
+                              {Math.round(entity.confidence_score * 100)}% confidence
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {entity.raw_value.length > 100 
+                              ? `${entity.raw_value.substring(0, 100)}...`
+                              : entity.raw_value
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {section !== Object.keys(groupedEntities)[Object.keys(groupedEntities).length - 1] && (
+                    <Separator className="mt-4" />
+                  )}
+                </div>
+              ))}
+              
+              <div className="flex justify-between items-center pt-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Extracted by {entities[0]?.model_version} • {entities[0]?.source_type}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => refetch()}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="normalization">
+          <EntityNormalization versionId={versionId} />
+        </TabsContent>
+
+        <TabsContent value="analysis">
+          <ResumeDiffAnalysis 
+            versionId={versionId}
+            onToggleVisibility={() => setShowDiffAnalysis(!showDiffAnalysis)}
+            isVisible={true}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
