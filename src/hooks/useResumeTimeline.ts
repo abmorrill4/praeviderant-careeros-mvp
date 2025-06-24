@@ -28,51 +28,52 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
         return null;
       }
 
-      // Get job logs for this resume
+      // Get job logs for this resume version
       const { data: jobLogs, error: logsError } = await supabase
         .from('job_logs')
-        .select(`
-          *,
-          jobs!inner(
-            id,
-            user_id,
-            status,
-            job_type,
-            created_at,
-            updated_at,
-            started_at,
-            completed_at,
-            error_message
-          )
-        `)
-        .eq('jobs.user_id', resumeVersion.resume_streams.user_id)
+        .select('*')
         .order('created_at', { ascending: true });
 
       if (logsError) {
         console.error('Error fetching job logs:', logsError);
       }
 
-      // Get related jobs data
-      const { data: jobs, error: jobsError } = await supabase
-        .from('jobs')
+      // Get normalization jobs
+      const { data: normalizationJobs, error: normError } = await supabase
+        .from('normalization_jobs')
         .select('*')
-        .eq('user_id', resumeVersion.resume_streams.user_id)
+        .eq('resume_version_id', resumeVersionId)
         .order('created_at', { ascending: true });
 
-      if (jobsError) {
-        console.error('Error fetching jobs:', jobsError);
+      if (normError) {
+        console.error('Error fetching normalization jobs:', normError);
+      }
+
+      // Get enrichment jobs
+      const { data: enrichmentJobs, error: enrichError } = await supabase
+        .from('enrichment_jobs')
+        .select('*')
+        .eq('resume_version_id', resumeVersionId)
+        .order('created_at', { ascending: true });
+
+      if (enrichError) {
+        console.error('Error fetching enrichment jobs:', enrichError);
       }
 
       // Process the data into timeline stages
       const stages: TimelineStage[] = PIPELINE_STAGES.map(stageConfig => {
+        // Filter job logs for this stage
         const stageLogs = (jobLogs || []).filter(log => 
-          log.stage === stageConfig.name || 
-          log.jobs?.job_type?.includes(stageConfig.name)
+          log.stage === stageConfig.name
         );
 
-        const relatedJobs = (jobs || []).filter(job => 
-          job.job_type?.includes(stageConfig.name)
-        );
+        // Find related jobs based on stage
+        let relatedJobs: any[] = [];
+        if (stageConfig.name === 'normalize') {
+          relatedJobs = normalizationJobs || [];
+        } else if (stageConfig.name === 'enrich') {
+          relatedJobs = enrichmentJobs || [];
+        }
 
         let status: TimelineStage['status'] = 'pending';
         let startedAt: string | undefined;
@@ -111,6 +112,28 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
           completedAt = resumeVersion.created_at;
         }
 
+        // Special handling for parse stage
+        if (stageConfig.name === 'parse' && resumeVersion.processing_status) {
+          switch (resumeVersion.processing_status) {
+            case 'pending':
+              status = 'pending';
+              break;
+            case 'processing':
+              status = 'in_progress';
+              startedAt = resumeVersion.updated_at;
+              break;
+            case 'completed':
+              status = 'completed';
+              startedAt = resumeVersion.updated_at;
+              completedAt = resumeVersion.updated_at;
+              break;
+            case 'failed':
+              status = 'failed';
+              startedAt = resumeVersion.updated_at;
+              break;
+          }
+        }
+
         return {
           id: stageConfig.id,
           name: stageConfig.name,
@@ -126,9 +149,9 @@ export function useResumeTimeline(resumeVersionId?: string, filters?: TimelineFi
             id: log.id,
             job_id: log.job_id,
             stage: log.stage,
-            level: log.level,
+            level: log.level as 'debug' | 'info' | 'warn' | 'error',
             message: log.message,
-            metadata: log.metadata || {},
+            metadata: (log.metadata as Record<string, any>) || {},
             created_at: log.created_at,
           })),
         };
