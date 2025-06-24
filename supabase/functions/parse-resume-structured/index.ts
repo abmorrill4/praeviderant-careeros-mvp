@@ -12,7 +12,7 @@ interface ParseRequest {
   versionId: string;
 }
 
-// Extract text from PDF using OpenAI Files API
+// Extract text from PDF using OpenAI Assistant API
 async function extractPDFTextWithOpenAI(fileBuffer: ArrayBuffer): Promise<string> {
   const openAIKey = Deno.env.get('OPENAI_API_KEY');
   if (!openAIKey) {
@@ -20,6 +20,8 @@ async function extractPDFTextWithOpenAI(fileBuffer: ArrayBuffer): Promise<string
   }
 
   let uploadedFileId: string | null = null;
+  let assistantId: string | null = null;
+  let threadId: string | null = null;
 
   try {
     // Check if file is too large (OpenAI limit is 512MB, but we'll use reasonable limit)
@@ -56,47 +58,155 @@ async function extractPDFTextWithOpenAI(fileBuffer: ArrayBuffer): Promise<string
 
     console.log('File uploaded to OpenAI with ID:', uploadedFileId);
 
-    // Step 2: Use the file with chat completions to extract text
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Step 2: Create an assistant for text extraction
+    const assistantResponse = await fetch('https://api.openai.com/v1/assistants', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIKey}`,
         'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2',
       },
       body: JSON.stringify({
+        name: 'Resume Text Extractor',
+        instructions: 'You are a resume text extraction specialist. Extract ALL text content from the provided PDF document. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content without any commentary or analysis.',
         model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a resume text extraction specialist. Extract ALL text content from the provided PDF document. Include names, contact information, work experience, education, skills, projects, certifications, and any other text. Maintain the logical structure and return only the extracted text content without any commentary or analysis.'
-          },
-          {
-            role: 'user',
-            content: [
-              { 
-                type: 'text', 
-                text: 'Please extract all text content from this resume PDF. Return only the text content, maintaining the structure but without any analysis or commentary:' 
-              },
-              { 
-                type: 'file',
-                file_id: uploadedFileId
-              }
-            ]
-          }
-        ],
-        max_tokens: 4000,
-        temperature: 0
+        tools: [{ type: 'file_search' }],
       }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+    if (!assistantResponse.ok) {
+      const errorData = await assistantResponse.json();
+      console.error('Assistant creation error:', errorData);
+      throw new Error(`Assistant creation error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
-    const data = await response.json();
-    const extractedText = data.choices[0]?.message?.content || '';
+    const assistantData = await assistantResponse.json();
+    assistantId = assistantData.id;
+
+    console.log('Assistant created with ID:', assistantId);
+
+    // Step 3: Create a thread
+    const threadResponse = await fetch('https://api.openai.com/v1/threads', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2',
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!threadResponse.ok) {
+      const errorData = await threadResponse.json();
+      console.error('Thread creation error:', errorData);
+      throw new Error(`Thread creation error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const threadData = await threadResponse.json();
+    threadId = threadData.id;
+
+    console.log('Thread created with ID:', threadId);
+
+    // Step 4: Add message to thread with file attachment
+    const messageResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2',
+      },
+      body: JSON.stringify({
+        role: 'user',
+        content: 'Please extract all text content from this resume PDF. Return only the text content, maintaining the structure but without any analysis or commentary.',
+        attachments: [
+          {
+            file_id: uploadedFileId,
+            tools: [{ type: 'file_search' }],
+          },
+        ],
+      }),
+    });
+
+    if (!messageResponse.ok) {
+      const errorData = await messageResponse.json();
+      console.error('Message creation error:', errorData);
+      throw new Error(`Message creation error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    // Step 5: Run the assistant
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIKey}`,
+        'Content-Type': 'application/json',
+        'OpenAI-Beta': 'assistants=v2',
+      },
+      body: JSON.stringify({
+        assistant_id: assistantId,
+      }),
+    });
+
+    if (!runResponse.ok) {
+      const errorData = await runResponse.json();
+      console.error('Run creation error:', errorData);
+      throw new Error(`Run creation error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const runData = await runResponse.json();
+    const runId = runData.id;
+
+    console.log('Run created with ID:', runId);
+
+    // Step 6: Poll for completion
+    let runStatus = 'queued';
+    let attempts = 0;
+    const maxAttempts = 30; // 30 seconds timeout
+
+    while (runStatus !== 'completed' && runStatus !== 'failed' && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+      
+      const statusResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${runId}`, {
+        headers: {
+          'Authorization': `Bearer ${openAIKey}`,
+          'OpenAI-Beta': 'assistants=v2',
+        },
+      });
+
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        runStatus = statusData.status;
+        console.log('Run status:', runStatus);
+      }
+      
+      attempts++;
+    }
+
+    if (runStatus !== 'completed') {
+      throw new Error(`Run did not complete successfully. Status: ${runStatus}`);
+    }
+
+    // Step 7: Retrieve messages
+    const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      headers: {
+        'Authorization': `Bearer ${openAIKey}`,
+        'OpenAI-Beta': 'assistants=v2',
+      },
+    });
+
+    if (!messagesResponse.ok) {
+      const errorData = await messagesResponse.json();
+      console.error('Messages retrieval error:', errorData);
+      throw new Error(`Messages retrieval error: ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const messagesData = await messagesResponse.json();
+    const assistantMessages = messagesData.data.filter((msg: any) => msg.role === 'assistant');
+    
+    if (assistantMessages.length === 0) {
+      throw new Error('No response from assistant');
+    }
+
+    const extractedText = assistantMessages[0].content[0]?.text?.value || '';
     
     // Check for common error responses from OpenAI
     if (extractedText.includes("I cannot process") || 
@@ -107,14 +217,14 @@ async function extractPDFTextWithOpenAI(fileBuffer: ArrayBuffer): Promise<string
       throw new Error('Unable to extract readable text from PDF. The document may be scanned, corrupted, or in an unsupported format. Please try converting to a Word document or text file.');
     }
     
-    console.log('Successfully extracted text from PDF using OpenAI Files API');
+    console.log('Successfully extracted text from PDF using OpenAI Assistants API');
     return extractedText;
 
   } catch (error) {
     console.error('PDF extraction error:', error);
     throw new Error(`Failed to extract text from PDF: ${error.message}`);
   } finally {
-    // Clean up: Delete the uploaded file from OpenAI
+    // Clean up: Delete the uploaded file, assistant, and thread from OpenAI
     if (uploadedFileId) {
       try {
         await fetch(`https://api.openai.com/v1/files/${uploadedFileId}`, {
@@ -126,7 +236,36 @@ async function extractPDFTextWithOpenAI(fileBuffer: ArrayBuffer): Promise<string
         console.log('Cleaned up uploaded file from OpenAI:', uploadedFileId);
       } catch (cleanupError) {
         console.warn('Failed to cleanup uploaded file from OpenAI:', cleanupError);
-        // Don't throw here as the main operation succeeded
+      }
+    }
+
+    if (assistantId) {
+      try {
+        await fetch(`https://api.openai.com/v1/assistants/${assistantId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${openAIKey}`,
+            'OpenAI-Beta': 'assistants=v2',
+          },
+        });
+        console.log('Cleaned up assistant from OpenAI:', assistantId);
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup assistant from OpenAI:', cleanupError);
+      }
+    }
+
+    if (threadId) {
+      try {
+        await fetch(`https://api.openai.com/v1/threads/${threadId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${openAIKey}`,
+            'OpenAI-Beta': 'assistants=v2',
+          },
+        });
+        console.log('Cleaned up thread from OpenAI:', threadId);
+      } catch (cleanupError) {
+        console.warn('Failed to cleanup thread from OpenAI:', cleanupError);
       }
     }
   }
