@@ -35,101 +35,12 @@ interface ResumeVersion {
   updated_at: string;
 }
 
-// Generate a simple hash for file content
+// Simple hash generation using Web Crypto API
 async function generateFileHash(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Check if a resume version already exists with the same hash
-async function checkDuplicateResume(
-  supabase: any,
-  userId: string,
-  fileHash: string
-): Promise<ResumeVersion | null> {
-  const { data, error } = await supabase
-    .from('resume_versions')
-    .select(`
-      *,
-      resume_streams!inner(user_id)
-    `)
-    .eq('file_hash', fileHash)
-    .eq('resume_streams.user_id', userId)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error checking for duplicate resume:', error);
-    return null;
-  }
-
-  return data;
-}
-
-// Get or create a resume stream
-async function getOrCreateStream(
-  supabase: any,
-  userId: string,
-  streamName: string = 'Default Resume',
-  tags: string[] = []
-): Promise<ResumeStream> {
-  // First try to find existing stream with the same name
-  const { data: existingStream, error: findError } = await supabase
-    .from('resume_streams')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('name', streamName)
-    .maybeSingle();
-
-  if (findError) {
-    console.error('Error finding existing stream:', findError);
-    throw new Error('Failed to check for existing resume stream');
-  }
-
-  if (existingStream) {
-    return existingStream;
-  }
-
-  // Create new stream
-  const { data: newStream, error: createError } = await supabase
-    .from('resume_streams')
-    .insert({
-      user_id: userId,
-      name: streamName,
-      tags: tags,
-      auto_tagged: tags.length === 0
-    })
-    .select()
-    .single();
-
-  if (createError) {
-    console.error('Error creating new stream:', createError);
-    throw new Error('Failed to create resume stream');
-  }
-
-  return newStream;
-}
-
-// Get the next version number for a stream
-async function getNextVersionNumber(
-  supabase: any,
-  streamId: string
-): Promise<number> {
-  const { data, error } = await supabase
-    .from('resume_versions')
-    .select('version_number')
-    .eq('stream_id', streamId)
-    .order('version_number', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error getting latest version:', error);
-    return 1;
-  }
-
-  return data ? data.version_number + 1 : 1;
 }
 
 serve(async (req) => {
@@ -138,9 +49,12 @@ serve(async (req) => {
   }
 
   try {
-    // Get the authorization header
+    console.log('Processing resume upload request...');
+
+    // Get authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('Missing authorization header');
       return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -154,7 +68,7 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Get the authenticated user
+    // Get authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.error('Authentication error:', userError);
@@ -164,19 +78,33 @@ serve(async (req) => {
       });
     }
 
-    // Parse the multipart form data
+    console.log('User authenticated:', user.id);
+
+    // Parse form data
     const formData = await req.formData();
     const file = formData.get('file') as File;
-    const streamName = formData.get('streamName') as string || 'Default Resume';
+    const streamName = (formData.get('streamName') as string) || 'Default Resume';
     const tagsString = formData.get('tags') as string;
-    const tags = tagsString ? JSON.parse(tagsString) : [];
+    
+    let tags: string[] = [];
+    if (tagsString) {
+      try {
+        tags = JSON.parse(tagsString);
+      } catch (e) {
+        console.error('Failed to parse tags:', e);
+        tags = [];
+      }
+    }
 
     if (!file) {
+      console.error('No file provided');
       return new Response(JSON.stringify({ error: 'No file provided' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log('File received:', file.name, 'Size:', file.size, 'Type:', file.type);
 
     // Validate file type
     const allowedTypes = [
@@ -187,6 +115,7 @@ serve(async (req) => {
     ];
     
     if (!allowedTypes.includes(file.type)) {
+      console.error('Invalid file type:', file.type);
       return new Response(JSON.stringify({ 
         error: 'Invalid file type. Please upload a PDF, Word document, or text file.' 
       }), {
@@ -197,6 +126,7 @@ serve(async (req) => {
 
     // Validate file size (50MB limit)
     if (file.size > 50 * 1024 * 1024) {
+      console.error('File too large:', file.size);
       return new Response(JSON.stringify({ 
         error: 'File too large. Please upload a file smaller than 50MB.' 
       }), {
@@ -205,14 +135,26 @@ serve(async (req) => {
       });
     }
 
-    console.log('Processing file upload:', file.name);
-
-    // Generate file hash
+    // Generate file hash for duplicate detection
+    console.log('Generating file hash...');
     const fileHash = await generateFileHash(file);
-    console.log('Generated file hash:', fileHash);
+    console.log('File hash generated:', fileHash);
 
-    // Check for duplicate
-    const existingVersion = await checkDuplicateResume(supabase, user.id, fileHash);
+    // Check for existing resume with same hash
+    const { data: existingVersion, error: duplicateError } = await supabase
+      .from('resume_versions')
+      .select(`
+        *,
+        resume_streams!inner(user_id)
+      `)
+      .eq('file_hash', fileHash)
+      .eq('resume_streams.user_id', user.id)
+      .maybeSingle();
+
+    if (duplicateError) {
+      console.error('Error checking for duplicates:', duplicateError);
+    }
+
     if (existingVersion) {
       console.log('Duplicate resume detected');
       return new Response(JSON.stringify({
@@ -225,20 +167,71 @@ serve(async (req) => {
       });
     }
 
-    // Get or create stream
-    const stream = await getOrCreateStream(supabase, user.id, streamName, tags);
+    // Find or create resume stream
+    console.log('Finding or creating resume stream:', streamName);
+    let { data: stream, error: streamError } = await supabase
+      .from('resume_streams')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('name', streamName)
+      .maybeSingle();
+
+    if (streamError) {
+      console.error('Error finding stream:', streamError);
+    }
+
+    if (!stream) {
+      console.log('Creating new resume stream');
+      const { data: newStream, error: createError } = await supabase
+        .from('resume_streams')
+        .insert({
+          user_id: user.id,
+          name: streamName,
+          tags: tags,
+          auto_tagged: tags.length === 0
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating stream:', createError);
+        return new Response(JSON.stringify({ 
+          error: 'Failed to create resume stream',
+          details: createError.message
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      stream = newStream;
+    }
+
     console.log('Using stream:', stream.id);
 
     // Get next version number
-    const versionNumber = await getNextVersionNumber(supabase, stream.id);
-    console.log('Version number:', versionNumber);
+    const { data: latestVersion, error: versionError } = await supabase
+      .from('resume_versions')
+      .select('version_number')
+      .eq('stream_id', stream.id)
+      .order('version_number', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    // Create file path
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${user.id}/stream-${stream.id}/v${versionNumber}-${Date.now()}.${fileExtension}`;
-    console.log('File path:', fileName);
+    if (versionError) {
+      console.error('Error getting latest version:', versionError);
+    }
+
+    const nextVersion = latestVersion ? latestVersion.version_number + 1 : 1;
+    console.log('Next version number:', nextVersion);
+
+    // Create file path for storage
+    const fileExtension = file.name.split('.').pop() || 'bin';
+    const fileName = `${user.id}/stream-${stream.id}/v${nextVersion}-${Date.now()}.${fileExtension}`;
+    console.log('Upload path:', fileName);
 
     // Upload file to storage
+    console.log('Uploading file to storage...');
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('user-resumes')
       .upload(fileName, file, {
@@ -257,14 +250,15 @@ serve(async (req) => {
       });
     }
 
-    console.log('File uploaded to storage:', uploadData.path);
+    console.log('File uploaded successfully:', uploadData.path);
 
     // Create resume version record
-    const { data: versionData, error: versionError } = await supabase
+    console.log('Creating resume version record...');
+    const { data: versionData, error: versionCreateError } = await supabase
       .from('resume_versions')
       .insert({
         stream_id: stream.id,
-        version_number: versionNumber,
+        version_number: nextVersion,
         file_hash: fileHash,
         file_path: uploadData.path,
         file_name: file.name,
@@ -273,32 +267,34 @@ serve(async (req) => {
         upload_metadata: {
           original_name: file.name,
           uploaded_at: new Date().toISOString(),
-          user_agent: req.headers.get('user-agent')
+          user_agent: req.headers.get('user-agent') || 'unknown'
         },
-        processing_status: 'pending'
+        processing_status: 'pending',
+        resume_metadata: {}
       })
       .select()
       .single();
 
-    if (versionError) {
-      console.error('Error creating version record:', versionError);
+    if (versionCreateError) {
+      console.error('Error creating version record:', versionCreateError);
       
-      // Clean up uploaded file
+      // Clean up uploaded file on error
       await supabase.storage
         .from('user-resumes')
         .remove([fileName]);
 
       return new Response(JSON.stringify({ 
         error: 'Failed to create version record',
-        details: versionError.message
+        details: versionCreateError.message
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('Resume version created:', versionData.id);
+    console.log('Resume version created successfully:', versionData.id);
 
+    // Return success response
     return new Response(JSON.stringify({
       success: true,
       isDuplicate: false,
@@ -310,7 +306,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in resume upload function:', error);
+    console.error('Unexpected error in resume upload:', error);
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
       details: error.message
