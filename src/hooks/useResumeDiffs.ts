@@ -25,7 +25,13 @@ export function useResumeDiffs(versionId?: string) {
         throw error;
       }
 
-      return data || [];
+      // Type assertion to ensure diff_type is properly typed
+      return (data || []).map(row => ({
+        ...row,
+        diff_type: row.diff_type as ResumeDiff['diff_type'],
+        metadata: row.metadata as Record<string, any>,
+        embedding_vector: row.embedding_vector as number[] | undefined
+      }));
     },
     enabled: !!versionId && !!user,
   });
