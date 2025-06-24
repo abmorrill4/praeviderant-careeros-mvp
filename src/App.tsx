@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,7 +9,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import DataManagement from "./pages/DataManagement";
-import ResumeUpload from "./pages/ResumeUpload";
 import ResumeUploadV2 from "./pages/ResumeUploadV2";
 import ResumeTimelinePage from "./pages/ResumeTimelinePage";
 import NotFound from "./pages/NotFound";
@@ -51,14 +49,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <DataManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/resume-upload"
-        element={
-          <ProtectedRoute>
-            <ResumeUpload />
           </ProtectedRoute>
         }
       />
