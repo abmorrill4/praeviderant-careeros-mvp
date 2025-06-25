@@ -9,11 +9,13 @@ import { EnrichedResumeView } from './resume-upload/EnrichedResumeView';
 interface ParsedResumeEntitiesProps {
   versionId: string;
   processingStatus: 'pending' | 'processing' | 'completed' | 'failed';
+  onProfileUpdated?: () => void;
 }
 
 export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
   versionId,
-  processingStatus
+  processingStatus,
+  onProfileUpdated
 }) => {
   const getStatusIcon = () => {
     switch (processingStatus) {
@@ -100,7 +102,7 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
 
   return (
     <div className="space-y-6">
-      <StructuredDataView versionId={versionId} />
+      <StructuredDataView versionId={versionId} onProfileUpdated={onProfileUpdated} />
       
       <Card>
         <CardHeader>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +23,7 @@ import { MergeDecisionView } from './MergeDecisionView';
 
 interface StructuredDataViewProps {
   versionId: string;
+  onProfileUpdated?: () => void;
 }
 
 interface StructuredEntity {
@@ -33,7 +33,10 @@ interface StructuredEntity {
   source_type: string;
 }
 
-export const StructuredDataView: React.FC<StructuredDataViewProps> = ({ versionId }) => {
+export const StructuredDataView: React.FC<StructuredDataViewProps> = ({ 
+  versionId, 
+  onProfileUpdated 
+}) => {
   const { data: entities, isLoading, error } = useParsedResumeEntities(versionId);
 
   if (isLoading) {
@@ -122,7 +125,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({ versionI
             </TabsList>
             
             <TabsContent value="merge" className="mt-6">
-              <MergeDecisionView versionId={versionId} />
+              <MergeDecisionView versionId={versionId} onProfileUpdated={onProfileUpdated} />
             </TabsContent>
             
             <TabsContent value="extracted" className="mt-6">

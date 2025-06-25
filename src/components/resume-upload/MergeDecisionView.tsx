@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,11 +12,14 @@ import {
   User,
   FileText,
   Save,
-  Loader2
+  Loader2,
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { useMergeReviewItems, useCreateMergeDecision } from '@/hooks/useMergeDecisions';
 import { useUserConfirmedProfile } from '@/hooks/useResumeDiffs';
 import { useApplyMergeDecisions } from '@/hooks/useApplyMergeDecisions';
+import { useApplyResumeDataToProfile } from '@/hooks/useApplyResumeDataToProfile';
 import { parseResumeFieldValue, getFieldDisplayName } from '@/utils/resumeDataParser';
 import { DataRenderer, ConfidenceBadge } from './DataRenderers';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +27,7 @@ import type { MergeReviewItem } from '@/types/merge-decisions';
 
 interface MergeDecisionViewProps {
   versionId: string;
+  onProfileUpdated?: () => void;
 }
 
 interface MergeDecisionState {
@@ -35,11 +38,15 @@ interface MergeDecisionState {
   };
 }
 
-export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({ versionId }) => {
-  const { data: reviewItems, isLoading: reviewLoading } = useMergeReviewItems(versionId);
+export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({ 
+  versionId, 
+  onProfileUpdated 
+}) => {
+  const { data: reviewItems, isLoading: reviewLoading, refetch: refetchReviewItems } = useMergeReviewItems(versionId);
   const { data: confirmedProfile } = useUserConfirmedProfile();
   const createDecisionMutation = useCreateMergeDecision();
   const applyDecisionsMutation = useApplyMergeDecisions();
+  const applyResumeDataMutation = useApplyResumeDataToProfile();
   const { toast } = useToast();
   
   const [decisions, setDecisions] = useState<MergeDecisionState>({});
@@ -65,6 +72,30 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({ versionId 
             All extracted data appears to be new or matches your existing profile perfectly.
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <Button
+              onClick={() => handleApplyAllResumeData()}
+              disabled={applyResumeDataMutation.isPending}
+              className="flex items-center gap-2"
+            >
+              {applyResumeDataMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
+              Add All Resume Data to Profile
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => refetchReviewItems()}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh Analysis
+            </Button>
+          </div>
+        </CardContent>
       </Card>
     );
   }
@@ -144,11 +175,35 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({ versionId 
       // Clear all local decisions
       setDecisions({});
       setShowOverrideInput({});
+      
+      // Notify parent component
+      onProfileUpdated?.();
     } catch (error) {
       console.error('Error applying decisions:', error);
       toast({
         title: "Error Applying Decisions",
         description: "Failed to apply merge decisions. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleApplyAllResumeData = async () => {
+    try {
+      const result = await applyResumeDataMutation.mutateAsync({ versionId });
+      
+      toast({
+        title: "Resume Data Applied Successfully",
+        description: `Added ${result.entitiesCreated} new entities to your profile`,
+      });
+      
+      // Notify parent component
+      onProfileUpdated?.();
+    } catch (error) {
+      console.error('Error applying resume data:', error);
+      toast({
+        title: "Error Applying Resume Data",
+        description: "Failed to apply resume data to profile. Please try again.",
         variant: "destructive",
       });
     }
@@ -319,19 +374,34 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({ versionId 
               Review conflicts and apply decisions to update your profile
             </p>
           </div>
-          <Button
-            onClick={handleApplyAllDecisions}
-            disabled={applyDecisionsMutation.isPending}
-            className="flex items-center gap-2"
-            size="lg"
-          >
-            {applyDecisionsMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            Apply All Decisions to Profile
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleApplyAllResumeData}
+              disabled={applyResumeDataMutation.isPending}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              {applyResumeDataMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
+              Add All New Data
+            </Button>
+            <Button
+              onClick={handleApplyAllDecisions}
+              disabled={applyDecisionsMutation.isPending}
+              className="flex items-center gap-2"
+              size="lg"
+            >
+              {applyDecisionsMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              Apply All Decisions to Profile
+            </Button>
+          </div>
         </div>
       )}
 
