@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,12 +11,16 @@ import {
   Edit3, 
   ArrowRight,
   User,
-  FileText
+  FileText,
+  Save,
+  Loader2
 } from 'lucide-react';
 import { useMergeReviewItems, useCreateMergeDecision } from '@/hooks/useMergeDecisions';
 import { useUserConfirmedProfile } from '@/hooks/useResumeDiffs';
+import { useApplyMergeDecisions } from '@/hooks/useApplyMergeDecisions';
 import { parseResumeFieldValue, getFieldDisplayName } from '@/utils/resumeDataParser';
 import { DataRenderer, ConfidenceBadge } from './DataRenderers';
+import { useToast } from '@/hooks/use-toast';
 import type { MergeReviewItem } from '@/types/merge-decisions';
 
 interface MergeDecisionViewProps {
@@ -34,6 +39,8 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({ versionId 
   const { data: reviewItems, isLoading: reviewLoading } = useMergeReviewItems(versionId);
   const { data: confirmedProfile } = useUserConfirmedProfile();
   const createDecisionMutation = useCreateMergeDecision();
+  const applyDecisionsMutation = useApplyMergeDecisions();
+  const { toast } = useToast();
   
   const [decisions, setDecisions] = useState<MergeDecisionState>({});
   const [showOverrideInput, setShowOverrideInput] = useState<{ [key: string]: boolean }>({});
@@ -124,6 +131,30 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({ versionId 
       console.error('Error saving merge decision:', error);
     }
   };
+
+  const handleApplyAllDecisions = async () => {
+    try {
+      const result = await applyDecisionsMutation.mutateAsync({ versionId });
+      
+      toast({
+        title: "Decisions Applied Successfully",
+        description: `Applied ${result.applied} decisions, rejected ${result.rejected}, overridden ${result.overridden}`,
+      });
+      
+      // Clear all local decisions
+      setDecisions({});
+      setShowOverrideInput({});
+    } catch (error) {
+      console.error('Error applying decisions:', error);
+      toast({
+        title: "Error Applying Decisions",
+        description: "Failed to apply merge decisions. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const hasPendingDecisions = Object.keys(decisions).some(key => decisions[key]?.decision);
 
   const renderMergeItem = (item: MergeReviewItem) => {
     const itemKey = `${item.fieldName}-${item.parsedEntityId}`;
@@ -279,6 +310,31 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({ versionId 
 
   return (
     <div className="space-y-6">
+      {/* Apply All Decisions Button */}
+      {reviewItems.length > 0 && (
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-semibold">Merge Decisions</h3>
+            <p className="text-sm text-muted-foreground">
+              Review conflicts and apply decisions to update your profile
+            </p>
+          </div>
+          <Button
+            onClick={handleApplyAllDecisions}
+            disabled={applyDecisionsMutation.isPending}
+            className="flex items-center gap-2"
+            size="lg"
+          >
+            {applyDecisionsMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            Apply All Decisions to Profile
+          </Button>
+        </div>
+      )}
+
       {conflictingItems.length > 0 && (
         <div className="space-y-4">
           <div>

@@ -68,7 +68,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       // Navigate to standalone page
       navigate(item.path);
     } else {
-      // Handle tab-based navigation within dashboard
+      // For dashboard tabs, navigate to dashboard with the tab parameter
+      if (location.pathname !== '/dashboard') {
+        navigate('/dashboard');
+      }
       onTabChange(item.id);
     }
   };
@@ -77,7 +80,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     if (item.path) {
       return location.pathname === item.path;
     } else {
-      return activeTab === item.id;
+      // Check if we're on dashboard and the tab is active
+      return location.pathname === '/dashboard' && activeTab === item.id;
     }
   };
 
