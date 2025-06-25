@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import DataManagement from "./pages/DataManagement";
 import ResumeUploadV2 from "./pages/ResumeUploadV2";
 import ResumeTimelinePage from "./pages/ResumeTimelinePage";
+import EntityGraphAdmin from "./pages/EntityGraphAdmin";
 import NotFound from "./pages/NotFound";
 import "./App.css";
 
@@ -65,6 +67,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ResumeTimelinePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/entity-graph-admin"
+        element={
+          <ProtectedRoute>
+            <EntityGraphAdmin />
           </ProtectedRoute>
         }
       />

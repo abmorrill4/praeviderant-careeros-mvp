@@ -63,6 +63,24 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     await signOut();
   };
 
+  const handleMenuItemClick = (item: typeof menuItems[0]) => {
+    if (item.path) {
+      // Navigate to standalone page
+      navigate(item.path);
+    } else {
+      // Handle tab-based navigation within dashboard
+      onTabChange(item.id);
+    }
+  };
+
+  const isItemActive = (item: typeof menuItems[0]) => {
+    if (item.path) {
+      return location.pathname === item.path;
+    } else {
+      return activeTab === item.id;
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -88,14 +106,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
-                    onClick={() => {
-                      if (item.path) {
-                        navigate(item.path);
-                      } else {
-                        onTabChange(item.id);
-                      }
-                    }}
-                    isActive={item.path ? location.pathname === item.path : activeTab === item.id}
+                    onClick={() => handleMenuItemClick(item)}
+                    isActive={isItemActive(item)}
                     className="w-full justify-start"
                   >
                     <item.icon className="w-4 h-4" />

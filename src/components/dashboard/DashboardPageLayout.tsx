@@ -1,5 +1,7 @@
+
 import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 interface DashboardPageLayoutProps {
   children: React.ReactNode;
@@ -8,10 +10,16 @@ interface DashboardPageLayoutProps {
 const DashboardPageLayout: React.FC<DashboardPageLayoutProps> = ({ children }) => {
   const [activeTab, setActiveTab] = useState("profile");
 
+  console.log('DashboardPageLayout rendering with activeTab:', activeTab);
+
   return (
-    <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>
-      {children}
-    </DashboardLayout>
+    <ErrorBoundary>
+      <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
+      </DashboardLayout>
+    </ErrorBoundary>
   );
 };
 
