@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Upload, Loader2 } from 'lucide-react';
+import { FileText, Upload, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useResumeUpload, useResumeStreams } from '@/hooks/useResumeStreams';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +23,7 @@ interface UploadState {
   currentStage: string;
   error: string | null;
   completedVersionId: string | null;
+  uploadResult: any | null;
 }
 
 export const ResumeUploadRefactored: React.FC = () => {
@@ -39,7 +41,8 @@ export const ResumeUploadRefactored: React.FC = () => {
     uploadProgress: 0,
     currentStage: 'upload',
     error: null,
-    completedVersionId: null
+    completedVersionId: null,
+    uploadResult: null
   });
 
   const handleFileSelect = (file: File) => {
@@ -47,7 +50,8 @@ export const ResumeUploadRefactored: React.FC = () => {
       ...prev, 
       file, 
       error: null,
-      completedVersionId: null
+      completedVersionId: null,
+      uploadResult: null
     }));
   };
 
@@ -56,7 +60,8 @@ export const ResumeUploadRefactored: React.FC = () => {
       ...prev, 
       file: null, 
       error: null,
-      completedVersionId: null
+      completedVersionId: null,
+      uploadResult: null
     }));
   };
 
@@ -75,21 +80,16 @@ export const ResumeUploadRefactored: React.FC = () => {
     setUploadState(prev => ({ 
       ...prev, 
       isUploading: true,
-      uploadProgress: 0,
+      uploadProgress: 10,
       currentStage: 'upload',
       error: null,
-      completedVersionId: null
+      completedVersionId: null,
+      uploadResult: null
     }));
 
     try {
-      const progressInterval = setInterval(() => {
-        setUploadState(prev => {
-          if (prev.uploadProgress < 90) {
-            return { ...prev, uploadProgress: prev.uploadProgress + 10 };
-          }
-          return prev;
-        });
-      }, 500);
+      // Simulate progress during upload
+      setUploadState(prev => ({ ...prev, uploadProgress: 30 }));
 
       const result = await uploadMutation.mutateAsync({
         file: uploadState.file,
@@ -97,7 +97,7 @@ export const ResumeUploadRefactored: React.FC = () => {
         tags: uploadState.tags
       });
 
-      clearInterval(progressInterval);
+      console.log('Upload result:', result);
 
       if (result.success) {
         setUploadState(prev => ({ 
@@ -105,8 +105,18 @@ export const ResumeUploadRefactored: React.FC = () => {
           uploadProgress: 100,
           currentStage: 'complete',
           isUploading: false,
-          completedVersionId: result.version?.id || null
+          completedVersionId: result.versionId || null,
+          uploadResult: result
         }));
+
+        toast({
+          title: "Upload Successful",
+          description: result.isDuplicate 
+            ? "File already exists in your collection" 
+            : "Resume uploaded and processing started",
+        });
+      } else {
+        throw new Error(result.message || 'Upload failed');
       }
 
     } catch (error) {
@@ -114,8 +124,15 @@ export const ResumeUploadRefactored: React.FC = () => {
       setUploadState(prev => ({ 
         ...prev, 
         isUploading: false,
+        uploadProgress: 0,
         error: error instanceof Error ? error.message : 'Upload failed'
       }));
+
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : 'Failed to upload resume',
+        variant: "destructive",
+      });
     }
   };
 
@@ -129,7 +146,8 @@ export const ResumeUploadRefactored: React.FC = () => {
       uploadProgress: 0,
       currentStage: 'upload',
       error: null,
-      completedVersionId: null
+      completedVersionId: null,
+      uploadResult: null
     });
   };
 
@@ -161,7 +179,7 @@ export const ResumeUploadRefactored: React.FC = () => {
             onClearFile={handleClearFile}
           />
 
-          {uploadState.file && (
+          {uploadState.file && !uploadState.completedVersionId && (
             <>
               <Separator />
               
@@ -187,7 +205,7 @@ export const ResumeUploadRefactored: React.FC = () => {
                   {uploadState.isUploading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
+                      Uploading...
                     </>
                   ) : (
                     <>
@@ -208,21 +226,37 @@ export const ResumeUploadRefactored: React.FC = () => {
             </>
           )}
 
-          <UploadProgress
-            isUploading={uploadState.isUploading}
-            currentStage={uploadState.currentStage}
-            fileName={uploadState.file?.name}
-            progress={uploadState.uploadProgress}
-            error={uploadState.error}
-          />
+          {(uploadState.isUploading || uploadState.error) && (
+            <UploadProgress
+              isUploading={uploadState.isUploading}
+              currentStage={uploadState.currentStage}
+              fileName={uploadState.file?.name}
+              progress={uploadState.uploadProgress}
+              error={uploadState.error}
+            />
+          )}
         </CardContent>
       </Card>
 
       {uploadState.completedVersionId && (
-        <ParsedResumeEntities
-          versionId={uploadState.completedVersionId}
-          processingStatus="completed"
-        />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Resume Analysis Results</h3>
+            <Button variant="outline" onClick={resetUpload}>
+              Upload Another Resume
+            </Button>
+          </div>
+          <ParsedResumeEntities
+            versionId={uploadState.completedVersionId}
+            processingStatus="completed"
+            onProfileUpdated={() => {
+              toast({
+                title: "Profile Updated",
+                description: "Your profile has been updated with the resume data",
+              });
+            }}
+          />
+        </div>
       )}
 
       <ResumeCollectionView streams={streams || []} />

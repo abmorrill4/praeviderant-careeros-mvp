@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Loader2, CheckCircle, XCircle, Clock, Sparkles } from 'lucide-react';
+import { FileText, Loader2, CheckCircle, XCircle, Clock, Sparkles, RefreshCw } from 'lucide-react';
 import { StructuredDataView } from './resume-upload/StructuredDataView';
 import { EnrichedResumeView } from './resume-upload/EnrichedResumeView';
 
@@ -17,6 +17,8 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
   processingStatus,
   onProfileUpdated
 }) => {
+  const [forceRefresh, setForceRefresh] = useState(0);
+
   const getStatusIcon = () => {
     switch (processingStatus) {
       case 'pending':
@@ -47,6 +49,10 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
     }
   };
 
+  const handleRefresh = () => {
+    setForceRefresh(prev => prev + 1);
+  };
+
   if (processingStatus === 'pending' || processingStatus === 'processing') {
     return (
       <Card>
@@ -62,11 +68,19 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
+            <div className="text-center space-y-4">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-500" />
               <p className="text-muted-foreground">
                 Please wait while we analyze your resume...
               </p>
+              <Button 
+                variant="outline" 
+                onClick={handleRefresh}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Check Status
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -87,13 +101,15 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
+          <div className="text-center py-8 space-y-4">
             <p className="text-muted-foreground mb-4">
               Please try uploading your resume again or contact support if the issue persists.
             </p>
-            <Button variant="outline">
-              Try Again
-            </Button>
+            <div className="flex gap-2 justify-center">
+              <Button variant="outline" onClick={handleRefresh}>
+                Try Again
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -101,7 +117,7 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={forceRefresh}>
       <StructuredDataView versionId={versionId} onProfileUpdated={onProfileUpdated} />
       
       <Card>
