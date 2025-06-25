@@ -1,7 +1,6 @@
 
 import { useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
-import WaveAnimation from "@/components/WaveAnimation";
 import AuthForm from "@/components/auth/AuthForm";
 
 interface HeroSectionProps {
@@ -23,11 +22,6 @@ const HeroSection = ({ onAuthSuccess }: HeroSectionProps) => {
 
   return (
     <section className="relative flex items-center justify-center py-12 md:py-20">
-      {/* Background Wave Animation */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <WaveAnimation />
-      </div>
-
       <div className="relative w-full grid lg:grid-cols-2 gap-12 items-center">
         {/* Hero Content */}
         <div className="text-center lg:text-left space-y-6">

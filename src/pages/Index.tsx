@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
-import ThemeToggle from "@/components/ThemeToggle";
 import HeroSection from "@/components/sections/HeroSection";
 import BeliefsSection from "@/components/sections/BeliefsSection";
 import HowItWorksSection from "@/components/sections/HowItWorksSection";
@@ -39,8 +38,6 @@ const Index = () => {
 
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} transition-colors duration-300`}>
-      <ThemeToggle />
-      
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <HeroSection onAuthSuccess={handleAuthSuccess} />
         
