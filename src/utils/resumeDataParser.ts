@@ -22,7 +22,7 @@ export function parseResumeFieldValue(rawValue: string | null): ParsedData {
       return {
         type: 'array',
         value: parsed,
-        displayValue: parsed.join(', ')
+        displayValue: formatArrayDisplay(parsed)
       };
     } else if (typeof parsed === 'object' && parsed !== null) {
       return {
@@ -47,14 +47,48 @@ export function parseResumeFieldValue(rawValue: string | null): ParsedData {
   }
 }
 
+function formatArrayDisplay(arr: any[]): string {
+  if (arr.length === 0) return 'Empty list';
+  
+  // Handle arrays of simple values
+  const simpleValues = arr.filter(item => typeof item !== 'object');
+  const complexValues = arr.filter(item => typeof item === 'object');
+  
+  if (simpleValues.length === arr.length) {
+    // All simple values
+    return simpleValues.slice(0, 3).join(', ') + (arr.length > 3 ? `... (+${arr.length - 3} more)` : '');
+  }
+  
+  if (complexValues.length === arr.length) {
+    // All complex objects
+    return `${arr.length} item${arr.length !== 1 ? 's' : ''}`;
+  }
+  
+  // Mixed content
+  return `${arr.length} item${arr.length !== 1 ? 's' : ''} (mixed)`;
+}
+
 function formatObjectDisplay(obj: Record<string, any>): string {
   const entries = Object.entries(obj);
   if (entries.length === 0) return 'Empty object';
   
-  return entries
-    .slice(0, 3) // Show only first 3 properties
-    .map(([key, value]) => `${key}: ${String(value)}`)
-    .join(', ') + (entries.length > 3 ? '...' : '');
+  const nonEmptyEntries = entries.filter(([key, value]) => 
+    value !== null && value !== undefined && value !== ''
+  );
+  
+  if (nonEmptyEntries.length === 0) return 'No data';
+  
+  return nonEmptyEntries
+    .slice(0, 2) // Show only first 2 properties for brevity
+    .map(([key, value]) => {
+      const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+      if (Array.isArray(value)) {
+        return `${formattedKey}: ${value.length} item${value.length !== 1 ? 's' : ''}`;
+      }
+      const displayValue = String(value).length > 30 ? String(value).substring(0, 30) + '...' : String(value);
+      return `${formattedKey}: ${displayValue}`;
+    })
+    .join(' • ') + (nonEmptyEntries.length > 2 ? '...' : '');
 }
 
 export function getFieldDisplayName(fieldName: string): string {

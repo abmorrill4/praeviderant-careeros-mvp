@@ -45,14 +45,39 @@ export const DataRenderer: React.FC<DataRendererProps> = ({
     return null;
   };
 
+  const formatObjectForDisplay = (obj: any): string => {
+    if (!obj || typeof obj !== 'object') return String(obj);
+    
+    // Handle arrays of simple values
+    if (Array.isArray(obj)) {
+      return obj.map(item => String(item)).join(', ');
+    }
+    
+    // Handle objects by showing key-value pairs in a readable format
+    const entries = Object.entries(obj);
+    if (entries.length === 0) return 'No data';
+    
+    return entries
+      .filter(([key, value]) => value !== null && value !== undefined && value !== '')
+      .slice(0, 3)
+      .map(([key, value]) => {
+        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        if (Array.isArray(value)) {
+          return `${formattedKey}: ${value.join(', ')}`;
+        }
+        return `${formattedKey}: ${String(value)}`;
+      })
+      .join(' • ') + (entries.length > 3 ? '...' : '');
+  };
+
   switch (parsedData.type) {
     case 'array':
       return (
         <div className="space-y-2">
           <div className="flex flex-wrap gap-1">
-            {parsedData.value.slice(0, 5).map((item: string, index: number) => (
+            {parsedData.value.slice(0, 5).map((item: any, index: number) => (
               <Badge key={index} variant="secondary" className="text-xs">
-                {String(item)}
+                {typeof item === 'object' ? formatObjectForDisplay(item) : String(item)}
               </Badge>
             ))}
             {parsedData.value.length > 5 && (
@@ -74,9 +99,9 @@ export const DataRenderer: React.FC<DataRendererProps> = ({
           )}
           {isExpanded && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {parsedData.value.slice(5).map((item: string, index: number) => (
+              {parsedData.value.slice(5).map((item: any, index: number) => (
                 <Badge key={index + 5} variant="secondary" className="text-xs">
-                  {String(item)}
+                  {typeof item === 'object' ? formatObjectForDisplay(item) : String(item)}
                 </Badge>
               ))}
             </div>
@@ -85,10 +110,11 @@ export const DataRenderer: React.FC<DataRendererProps> = ({
       );
 
     case 'object':
+      const formattedDisplay = formatObjectForDisplay(parsedData.value);
       return (
         <div className="space-y-2">
           <div className="text-sm">
-            {parsedData.displayValue}
+            {formattedDisplay}
           </div>
           <Button
             variant="ghost"
@@ -97,7 +123,7 @@ export const DataRenderer: React.FC<DataRendererProps> = ({
             className="h-6 text-xs"
           >
             {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            {isExpanded ? 'Hide details' : 'Show details'}
+            {isExpanded ? 'Hide details' : 'Show raw data'}
           </Button>
           {isExpanded && (
             <Card className="mt-2">
