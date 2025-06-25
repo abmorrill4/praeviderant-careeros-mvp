@@ -10,8 +10,6 @@ interface DashboardPageLayoutProps {
 const DashboardPageLayout: React.FC<DashboardPageLayoutProps> = ({ children }) => {
   const [activeTab, setActiveTab] = useState("profile");
 
-  console.log('DashboardPageLayout rendering with activeTab:', activeTab);
-
   return (
     <ErrorBoundary>
       <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>

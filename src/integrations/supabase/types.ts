@@ -1436,6 +1436,17 @@ export type Database = {
           similarity_score: number
         }[]
       }
+      find_similar_entities_safe: {
+        Args: { p_entity_id: string; p_similarity_threshold?: number }
+        Returns: {
+          id: string
+          entity_type: string
+          canonical_name: string
+          aliases: string[]
+          confidence_score: number
+          similarity_score: number
+        }[]
+      }
       get_interview_context: {
         Args: { p_user_id: string }
         Returns: {
@@ -1488,6 +1499,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_admin_user: {
+        Args: { user_id?: string }
+        Returns: boolean
+      }
       ivfflat_bit_support: {
         Args: { "": unknown }
         Returns: unknown
@@ -1509,6 +1524,14 @@ export type Database = {
         Returns: string
       }
       merge_normalized_entities: {
+        Args: {
+          p_source_entity_id: string
+          p_target_entity_id: string
+          p_admin_user_id: string
+        }
+        Returns: boolean
+      }
+      merge_normalized_entities_safe: {
         Args: {
           p_source_entity_id: string
           p_target_entity_id: string
