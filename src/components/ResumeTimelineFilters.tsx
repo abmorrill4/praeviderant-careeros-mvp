@@ -21,7 +21,7 @@ export const ResumeTimelineFilters: React.FC<ResumeTimelineFiltersProps> = ({
   const handleFilterChange = (key: keyof TimelineFilters, value: string) => {
     onFiltersChange({
       ...filters,
-      [key]: value || undefined
+      [key]: value === 'all' ? undefined : value || undefined
     });
   };
 
@@ -65,12 +65,12 @@ export const ResumeTimelineFilters: React.FC<ResumeTimelineFiltersProps> = ({
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Status</label>
-            <Select value={filters.status || ''} onValueChange={(value) => handleFilterChange('status', value)}>
+            <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="All statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All statuses</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
@@ -81,12 +81,12 @@ export const ResumeTimelineFilters: React.FC<ResumeTimelineFiltersProps> = ({
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Stage</label>
-            <Select value={filters.stage || ''} onValueChange={(value) => handleFilterChange('stage', value)}>
+            <Select value={filters.stage || 'all'} onValueChange={(value) => handleFilterChange('stage', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="All stages" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All stages</SelectItem>
+                <SelectItem value="all">All stages</SelectItem>
                 <SelectItem value="upload">Upload</SelectItem>
                 <SelectItem value="parse">Parse</SelectItem>
                 <SelectItem value="diff">Diff Analysis</SelectItem>
