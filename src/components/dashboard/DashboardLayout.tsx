@@ -29,7 +29,6 @@ import {
   Settings,
   Activity
 } from "lucide-react";
-import ThemeToggle from "@/components/ThemeToggle";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -114,8 +113,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 {user?.email}
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <ThemeToggle />
+            <div className="flex items-center justify-end">
               <Button
                 onClick={handleSignOut}
                 variant="ghost"
