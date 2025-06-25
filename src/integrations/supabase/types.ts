@@ -205,33 +205,6 @@ export type Database = {
         }
         Relationships: []
       }
-      domain_values: {
-        Row: {
-          category: string
-          created_at: string | null
-          display_order: number | null
-          id: string
-          is_active: boolean | null
-          value: string
-        }
-        Insert: {
-          category: string
-          created_at?: string | null
-          display_order?: number | null
-          id?: string
-          is_active?: boolean | null
-          value: string
-        }
-        Update: {
-          category?: string
-          created_at?: string | null
-          display_order?: number | null
-          id?: string
-          is_active?: boolean | null
-          value?: string
-        }
-        Relationships: []
-      }
       education: {
         Row: {
           created_at: string
@@ -360,27 +333,6 @@ export type Database = {
           },
         ]
       }
-      interest_registrations: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          name: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
       interview_sessions: {
         Row: {
           audio_file_url: string | null
@@ -472,39 +424,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      interview_types: {
-        Row: {
-          created_at: string
-          description: string | null
-          display_order: number | null
-          id: string
-          is_active: boolean | null
-          name: string
-          prompt_template: string | null
-          title: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          display_order?: number | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          prompt_template?: string | null
-          title: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          display_order?: number | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          prompt_template?: string | null
-          title?: string
-        }
-        Relationships: []
       }
       interviews: {
         Row: {
@@ -669,42 +588,6 @@ export type Database = {
           tools_used?: string[] | null
           updated_at?: string | null
           user_id?: string
-        }
-        Relationships: []
-      }
-      llm_cache: {
-        Row: {
-          access_count: number
-          complexity: string
-          created_at: string
-          id: string
-          last_accessed_at: string
-          model: string
-          prompt_hash: string
-          request_data: Json
-          response_data: Json
-        }
-        Insert: {
-          access_count?: number
-          complexity: string
-          created_at?: string
-          id?: string
-          last_accessed_at?: string
-          model: string
-          prompt_hash: string
-          request_data: Json
-          response_data: Json
-        }
-        Update: {
-          access_count?: number
-          complexity?: string
-          created_at?: string
-          id?: string
-          last_accessed_at?: string
-          model?: string
-          prompt_hash?: string
-          request_data?: Json
-          response_data?: Json
         }
         Relationships: []
       }
@@ -1428,30 +1311,6 @@ export type Database = {
         }
         Relationships: []
       }
-      system_prompts: {
-        Row: {
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          label: string
-          prompt: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          label: string
-          prompt: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          label?: string
-          prompt?: string
-        }
-        Relationships: []
-      }
       user_confirmed_profile: {
         Row: {
           confidence_score: number | null
@@ -1491,45 +1350,6 @@ export type Database = {
           source?: string | null
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      user_interest: {
-        Row: {
-          beta: boolean | null
-          challenge: string | null
-          created_at: string | null
-          email: string
-          id: string
-          industry: string | null
-          name: string
-          stage: string | null
-          status: string | null
-          title: string | null
-        }
-        Insert: {
-          beta?: boolean | null
-          challenge?: string | null
-          created_at?: string | null
-          email: string
-          id?: string
-          industry?: string | null
-          name: string
-          stage?: string | null
-          status?: string | null
-          title?: string | null
-        }
-        Update: {
-          beta?: boolean | null
-          challenge?: string | null
-          created_at?: string | null
-          email?: string
-          id?: string
-          industry?: string | null
-          name?: string
-          stage?: string | null
-          status?: string | null
-          title?: string | null
         }
         Relationships: []
       }
