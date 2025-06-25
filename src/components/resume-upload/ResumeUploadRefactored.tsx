@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { ResumeDropzone } from './ResumeDropzone';
 import { StreamConfiguration } from './StreamConfiguration';
 import { UploadProgress } from './UploadProgress';
 import { ResumeCollectionView } from './ResumeCollectionView';
+import { ParsedResumeEntities } from '../ParsedResumeEntities';
 
 interface UploadState {
   file: File | null;
@@ -21,6 +21,7 @@ interface UploadState {
   uploadProgress: number;
   currentStage: string;
   error: string | null;
+  completedVersionId: string | null;
 }
 
 export const ResumeUploadRefactored: React.FC = () => {
@@ -37,14 +38,16 @@ export const ResumeUploadRefactored: React.FC = () => {
     isUploading: false,
     uploadProgress: 0,
     currentStage: 'upload',
-    error: null
+    error: null,
+    completedVersionId: null
   });
 
   const handleFileSelect = (file: File) => {
     setUploadState(prev => ({ 
       ...prev, 
       file, 
-      error: null 
+      error: null,
+      completedVersionId: null
     }));
   };
 
@@ -52,7 +55,8 @@ export const ResumeUploadRefactored: React.FC = () => {
     setUploadState(prev => ({ 
       ...prev, 
       file: null, 
-      error: null 
+      error: null,
+      completedVersionId: null
     }));
   };
 
@@ -73,11 +77,11 @@ export const ResumeUploadRefactored: React.FC = () => {
       isUploading: true,
       uploadProgress: 0,
       currentStage: 'upload',
-      error: null
+      error: null,
+      completedVersionId: null
     }));
 
     try {
-      // Simulate progress updates
       const progressInterval = setInterval(() => {
         setUploadState(prev => {
           if (prev.uploadProgress < 90) {
@@ -100,22 +104,9 @@ export const ResumeUploadRefactored: React.FC = () => {
           ...prev,
           uploadProgress: 100,
           currentStage: 'complete',
-          isUploading: false
+          isUploading: false,
+          completedVersionId: result.version?.id || null
         }));
-
-        // Reset form after a brief delay
-        setTimeout(() => {
-          setUploadState({
-            file: null,
-            streamName: 'Default Resume',
-            tags: [],
-            tagInput: '',
-            isUploading: false,
-            uploadProgress: 0,
-            currentStage: 'upload',
-            error: null
-          });
-        }, 2000);
       }
 
     } catch (error) {
@@ -137,7 +128,8 @@ export const ResumeUploadRefactored: React.FC = () => {
       isUploading: false,
       uploadProgress: 0,
       currentStage: 'upload',
-      error: null
+      error: null,
+      completedVersionId: null
     });
   };
 
@@ -225,6 +217,13 @@ export const ResumeUploadRefactored: React.FC = () => {
           />
         </CardContent>
       </Card>
+
+      {uploadState.completedVersionId && (
+        <ParsedResumeEntities
+          versionId={uploadState.completedVersionId}
+          processingStatus="completed"
+        />
+      )}
 
       <ResumeCollectionView streams={streams || []} />
     </div>

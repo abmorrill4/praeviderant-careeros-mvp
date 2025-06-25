@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { FileText, Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { useParsedResumeEntities } from '@/hooks/useResumeStreams';
+import { Button } from '@/components/ui/button';
+import { FileText, Loader2, CheckCircle, XCircle, Clock, Sparkles, Database } from 'lucide-react';
+import { StructuredDataView } from './resume-upload/StructuredDataView';
+import { EnrichedResumeView } from './resume-upload/EnrichedResumeView';
 
 interface ParsedResumeEntitiesProps {
   versionId: string;
@@ -15,7 +17,7 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
   versionId,
   processingStatus
 }) => {
-  const { data: entities, isLoading, error } = useParsedResumeEntities(versionId);
+  const [activeTab, setActiveTab] = useState('structured');
 
   const getStatusIcon = () => {
     switch (processingStatus) {
@@ -47,100 +49,92 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
     }
   };
 
-  const groupedEntities = entities?.reduce((groups, entity) => {
-    const key = entity.field_name;
-    if (!groups[key]) {
-      groups[key] = [];
-    }
-    groups[key].push(entity);
-    return groups;
-  }, {} as Record<string, typeof entities>) || {};
+  if (processingStatus === 'pending' || processingStatus === 'processing') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Resume Analysis
+          </CardTitle>
+          <CardDescription className="flex items-center gap-2">
+            {getStatusIcon()}
+            {getStatusText()}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
+              <p className="text-muted-foreground">
+                Please wait while we analyze your resume...
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (processingStatus === 'failed') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <XCircle className="w-5 h-5 text-red-500" />
+            Processing Failed
+          </CardTitle>
+          <CardDescription>
+            We encountered an error while processing your resume
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">
+              Please try uploading your resume again or contact support if the issue persists.
+            </p>
+            <Button variant="outline">
+              Try Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="w-5 h-5" />
-          Parsed Resume Entities
+          Resume Analysis
         </CardTitle>
         <CardDescription className="flex items-center gap-2">
           {getStatusIcon()}
-          {getStatusText()}
-          {entities && entities.length > 0 && (
-            <span className="ml-2">• {entities.length} data points extracted</span>
-          )}
+          {getStatusText()} • Complete analysis of your resume data
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin" />
-            <span className="ml-2">Loading parsed data...</span>
-          </div>
-        ) : error ? (
-          <div className="flex items-center gap-2 text-red-600 py-4">
-            <XCircle className="w-5 h-5" />
-            <span>Error loading parsed entities</span>
-          </div>
-        ) : !entities || entities.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="text-muted-foreground">
-              {processingStatus === 'pending' || processingStatus === 'processing' ? (
-                <div className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Processing resume data...</span>
-                </div>
-              ) : processingStatus === 'failed' ? (
-                <div className="flex items-center justify-center gap-2 text-red-600">
-                  <XCircle className="w-5 h-5" />
-                  <span>Failed to process resume</span>
-                </div>
-              ) : (
-                'No entities extracted yet'
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {Object.entries(groupedEntities).map(([fieldName, fieldEntities]) => (
-              <div key={fieldName}>
-                <div className="flex items-center gap-2 mb-2">
-                  <h4 className="text-sm font-medium capitalize">
-                    {fieldName.replace(/_/g, ' ')}
-                  </h4>
-                  <Badge variant="outline" className="text-xs">
-                    {fieldEntities.length} value{fieldEntities.length !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-                
-                <div className="space-y-2 ml-4">
-                  {fieldEntities.map((entity) => (
-                    <div key={entity.id} className="flex items-start justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex-1">
-                        <p className="text-sm">{entity.raw_value}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge 
-                            variant={entity.confidence_score > 0.8 ? "default" : entity.confidence_score > 0.6 ? "secondary" : "outline"}
-                            className="text-xs"
-                          >
-                            {Math.round(entity.confidence_score * 100)}% confidence
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {entity.source_type}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                {Object.keys(groupedEntities).indexOf(fieldName) < Object.keys(groupedEntities).length - 1 && (
-                  <Separator className="mt-4" />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="structured" className="flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              Extracted Data
+            </TabsTrigger>
+            <TabsTrigger value="enriched" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Career Insights
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="structured" className="mt-6">
+            <StructuredDataView versionId={versionId} />
+          </TabsContent>
+          
+          <TabsContent value="enriched" className="mt-6">
+            <EnrichedResumeView versionId={versionId} />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
