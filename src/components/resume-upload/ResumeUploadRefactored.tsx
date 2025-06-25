@@ -105,7 +105,7 @@ export const ResumeUploadRefactored: React.FC = () => {
           uploadProgress: 100,
           currentStage: 'complete',
           isUploading: false,
-          completedVersionId: result.versionId || null,
+          completedVersionId: result.version || null,
           uploadResult: result
         }));
 

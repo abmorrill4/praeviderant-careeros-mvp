@@ -75,7 +75,7 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({
         <CardContent>
           <div className="flex gap-4">
             <Button
-              onClick={() => handleApplyAllResumeData()}
+              onClick={handleApplyAllResumeData}
               disabled={applyResumeDataMutation.isPending}
               className="flex items-center gap-2"
             >
@@ -188,9 +188,13 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({
     }
   };
 
-  const handleApplyAllResumeData = async () => {
+  async function handleApplyAllResumeData() {
     try {
+      console.log('Starting to apply all resume data for version:', versionId);
+      
       const result = await applyResumeDataMutation.mutateAsync({ versionId });
+      
+      console.log('Apply resume data result:', result);
       
       toast({
         title: "Resume Data Applied Successfully",
@@ -199,17 +203,18 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({
       
       // Notify parent component
       onProfileUpdated?.();
+      
+      // Refetch review items to update the UI
+      refetchReviewItems();
     } catch (error) {
       console.error('Error applying resume data:', error);
       toast({
         title: "Error Applying Resume Data",
-        description: "Failed to apply resume data to profile. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to apply resume data to profile. Please try again.",
         variant: "destructive",
       });
     }
-  };
-
-  const hasPendingDecisions = Object.keys(decisions).some(key => decisions[key]?.decision);
+  }
 
   const renderMergeItem = (item: MergeReviewItem) => {
     const itemKey = `${item.fieldName}-${item.parsedEntityId}`;
