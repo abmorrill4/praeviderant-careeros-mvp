@@ -50,7 +50,7 @@ export const DataRenderer: React.FC<DataRendererProps> = ({
     
     // Handle arrays of simple values
     if (Array.isArray(obj)) {
-      return obj.map(item => String(item)).join(', ');
+      return obj.map(item => typeof item === 'string' ? item : String(item)).join(', ');
     }
     
     // Handle objects by showing key-value pairs in a readable format
@@ -70,23 +70,41 @@ export const DataRenderer: React.FC<DataRendererProps> = ({
       .join(' • ') + (entries.length > 3 ? '...' : '');
   };
 
+  const formatArrayItems = (items: any[]): string[] => {
+    return items.map(item => {
+      if (typeof item === 'string') return item;
+      if (typeof item === 'object' && item !== null) {
+        // Extract meaningful text from objects
+        if (item.name) return item.name;
+        if (item.title) return item.title;
+        if (item.value) return String(item.value);
+        // For other objects, try to create a readable summary
+        const keys = Object.keys(item);
+        if (keys.length === 1) return String(item[keys[0]]);
+        return keys.slice(0, 2).map(key => `${key}: ${item[key]}`).join(', ');
+      }
+      return String(item);
+    });
+  };
+
   switch (parsedData.type) {
     case 'array':
+      const formattedItems = formatArrayItems(parsedData.value);
       return (
         <div className="space-y-2">
           <div className="flex flex-wrap gap-1">
-            {parsedData.value.slice(0, 5).map((item: any, index: number) => (
+            {formattedItems.slice(0, 5).map((item: string, index: number) => (
               <Badge key={index} variant="secondary" className="text-xs">
-                {typeof item === 'object' ? formatObjectForDisplay(item) : String(item)}
+                {item}
               </Badge>
             ))}
-            {parsedData.value.length > 5 && (
+            {formattedItems.length > 5 && (
               <Badge variant="outline" className="text-xs">
-                +{parsedData.value.length - 5} more
+                +{formattedItems.length - 5} more
               </Badge>
             )}
           </div>
-          {parsedData.value.length > 5 && (
+          {formattedItems.length > 5 && (
             <Button
               variant="ghost"
               size="sm"
@@ -94,14 +112,14 @@ export const DataRenderer: React.FC<DataRendererProps> = ({
               className="h-6 text-xs"
             >
               {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              {isExpanded ? 'Show less' : `Show all ${parsedData.value.length} items`}
+              {isExpanded ? 'Show less' : `Show all ${formattedItems.length} items`}
             </Button>
           )}
           {isExpanded && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {parsedData.value.slice(5).map((item: any, index: number) => (
+              {formattedItems.slice(5).map((item: string, index: number) => (
                 <Badge key={index + 5} variant="secondary" className="text-xs">
-                  {typeof item === 'object' ? formatObjectForDisplay(item) : String(item)}
+                  {item}
                 </Badge>
               ))}
             </div>
@@ -123,14 +141,23 @@ export const DataRenderer: React.FC<DataRendererProps> = ({
             className="h-6 text-xs"
           >
             {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-            {isExpanded ? 'Hide details' : 'Show raw data'}
+            {isExpanded ? 'Hide details' : 'Show details'}
           </Button>
           {isExpanded && (
             <Card className="mt-2">
               <CardContent className="p-3">
-                <pre className="text-xs whitespace-pre-wrap">
-                  {JSON.stringify(parsedData.value, null, 2)}
-                </pre>
+                <div className="space-y-2">
+                  {Object.entries(parsedData.value).map(([key, value]) => (
+                    <div key={key} className="flex justify-between">
+                      <span className="font-medium text-xs">
+                        {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {Array.isArray(value) ? value.join(', ') : String(value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
