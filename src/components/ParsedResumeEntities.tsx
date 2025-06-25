@@ -1,10 +1,8 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Loader2, CheckCircle, XCircle, Clock, Sparkles, Database } from 'lucide-react';
+import { FileText, Loader2, CheckCircle, XCircle, Clock, Sparkles } from 'lucide-react';
 import { StructuredDataView } from './resume-upload/StructuredDataView';
 import { EnrichedResumeView } from './resume-upload/EnrichedResumeView';
 
@@ -17,8 +15,6 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
   versionId,
   processingStatus
 }) => {
-  const [activeTab, setActiveTab] = useState('structured');
-
   const getStatusIcon = () => {
     switch (processingStatus) {
       case 'pending':
@@ -103,39 +99,23 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="w-5 h-5" />
-          Resume Analysis
-        </CardTitle>
-        <CardDescription className="flex items-center gap-2">
-          {getStatusIcon()}
-          {getStatusText()} • Complete analysis of your resume data
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="structured" className="flex items-center gap-2">
-              <Database className="w-4 h-4" />
-              Extracted Data
-            </TabsTrigger>
-            <TabsTrigger value="enriched" className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              Career Insights
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="structured" className="mt-6">
-            <StructuredDataView versionId={versionId} />
-          </TabsContent>
-          
-          <TabsContent value="enriched" className="mt-6">
-            <EnrichedResumeView versionId={versionId} />
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <StructuredDataView versionId={versionId} />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5" />
+            Career Insights
+          </CardTitle>
+          <CardDescription>
+            AI-powered analysis and enrichment of your career profile
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EnrichedResumeView versionId={versionId} />
+        </CardContent>
+      </Card>
+    </div>
   );
 };

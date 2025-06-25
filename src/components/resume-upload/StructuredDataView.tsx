@@ -2,8 +2,8 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   FileText, 
   Briefcase, 
@@ -14,11 +14,13 @@ import {
   Mail,
   CheckCircle,
   AlertCircle,
-  Edit
+  Edit,
+  GitMerge
 } from 'lucide-react';
 import { useParsedResumeEntities } from '@/hooks/useResumeStreams';
 import { parseResumeFieldValue, getFieldDisplayName, getSectionFromFieldName } from '@/utils/resumeDataParser';
 import { DataRenderer, ConfidenceBadge } from './DataRenderers';
+import { MergeDecisionView } from './MergeDecisionView';
 
 interface StructuredDataViewProps {
   versionId: string;
@@ -100,74 +102,100 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({ versionI
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            Extracted Information
+            Resume Analysis Results
           </CardTitle>
           <CardDescription>
-            Structured data extracted from your resume • {entities.length} data points across {Object.keys(groupedData).length} sections
+            Review extracted data and resolve any conflicts with your existing profile
           </CardDescription>
         </CardHeader>
-      </Card>
+        <CardContent>
+          <Tabs defaultValue="merge" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="merge" className="flex items-center gap-2">
+                <GitMerge className="w-4 h-4" />
+                Review & Merge
+              </TabsTrigger>
+              <TabsTrigger value="extracted" className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Extracted Data
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="merge" className="mt-6">
+              <MergeDecisionView versionId={versionId} />
+            </TabsContent>
+            
+            <TabsContent value="extracted" className="mt-6">
+              <div className="space-y-6">
+                <div className="text-sm text-muted-foreground">
+                  {entities.length} data points extracted across {Object.keys(groupedData).length} sections
+                </div>
 
-      {sortedSections.map(([sectionKey, sectionEntities]) => {
-        const config = sectionConfigs[sectionKey] || { 
-          title: sectionKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), 
-          icon: <FileText className="w-4 h-4" />,
-          priority: 999
-        };
+                {sortedSections.map(([sectionKey, sectionEntities]) => {
+                  const config = sectionConfigs[sectionKey] || { 
+                    title: sectionKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), 
+                    icon: <FileText className="w-4 h-4" />,
+                    priority: 999
+                  };
 
-        // Sort entities within section by confidence score
-        const sortedEntities = sectionEntities.sort((a, b) => b.confidence_score - a.confidence_score);
-
-        return (
-          <Card key={sectionKey}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {config.icon}
-                {config.title}
-              </CardTitle>
-              <CardDescription>
-                {sectionEntities.length} field{sectionEntities.length !== 1 ? 's' : ''} extracted
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {sortedEntities.map((entity, index) => {
-                  const parsedData = parseResumeFieldValue(entity.raw_value);
-                  const displayName = getFieldDisplayName(entity.field_name);
+                  // Sort entities within section by confidence score
+                  const sortedEntities = sectionEntities.sort((a, b) => b.confidence_score - a.confidence_score);
 
                   return (
-                    <div key={entity.field_name + index} className="flex items-start justify-between p-4 bg-muted/30 rounded-lg">
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">
-                            {displayName}
-                          </span>
+                    <Card key={sectionKey}>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          {config.icon}
+                          {config.title}
+                        </CardTitle>
+                        <CardDescription>
+                          {sectionEntities.length} field{sectionEntities.length !== 1 ? 's' : ''} extracted
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {sortedEntities.map((entity, index) => {
+                            const parsedData = parseResumeFieldValue(entity.raw_value);
+                            const displayName = getFieldDisplayName(entity.field_name);
+
+                            return (
+                              <div key={entity.field_name + index} className="flex items-start justify-between p-4 bg-muted/30 rounded-lg">
+                                <div className="flex-1 space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-sm">
+                                      {displayName}
+                                    </span>
+                                  </div>
+                                  
+                                  <DataRenderer 
+                                    fieldName={entity.field_name}
+                                    parsedData={parsedData}
+                                    confidence={entity.confidence_score}
+                                  />
+                                  
+                                  <div className="flex items-center gap-2">
+                                    <ConfidenceBadge score={entity.confidence_score} />
+                                    <Badge variant="outline" className="text-xs">
+                                      {entity.source_type}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <Button variant="ghost" size="sm" className="ml-4">
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            );
+                          })}
                         </div>
-                        
-                        <DataRenderer 
-                          fieldName={entity.field_name}
-                          parsedData={parsedData}
-                          confidence={entity.confidence_score}
-                        />
-                        
-                        <div className="flex items-center gap-2">
-                          <ConfidenceBadge score={entity.confidence_score} />
-                          <Badge variant="outline" className="text-xs">
-                            {entity.source_type}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" className="ml-4">
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                    </div>
+                      </CardContent>
+                    </Card>
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
