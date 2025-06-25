@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,7 +105,7 @@ export const ResumeUploadRefactored: React.FC = () => {
           uploadProgress: 100,
           currentStage: 'complete',
           isUploading: false,
-          completedVersionId: result.version?.id || result.versionId || null,
+          completedVersionId: result.version?.id || null,
           uploadResult: result
         }));
 
