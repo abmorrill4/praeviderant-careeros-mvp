@@ -54,25 +54,84 @@ export const EducationRenderer: React.FC<{ item: Education }> = ({ item }) => (
   </div>
 );
 
-export const SkillRenderer: React.FC<{ item: Skill }> = ({ item }) => (
-  <div>
-    <h4 className="font-medium text-sm">{item.name}</h4>
-    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-      {item.category && (
-        <span className="bg-muted px-2 py-1 rounded">{item.category}</span>
-      )}
-      {item.proficiency_level && (
-        <div className="flex items-center gap-1">
-          <Star className="w-3 h-3" />
-          <span>{item.proficiency_level}</span>
-        </div>
-      )}
-      {item.years_of_experience && (
-        <span>{item.years_of_experience} years</span>
-      )}
+export const SkillRenderer: React.FC<{ item: Skill }> = ({ item }) => {
+  // Handle cases where the skill name might be JSON or malformed data
+  const getSkillName = (skill: Skill): string => {
+    if (!skill.name) return 'Unknown Skill';
+    
+    // If the name looks like JSON, try to parse it
+    if (skill.name.startsWith('{') || skill.name.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(skill.name);
+        if (parsed.name) return parsed.name;
+        if (typeof parsed === 'string') return parsed;
+        return 'Unknown Skill';
+      } catch {
+        return skill.name;
+      }
+    }
+    
+    return skill.name;
+  };
+
+  // Extract category from JSON if needed
+  const getSkillCategory = (skill: Skill): string | undefined => {
+    if (skill.category) return skill.category;
+    
+    // Try to extract category from JSON in name field
+    if (skill.name && (skill.name.startsWith('{') || skill.name.startsWith('['))) {
+      try {
+        const parsed = JSON.parse(skill.name);
+        if (parsed.category) return parsed.category;
+      } catch {
+        // Ignore parsing errors
+      }
+    }
+    
+    return undefined;
+  };
+
+  // Extract proficiency from JSON if needed
+  const getSkillProficiency = (skill: Skill): string | undefined => {
+    if (skill.proficiency_level) return skill.proficiency_level;
+    
+    // Try to extract proficiency from JSON in name field
+    if (skill.name && (skill.name.startsWith('{') || skill.name.startsWith('['))) {
+      try {
+        const parsed = JSON.parse(skill.name);
+        if (parsed.proficiency_level) return parsed.proficiency_level;
+      } catch {
+        // Ignore parsing errors
+      }
+    }
+    
+    return undefined;
+  };
+
+  const skillName = getSkillName(item);
+  const skillCategory = getSkillCategory(item);
+  const skillProficiency = getSkillProficiency(item);
+
+  return (
+    <div>
+      <h4 className="font-medium text-sm">{skillName}</h4>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+        {skillCategory && (
+          <span className="bg-muted px-2 py-1 rounded">{skillCategory}</span>
+        )}
+        {skillProficiency && (
+          <div className="flex items-center gap-1">
+            <Star className="w-3 h-3" />
+            <span>{skillProficiency}</span>
+          </div>
+        )}
+        {item.years_of_experience && (
+          <span>{item.years_of_experience} years</span>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const ProjectRenderer: React.FC<{ item: Project }> = ({ item }) => (
   <div>
