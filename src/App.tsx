@@ -1,123 +1,72 @@
 
-import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { tooltip, TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import Index from "./pages/Index";
-import ProfileTimelinePage from "./pages/ProfileTimelinePage";
-import ProfileManagementPage from "./pages/ProfileManagementPage";
-import DataManagement from "./pages/DataManagement";
-import ResumeUploadV2 from "./pages/ResumeUploadV2";
-import ResumeTimelinePage from "./pages/ResumeTimelinePage";
-import EntityGraphAdmin from "./pages/EntityGraphAdmin";
-import NotFound from "./pages/NotFound";
-import "./App.css";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
+import { PraevidHomePageV2 } from '@/components/PraevidHomePageV2';
+import ProfileTimelinePage from '@/pages/ProfileTimelinePage';
+import ProfileManagementPage from '@/pages/ProfileManagementPage';
+import ProfileOptimizationPage from '@/pages/ProfileOptimizationPage';
+import ApplicationToolkitPage from '@/pages/ApplicationToolkitPage';
+import InterviewPage from '@/pages/InterviewPage';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
-const AppRoutes = () => {
-  const { user } = useAuth();
-  
-  return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      
-      {/* Redirect old routes to profile timeline */}
-      <Route path="/dashboard" element={<Navigate to="/profile-timeline" replace />} />
-      
-      <Route
-        path="/profile-timeline"
-        element={
-          <ProtectedRoute>
-            <ProfileTimelinePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/profile-management"
-        element={
-          <ProtectedRoute>
-            <ProfileManagementPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/data-management"
-        element={
-          <ProtectedRoute>
-            <DataManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/resume-upload-v2"
-        element={
-          <ProtectedRoute>
-            <ResumeUploadV2 />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/resume-timeline"
-        element={
-          <ProtectedRoute>
-            <ResumeTimelinePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/entity-graph-admin"
-        element={
-          <ProtectedRoute>
-            <EntityGraphAdmin />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
-};
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
       <ThemeProvider>
         <TooltipProvider>
-          <AuthProvider>
-            <Router>
-              <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-                <AppRoutes />
-              </div>
-              <Toaster />
-              <Sonner />
-            </Router>
-          </AuthProvider>
+          <div className="min-h-screen">
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<PraevidHomePageV2 />} />
+                <Route path="/profile-timeline" element={
+                  <ProtectedRoute>
+                    <ProfileTimelinePage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile-management" element={
+                  <ProtectedRoute>
+                    <ProfileManagementPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile-optimization" element={
+                  <ProtectedRoute>
+                    <ProfileOptimizationPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/application-toolkit" element={
+                  <ProtectedRoute>
+                    <ApplicationToolkitPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/interview" element={
+                  <ProtectedRoute>
+                    <InterviewPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </div>
         </TooltipProvider>
       </ThemeProvider>
-    </QueryClientProvider>
-  );
-}
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;

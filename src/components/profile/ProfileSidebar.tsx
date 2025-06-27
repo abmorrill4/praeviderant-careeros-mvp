@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
-import { User, Briefcase, GraduationCap, Star, Settings, LogOut } from 'lucide-react';
+import { User, Briefcase, GraduationCap, Star, Settings, LogOut, TrendingUp } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileSidebarProps {
@@ -105,8 +105,20 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         {/* Profile Management Section */}
         <div className="space-y-1 mb-4">
           <h3 className={`text-xs font-semibold ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} uppercase tracking-wider mb-2`}>
-            Management
+            Tools & Optimization
           </h3>
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/profile-optimization')}
+            className={`w-full justify-start h-10 px-3 ${
+              theme === 'dark'
+                ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
+                : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
+            } transition-all duration-200`}
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            <span className="font-medium text-sm">Profile Optimization</span>
+          </Button>
           <Button
             variant="ghost"
             onClick={() => navigate('/profile-management')}
