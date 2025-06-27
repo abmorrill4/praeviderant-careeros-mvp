@@ -5,7 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Briefcase, GraduationCap, Star, Settings, LogOut, TrendingUp } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
@@ -28,6 +28,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const { user } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     try {
@@ -44,6 +45,14 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     const email = user?.email || '';
     const name = email.split('@')[0];
     return name.slice(0, 2).toUpperCase();
+  };
+
+  // Check if we're on the profile timeline page for section navigation
+  const isOnTimelinePage = location.pathname === '/profile-timeline';
+
+  // Check if a route is active
+  const isRouteActive = (path: string) => {
+    return location.pathname === path;
   };
 
   return (
@@ -77,14 +86,21 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             Profile Sections
           </h3>
           {navigationItems.map((item) => {
-            const isActive = activeSection === item.id;
+            // Only show active state if we're on the timeline page AND this section is active
+            const isActive = isOnTimelinePage && activeSection === item.id;
             const Icon = item.icon;
             
             return (
               <Button
                 key={item.id}
                 variant="ghost"
-                onClick={() => onSectionChange(item.id)}
+                onClick={() => {
+                  // Navigate to timeline page first, then set section
+                  if (!isOnTimelinePage) {
+                    navigate('/profile-timeline');
+                  }
+                  onSectionChange(item.id);
+                }}
                 className={`w-full justify-start h-10 px-3 ${
                   isActive
                     ? 'bg-career-accent text-white shadow-neumorphic-inset-dark hover:bg-career-accent'
@@ -111,9 +127,11 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             variant="ghost"
             onClick={() => navigate('/profile-optimization')}
             className={`w-full justify-start h-10 px-3 ${
-              theme === 'dark'
-                ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
+              isRouteActive('/profile-optimization')
+                ? 'bg-career-accent text-white shadow-neumorphic-inset-dark hover:bg-career-accent'
+                : theme === 'dark'
+                  ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
+                  : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
             } transition-all duration-200`}
           >
             <TrendingUp className="w-4 h-4 mr-2" />
@@ -123,9 +141,11 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             variant="ghost"
             onClick={() => navigate('/profile-management')}
             className={`w-full justify-start h-10 px-3 ${
-              theme === 'dark'
-                ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
+              isRouteActive('/profile-management')
+                ? 'bg-career-accent text-white shadow-neumorphic-inset-dark hover:bg-career-accent'
+                : theme === 'dark'
+                  ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
+                  : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
             } transition-all duration-200`}
           >
             <Settings className="w-4 h-4 mr-2" />
