@@ -3,9 +3,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
 import { User, Briefcase, GraduationCap, Star, Settings, LogOut, Plus } from 'lucide-react';
@@ -24,19 +22,6 @@ const navigationItems = [
   { id: 'skills' as const, label: 'Skills', icon: Star },
 ];
 
-// Mock hook for profile completeness - in real app this would be a proper hook
-const useProfileCompleteness = () => {
-  return {
-    percentage: 75,
-    loading: false,
-    topActions: [
-      'Complete your professional summary',
-      'Add 2 more work experiences',
-      'Upload a professional profile photo'
-    ]
-  };
-};
-
 export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   activeSection,
   onSectionChange,
@@ -45,7 +30,6 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const { user } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const { percentage: profileCompleteness, topActions } = useProfileCompleteness();
 
   const handleSignOut = async () => {
     try {
@@ -96,38 +80,6 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           </Button>
         </div>
       </div>
-
-      {/* Profile Completeness with Hover Card */}
-      <HoverCard>
-        <HoverCardTrigger asChild>
-          <div className="mb-6 cursor-pointer">
-            <div className="flex justify-between items-center mb-2">
-              <span className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                Profile Completeness
-              </span>
-              <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                {profileCompleteness}%
-              </span>
-            </div>
-            <Progress value={profileCompleteness} className="h-2" />
-          </div>
-        </HoverCardTrigger>
-        <HoverCardContent className={`w-80 ${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'}`}>
-          <div className="space-y-2">
-            <h4 className={`text-sm font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-              Next Steps to Improve Your Profile
-            </h4>
-            <ul className={`text-sm space-y-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-              {topActions.map((action, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <span className="text-career-accent">•</span>
-                  {action}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </HoverCardContent>
-      </HoverCard>
 
       <Separator className={`mb-6 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`} />
 
