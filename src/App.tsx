@@ -62,6 +62,9 @@ const App = () => (
                     <InterviewPage />
                   </ProtectedRoute>
                 } />
+                {/* Keep legacy route for any existing bookmarks, redirect to profile management */}
+                <Route path="/resume-upload-v2" element={<Navigate to="/profile-management" replace />} />
+                <Route path="/data-management" element={<Navigate to="/profile-management" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </BrowserRouter>
