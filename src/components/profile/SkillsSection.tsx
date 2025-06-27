@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -146,11 +145,15 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   const createNormalizedSkillForEdit = (skill: Skill) => {
     const parsedData = parseSkillData(skill.name, skill.category, skill.proficiency_level);
     
+    // Ensure the category and proficiency_level values match the select options
+    const normalizedCategory = parsedData.category || skill.category;
+    const normalizedProficiency = parsedData.proficiency_level || skill.proficiency_level;
+    
     return {
       ...skill,
       name: parsedData.name, // Use parsed name instead of raw JSON
-      category: parsedData.category || skill.category || 'general',
-      proficiency_level: parsedData.proficiency_level || skill.proficiency_level,
+      category: normalizedCategory ? normalizedCategory.toLowerCase().replace(/\s+/g, '_') : 'general',
+      proficiency_level: normalizedProficiency ? normalizedProficiency.toLowerCase() : 'beginner',
       years_of_experience: parsedData.years_of_experience || skill.years_of_experience || 0
     };
   };
