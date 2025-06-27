@@ -108,8 +108,10 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
 
   // Parse and group skills by category
   const processedSkills: ProcessedSkill[] = skills.map(skill => {
+    console.log('Processing skill:', skill);
+    
     const parsedSkill = parseSkillData(skill.name, skill.category, skill.proficiency_level);
-    console.log('Parsing skill:', skill.name, '-> Result:', parsedSkill);
+    console.log('Parsed skill result:', parsedSkill);
     
     return {
       ...skill,
@@ -130,7 +132,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     return acc;
   }, {} as Record<string, ProcessedSkill[]>);
 
-  console.log('Processed skills by category:', skillsByCategory);
+  console.log('Final processed skills by category:', skillsByCategory);
 
   return (
     <div className="space-y-6">
@@ -150,6 +152,22 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
           <Plus className="w-4 h-4 mr-2" />
           Add Skill
         </Button>
+      </div>
+
+      {/* Debug Information */}
+      <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}>
+        <h3 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+          Debug Info
+        </h3>
+        <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+          Raw skills count: {skills.length}
+        </p>
+        <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+          Processed skills count: {processedSkills.length}
+        </p>
+        <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+          Categories: {Object.keys(skillsByCategory).join(', ')}
+        </p>
       </div>
 
       {/* Skills by Category */}
@@ -174,6 +192,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                       <h3 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-1`}>
                         {skill.parsedName}
                       </h3>
+                      <div className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
+                        Raw: {skill.name}
+                      </div>
                       <Badge 
                         className={`text-xs ${getCategoryColor(skill.parsedCategory)}`}
                       >
