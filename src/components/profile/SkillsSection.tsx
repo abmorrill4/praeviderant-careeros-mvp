@@ -136,12 +136,12 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
           key={category}
           id={`skills-${category}`}
           title={category}
-          badgeText={`${categorySkills.length} skills`}
+          badgeText={`${Array.isArray(categorySkills) ? categorySkills.length : 0} skills`}
           isExpanded={expandedSkills[category] || false}
           onToggle={() => toggleSkillExpansion(category)}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categorySkills.map((skill) => (
+            {Array.isArray(categorySkills) && categorySkills.map((skill) => (
               <Card
                 key={skill.logical_entity_id}
                 className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} hover:shadow-lg transition-all duration-200`}

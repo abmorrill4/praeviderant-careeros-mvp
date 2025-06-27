@@ -6,7 +6,7 @@ import { ProfileSidebar } from '@/components/profile/ProfileSidebar';
 import { ProfileTimeline } from '@/components/profile/ProfileTimeline';
 import { useTheme } from '@/contexts/ThemeContext';
 
-export type TimelineSection = 'overview' | 'experience' | 'education' | 'skills' | 'goals' | 'analytics';
+export type TimelineSection = 'overview' | 'experience' | 'education' | 'skills';
 
 const ProfileTimelinePage: React.FC = () => {
   const { user } = useAuth();

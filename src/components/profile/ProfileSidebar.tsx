@@ -5,8 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
-import { User, Briefcase, GraduationCap, Star, Target, Settings, LogOut, BarChart3, ChevronDown, Upload, Database } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { User, Briefcase, GraduationCap, Star, Settings, LogOut } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileSidebarProps {
@@ -19,8 +18,6 @@ const navigationItems = [
   { id: 'experience' as const, label: 'Experience', icon: Briefcase },
   { id: 'education' as const, label: 'Education', icon: GraduationCap },
   { id: 'skills' as const, label: 'Skills', icon: Star },
-  { id: 'goals' as const, label: 'Goals', icon: Target },
-  { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
 ];
 
 export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
@@ -30,8 +27,6 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const { user } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const [profileMenuOpen, setProfileMenuOpen] = React.useState(false);
-  const [toolsMenuOpen, setToolsMenuOpen] = React.useState(false);
 
   // Calculate profile completeness (placeholder logic)
   const profileCompleteness = 75;
@@ -108,111 +103,39 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           })}
         </div>
 
-        {/* Tools & Data Section */}
+        {/* Profile Management Section */}
         <div className="space-y-2 mb-6">
-          <Collapsible open={toolsMenuOpen} onOpenChange={setToolsMenuOpen}>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className={`w-full justify-between h-12 px-4 ${
-                  theme === 'dark'
-                    ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                    : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
-                } transition-all duration-200`}
-              >
-                <div className="flex items-center">
-                  <Database className="w-5 h-5 mr-3" />
-                  <span className="font-medium">Tools & Data</span>
-                </div>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${toolsMenuOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-1 ml-4">
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/resume-upload-v2')}
-                className={`w-full justify-start h-10 px-4 ${
-                  theme === 'dark'
-                    ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                    : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
-                } transition-all duration-200`}
-              >
-                <Upload className="w-4 h-4 mr-3" />
-                <span>Resume Upload</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/data-management')}
-                className={`w-full justify-start h-10 px-4 ${
-                  theme === 'dark'
-                    ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                    : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
-                } transition-all duration-200`}
-              >
-                <Database className="w-4 h-4 mr-3" />
-                <span>Data Management</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/entity-graph-admin')}
-                className={`w-full justify-start h-10 px-4 ${
-                  theme === 'dark'
-                    ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                    : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
-                } transition-all duration-200`}
-              >
-                <Settings className="w-4 h-4 mr-3" />
-                <span>Admin Tools</span>
-              </Button>
-            </CollapsibleContent>
-          </Collapsible>
+          <h3 className={`text-xs font-semibold ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} uppercase tracking-wider mb-3`}>
+            Management
+          </h3>
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/profile-management')}
+            className={`w-full justify-start h-12 px-4 ${
+              theme === 'dark'
+                ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
+                : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
+            } transition-all duration-200`}
+          >
+            <Settings className="w-5 h-5 mr-3" />
+            <span className="font-medium">Profile Management</span>
+          </Button>
         </div>
 
-        {/* Profile Settings Section */}
-        <div className="space-y-2 mb-6">
-          <Collapsible open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className={`w-full justify-between h-12 px-4 ${
-                  theme === 'dark'
-                    ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                    : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
-                } transition-all duration-200`}
-              >
-                <div className="flex items-center">
-                  <User className="w-5 h-5 mr-3" />
-                  <span className="font-medium">Profile</span>
-                </div>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${profileMenuOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-1 ml-4">
-              <Button
-                variant="ghost"
-                className={`w-full justify-start h-10 px-4 ${
-                  theme === 'dark'
-                    ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                    : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
-                } transition-all duration-200`}
-              >
-                <Settings className="w-4 h-4 mr-3" />
-                <span>Settings</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={handleSignOut}
-                className={`w-full justify-start h-10 px-4 ${
-                  theme === 'dark'
-                    ? 'hover:bg-red-900/20 text-red-400 hover:text-red-300'
-                    : 'hover:bg-red-50 text-red-600 hover:text-red-700'
-                } transition-all duration-200`}
-              >
-                <LogOut className="w-4 h-4 mr-3" />
-                <span>Sign Out</span>
-              </Button>
-            </CollapsibleContent>
-          </Collapsible>
+        {/* Sign Out */}
+        <div className="space-y-2">
+          <Button
+            variant="ghost"
+            onClick={handleSignOut}
+            className={`w-full justify-start h-12 px-4 ${
+              theme === 'dark'
+                ? 'hover:bg-red-900/20 text-red-400 hover:text-red-300'
+                : 'hover:bg-red-50 text-red-600 hover:text-red-700'
+            } transition-all duration-200`}
+          >
+            <LogOut className="w-5 h-5 mr-3" />
+            <span className="font-medium">Sign Out</span>
+          </Button>
         </div>
       </nav>
     </div>

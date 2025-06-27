@@ -6,8 +6,6 @@ import { ProfileOverview } from './ProfileOverview';
 import { ExperienceSection } from './ExperienceSection';
 import { EducationSection } from './EducationSection';
 import { SkillsSection } from './SkillsSection';
-import { GoalsSection } from './GoalsSection';
-import { AnalyticsSection } from './AnalyticsSection';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileTimelineProps {
@@ -34,13 +32,11 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
         </h1>
         
         <Tabs value={activeSection} onValueChange={(value) => onSectionChange(value as TimelineSection)}>
-          <TabsList className={`grid w-full grid-cols-6 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}>
+          <TabsList className={`grid w-full grid-cols-4 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="experience">Experience</TabsTrigger>
             <TabsTrigger value="education">Education</TabsTrigger>
             <TabsTrigger value="skills">Skills</TabsTrigger>
-            <TabsTrigger value="goals">Goals</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -61,14 +57,6 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
           
           <TabsContent value="skills" className="mt-0">
             <SkillsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
-          </TabsContent>
-          
-          <TabsContent value="goals" className="mt-0">
-            <GoalsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
-          </TabsContent>
-          
-          <TabsContent value="analytics" className="mt-0">
-            <AnalyticsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
           </TabsContent>
         </Tabs>
       </div>

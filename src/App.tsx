@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
 import ProfileTimelinePage from "./pages/ProfileTimelinePage";
+import ProfileManagementPage from "./pages/ProfileManagementPage";
 import DataManagement from "./pages/DataManagement";
 import ResumeUploadV2 from "./pages/ResumeUploadV2";
 import ResumeTimelinePage from "./pages/ResumeTimelinePage";
@@ -51,6 +52,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ProfileTimelinePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile-management"
+        element={
+          <ProtectedRoute>
+            <ProfileManagementPage />
           </ProtectedRoute>
         }
       />
