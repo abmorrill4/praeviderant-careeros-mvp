@@ -154,22 +154,6 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
         </Button>
       </div>
 
-      {/* Debug Information */}
-      <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}>
-        <h3 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
-          Debug Info
-        </h3>
-        <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-          Raw skills count: {skills.length}
-        </p>
-        <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-          Processed skills count: {processedSkills.length}
-        </p>
-        <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-          Categories: {Object.keys(skillsByCategory).join(', ')}
-        </p>
-      </div>
-
       {/* Skills by Category */}
       {Object.entries(skillsByCategory).map(([category, categorySkills]) => (
         <TimelineCardFrame
@@ -192,9 +176,6 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                       <h3 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-1`}>
                         {skill.parsedName}
                       </h3>
-                      <div className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
-                        Raw: {skill.name}
-                      </div>
                       <Badge 
                         className={`text-xs ${getCategoryColor(skill.parsedCategory)}`}
                       >
