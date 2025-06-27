@@ -95,11 +95,13 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 key={item.id}
                 variant="ghost"
                 onClick={() => {
-                  // Navigate to timeline page first, then set section
-                  if (!isOnTimelinePage) {
-                    navigate('/profile-timeline');
+                  if (isOnTimelinePage) {
+                    // If we're already on the timeline page, just change the section
+                    onSectionChange(item.id);
+                  } else {
+                    // If we're on a different page, navigate with the section as a URL parameter
+                    navigate(`/profile-timeline?section=${item.id}`);
                   }
-                  onSectionChange(item.id);
                 }}
                 className={`w-full justify-start h-10 px-3 ${
                   isActive
