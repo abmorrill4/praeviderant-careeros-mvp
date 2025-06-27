@@ -4,35 +4,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileLayout } from '@/components/layout/ProfileLayout';
 import { Upload, Database, Settings, User } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
+
+export type ManagementSection = 'profile' | 'uploads' | 'data' | 'admin';
 
 const ProfileManagementPage: React.FC = () => {
   const { user } = useAuth();
   const { theme } = useTheme();
   const [activeSection, setActiveSection] = useState<TimelineSection>('overview');
-
-  const managementSections = [
-    {
-      title: 'Resume Upload',
-      description: 'Upload and process your resume to extract career data',
-      icon: Upload,
-      path: '/resume-upload-v2',
-    },
-    {
-      title: 'Data Management',
-      description: 'Manage your profile data and career information',
-      icon: Database,
-      path: '/data-management',
-    },
-    {
-      title: 'Admin Tools',
-      description: 'Advanced tools for managing your profile entities',
-      icon: Settings,
-      path: '/entity-graph-admin',
-    },
-  ];
+  const [activeManagementSection, setActiveManagementSection] = useState<ManagementSection>('profile');
 
   const handleNavigate = (path: string) => {
     window.open(path, '_blank');
@@ -42,71 +25,128 @@ const ProfileManagementPage: React.FC = () => {
     <ProfileLayout activeSection={activeSection} onSectionChange={setActiveSection}>
       <div className="h-full flex flex-col">
         <div className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'} border-b p-6`}>
-          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
-            Profile Management
-          </h1>
-          <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+              Profile Management
+            </h1>
+          </div>
+          <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-4`}>
             Manage your profile data, upload resumes, and access advanced tools
           </p>
+          
+          <Tabs value={activeManagementSection} onValueChange={(value) => setActiveManagementSection(value as ManagementSection)}>
+            <TabsList className={`grid w-full grid-cols-4 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}>
+              <TabsTrigger value="profile">Profile Info</TabsTrigger>
+              <TabsTrigger value="uploads">Resume Upload</TabsTrigger>
+              <TabsTrigger value="data">Data Management</TabsTrigger>
+              <TabsTrigger value="admin">Admin Tools</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-6">
-            {/* User Info Card */}
-            <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
-              <CardHeader>
-                <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                  <User className="w-5 h-5" />
-                  Profile Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                    <span className="font-medium">Email:</span> {user?.email}
-                  </p>
-                  <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                    <span className="font-medium">User ID:</span> {user?.id}
-                  </p>
-                  <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                    Manage your profile settings and account preferences here.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <Tabs value={activeManagementSection} onValueChange={(value) => setActiveManagementSection(value as ManagementSection)}>
+            <TabsContent value="profile" className="mt-0">
+              <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+                <CardHeader>
+                  <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <User className="w-5 h-5" />
+                    Profile Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                        <span className="font-medium">Email:</span> {user?.email}
+                      </p>
+                      <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                        <span className="font-medium">User ID:</span> {user?.id}
+                      </p>
+                      <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                        Manage your profile settings and account preferences here.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-            {/* Management Tools Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {managementSections.map((section) => {
-                const Icon = section.icon;
-                return (
-                  <Card
-                    key={section.title}
-                    className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark hover:shadow-neumorphic-hover-dark' : 'neumorphic-panel light bg-career-panel-light hover:shadow-neumorphic-hover-light'} transition-all duration-200 cursor-pointer`}
-                    onClick={() => handleNavigate(section.path)}
+            <TabsContent value="uploads" className="mt-0">
+              <Card
+                className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark hover:shadow-neumorphic-hover-dark' : 'neumorphic-panel light bg-career-panel-light hover:shadow-neumorphic-hover-light'} transition-all duration-200 cursor-pointer`}
+                onClick={() => handleNavigate('/resume-upload-v2')}
+              >
+                <CardHeader>
+                  <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <Upload className="w-5 h-5 text-career-accent" />
+                    Resume Upload
+                  </CardTitle>
+                  <CardDescription className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    Upload and process your resume to extract career data
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    variant="outline"
+                    className={`w-full ${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
                   >
-                    <CardHeader>
-                      <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                        <Icon className="w-5 h-5 text-career-accent" />
-                        {section.title}
-                      </CardTitle>
-                      <CardDescription className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                        {section.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button
-                        variant="outline"
-                        className={`w-full ${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
-                      >
-                        Open {section.title}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
+                    Open Resume Upload
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="data" className="mt-0">
+              <Card
+                className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark hover:shadow-neumorphic-hover-dark' : 'neumorphic-panel light bg-career-panel-light hover:shadow-neumorphic-hover-light'} transition-all duration-200 cursor-pointer`}
+                onClick={() => handleNavigate('/data-management')}
+              >
+                <CardHeader>
+                  <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <Database className="w-5 h-5 text-career-accent" />
+                    Data Management
+                  </CardTitle>
+                  <CardDescription className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    Manage your profile data and career information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    variant="outline"
+                    className={`w-full ${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+                  >
+                    Open Data Management
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="admin" className="mt-0">
+              <Card
+                className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark hover:shadow-neumorphic-hover-dark' : 'neumorphic-panel light bg-career-panel-light hover:shadow-neumorphic-hover-light'} transition-all duration-200 cursor-pointer`}
+                onClick={() => handleNavigate('/entity-graph-admin')}
+              >
+                <CardHeader>
+                  <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <Settings className="w-5 h-5 text-career-accent" />
+                    Admin Tools
+                  </CardTitle>
+                  <CardDescription className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    Advanced tools for managing your profile entities
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    variant="outline"
+                    className={`w-full ${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+                  >
+                    Open Admin Tools
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </ProfileLayout>
