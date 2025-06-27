@@ -28,6 +28,26 @@ export function parseSkillData(skillName: string, skillCategory?: string, skillP
     return { name: 'Unknown Skill' };
   }
 
+  // Handle JSON string in name field - this is the main issue we're fixing
+  if (skillName && (skillName.startsWith('{') && skillName.endsWith('}'))) {
+    try {
+      const parsed = JSON.parse(skillName);
+      console.log('Successfully parsed JSON from skill name:', parsed);
+      
+      if (typeof parsed === 'object' && parsed !== null) {
+        return {
+          name: cleanSkillName(parsed.name || parsed.skill || 'Unknown Skill'),
+          category: parsed.category,
+          proficiency_level: parsed.proficiency_level || parsed.proficiency,
+          years_of_experience: parsed.years_of_experience || parsed.years,
+        };
+      }
+    } catch (error) {
+      console.log('Failed to parse skill JSON:', skillName, error);
+      // Fall through to other parsing methods
+    }
+  }
+
   // Handle comma-separated key-value pairs (Name:Agile,Category:...)
   if (skillName.includes('Name:') && skillName.includes(',')) {
     try {
@@ -43,8 +63,8 @@ export function parseSkillData(skillName: string, skillCategory?: string, skillP
     }
   }
 
-  // Handle JSON string in name field
-  if (skillName && (skillName.startsWith('{') || skillName.startsWith('['))) {
+  // Handle array format
+  if (skillName && skillName.startsWith('[')) {
     try {
       const parsed = JSON.parse(skillName);
       
@@ -63,22 +83,8 @@ export function parseSkillData(skillName: string, skillCategory?: string, skillP
         }
         return { name: cleanSkillName(String(firstSkill)) };
       }
-      
-      // Handle single skill object
-      if (typeof parsed === 'object' && parsed !== null) {
-        return {
-          name: cleanSkillName(parsed.name || parsed.skill || 'Unknown Skill'),
-          category: parsed.category,
-          proficiency_level: parsed.proficiency_level || parsed.proficiency,
-          years_of_experience: parsed.years_of_experience || parsed.years,
-        };
-      }
-      
-      return { name: cleanSkillName(String(parsed)) };
     } catch (error) {
-      console.log('Failed to parse skill JSON:', skillName, error);
-      // If JSON parsing fails, treat as regular text but clean it up
-      return { name: cleanSkillName(skillName) };
+      console.log('Failed to parse skill array:', skillName, error);
     }
   }
 
