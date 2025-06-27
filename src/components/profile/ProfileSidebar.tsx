@@ -49,22 +49,22 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   };
 
   return (
-    <div className={`h-full ${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} m-4 p-6 flex flex-col`}>
+    <div className={`h-full ${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} m-3 p-4 flex flex-col`}>
       {/* User Identity Section */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <Avatar className="w-12 h-12">
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Avatar className="w-10 h-10">
               <AvatarImage src={user?.user_metadata?.avatar_url} />
-              <AvatarFallback className={`${theme === 'dark' ? 'bg-career-gray-dark text-career-text-dark' : 'bg-career-gray-light text-career-text-light'} font-semibold`}>
+              <AvatarFallback className={`${theme === 'dark' ? 'bg-career-gray-dark text-career-text-dark' : 'bg-career-gray-light text-career-text-light'} font-semibold text-sm`}>
                 {getUserInitials()}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h2 className={`text-lg font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-1`}>
+              <h2 className={`text-base font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-0.5`}>
                 {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
               </h2>
-              <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
                 Career Professional
               </p>
             </div>
@@ -74,19 +74,19 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             size="icon"
             variant="ghost"
             onClick={onCommandPaletteOpen}
-            className={`w-8 h-8 ${theme === 'dark' ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-accent' : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-accent'} transition-colors`}
+            className={`w-7 h-7 ${theme === 'dark' ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-accent' : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-accent'} transition-colors`}
           >
             <Plus className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
-      <Separator className={`mb-6 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`} />
+      <Separator className={`mb-4 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`} />
 
       {/* Main Navigation Menu */}
       <nav className="flex-1">
-        <div className="space-y-2 mb-6">
-          <h3 className={`text-xs font-semibold ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} uppercase tracking-wider mb-3`}>
+        <div className="space-y-1 mb-4">
+          <h3 className={`text-xs font-semibold ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} uppercase tracking-wider mb-2`}>
             Profile Sections
           </h3>
           {navigationItems.map((item) => {
@@ -98,7 +98,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 key={item.id}
                 variant="ghost"
                 onClick={() => onSectionChange(item.id)}
-                className={`w-full justify-start h-12 px-4 ${
+                className={`w-full justify-start h-10 px-3 ${
                   isActive
                     ? 'bg-career-accent text-white shadow-neumorphic-inset-dark hover:bg-career-accent'
                     : theme === 'dark'
@@ -106,47 +106,47 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                       : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
                 } transition-all duration-200`}
               >
-                <Icon className="w-5 h-5 mr-3" />
-                <span className="font-medium">{item.label}</span>
+                <Icon className="w-4 h-4 mr-2" />
+                <span className="font-medium text-sm">{item.label}</span>
               </Button>
             );
           })}
         </div>
 
-        <Separator className={`mb-6 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`} />
+        <Separator className={`mb-4 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`} />
 
         {/* Profile Management Section */}
-        <div className="space-y-2 mb-6">
-          <h3 className={`text-xs font-semibold ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} uppercase tracking-wider mb-3`}>
+        <div className="space-y-1 mb-4">
+          <h3 className={`text-xs font-semibold ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} uppercase tracking-wider mb-2`}>
             Management
           </h3>
           <Button
             variant="ghost"
             onClick={() => navigate('/profile-management')}
-            className={`w-full justify-start h-12 px-4 ${
+            className={`w-full justify-start h-10 px-3 ${
               theme === 'dark'
                 ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
                 : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
             } transition-all duration-200`}
           >
-            <Settings className="w-5 h-5 mr-3" />
-            <span className="font-medium">Profile Management</span>
+            <Settings className="w-4 h-4 mr-2" />
+            <span className="font-medium text-sm">Profile Management</span>
           </Button>
         </div>
 
         {/* Sign Out */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Button
             variant="ghost"
             onClick={handleSignOut}
-            className={`w-full justify-start h-12 px-4 group ${
+            className={`w-full justify-start h-10 px-3 group ${
               theme === 'dark'
                 ? 'hover:bg-red-900/20 text-red-400 hover:text-red-300'
                 : 'hover:bg-red-50 text-red-600 hover:text-red-700'
             } transition-all duration-200`}
           >
-            <LogOut className="w-5 h-5 mr-3 group-hover:text-red-500" />
-            <span className="font-medium">Sign Out</span>
+            <LogOut className="w-4 h-4 mr-2 group-hover:text-red-500" />
+            <span className="font-medium text-sm">Sign Out</span>
           </Button>
         </div>
       </nav>

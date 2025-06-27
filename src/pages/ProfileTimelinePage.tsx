@@ -26,8 +26,8 @@ const ProfileTimelinePage: React.FC = () => {
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'bg-career-dark' : 'bg-career-light'} transition-colors duration-300`}>
       <div className="flex h-screen">
-        {/* Left Sidebar - Static */}
-        <div className="w-80 flex-shrink-0">
+        {/* Left Sidebar - Reduced width */}
+        <div className="w-64 flex-shrink-0">
           <ProfileSidebar 
             activeSection={activeSection}
             onSectionChange={setActiveSection}
@@ -35,7 +35,7 @@ const ProfileTimelinePage: React.FC = () => {
           />
         </div>
         
-        {/* Right Content Area - Scrollable */}
+        {/* Right Content Area - More space */}
         <div className="flex-1 overflow-hidden">
           <ProfileTimeline 
             activeSection={activeSection}
