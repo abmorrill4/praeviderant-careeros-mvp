@@ -6,6 +6,7 @@ import { ProfileOverview } from './ProfileOverview';
 import { ExperienceSection } from './ExperienceSection';
 import { EducationSection } from './EducationSection';
 import { SkillsSection } from './SkillsSection';
+import { ResumeUploadModal } from './ResumeUploadModal';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileTimelineProps {
@@ -27,9 +28,12 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
   return (
     <div className="h-full flex flex-col">
       <div className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'} border-b p-6`}>
-        <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-4`}>
-          Career Timeline
-        </h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            Career Timeline
+          </h1>
+          <ResumeUploadModal />
+        </div>
         
         <Tabs value={activeSection} onValueChange={(value) => onSectionChange(value as TimelineSection)}>
           <TabsList className={`grid w-full grid-cols-4 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}>
