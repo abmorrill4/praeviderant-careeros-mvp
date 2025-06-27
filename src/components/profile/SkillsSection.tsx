@@ -108,18 +108,21 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
 
   // Parse and group skills by category
   const processedSkills: ProcessedSkill[] = skills.map(skill => {
-    console.log('Processing skill:', skill);
+    console.log('Processing individual skill:', skill);
     
     const parsedSkill = parseSkillData(skill.name, skill.category, skill.proficiency_level);
     console.log('Parsed skill result:', parsedSkill);
     
-    return {
+    const processed = {
       ...skill,
       parsedName: parsedSkill.name,
       parsedCategory: parsedSkill.category || skill.category || 'General',
       parsedProficiency: parsedSkill.proficiency_level || skill.proficiency_level,
       parsedYears: parsedSkill.years_of_experience || skill.years_of_experience
     };
+    
+    console.log('Final processed skill:', processed);
+    return processed;
   });
 
   const skillsByCategory: Record<string, ProcessedSkill[]> = processedSkills.reduce((acc, skill) => {
@@ -154,6 +157,26 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
         </Button>
       </div>
 
+      {/* Debug Information */}
+      <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'} mb-4`}>
+        <h3 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+          Debug Info
+        </h3>
+        <div className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} space-y-1`}>
+          <p>Raw skills count: {skills.length}</p>
+          <p>Processed skills count: {processedSkills.length}</p>
+          <p>Categories: {Object.keys(skillsByCategory).join(', ')}</p>
+          {skills.slice(0, 3).map((skill, index) => (
+            <div key={index} className="mt-2 p-2 bg-opacity-50 bg-gray-500 rounded">
+              <p>Skill {index + 1}:</p>
+              <p>- Raw name: "{skill.name}"</p>
+              <p>- Parsed name: "{processedSkills[index]?.parsedName}"</p>
+              <p>- Category: "{skill.category}" → "{processedSkills[index]?.parsedCategory}"</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Skills by Category */}
       {Object.entries(skillsByCategory).map(([category, categorySkills]) => (
         <TimelineCardFrame
@@ -176,6 +199,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                       <h3 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-1`}>
                         {skill.parsedName}
                       </h3>
+                      <div className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
+                        Raw: "{skill.name}" → Parsed: "{skill.parsedName}"
+                      </div>
                       <Badge 
                         className={`text-xs ${getCategoryColor(skill.parsedCategory)}`}
                       >
