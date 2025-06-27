@@ -8,26 +8,55 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Plus, Edit, Star, Target } from 'lucide-react';
 import { parseSkillData, formatProficiencyLevel, getCategoryColor } from '@/utils/skillDataParser';
+import { useLatestEntities } from '@/hooks/useVersionedEntities';
+import { useEntityActions } from '@/hooks/useEntityActions';
+import { ProfileItemDisplay } from './ProfileItemDisplay';
+import { ProfileItemEditor } from './ProfileItemEditor';
+import type { Skill } from '@/types/versioned-entities';
 
 interface SkillsSectionProps {
   focusedCard: string | null;
   onCardFocus: (cardId: string | null) => void;
 }
 
-interface Skill {
-  logical_entity_id: string;
-  name: string;
-  category?: string;
-  proficiency_level?: string;
-  years_of_experience?: number;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-  version: number;
-  is_active: boolean;
-  source?: string;
-  source_confidence?: number;
-}
+// Edit fields configuration for skills
+const skillEditFields = [
+  {
+    key: 'name',
+    label: 'Skill Name',
+    type: 'text' as const,
+    placeholder: 'Enter skill name'
+  },
+  {
+    key: 'category',
+    label: 'Category',
+    type: 'select' as const,
+    options: [
+      'programming',
+      'framework',
+      'tool',
+      'language',
+      'database',
+      'soft_skill',
+      'technical',
+      'general'
+    ],
+    placeholder: 'Select category'
+  },
+  {
+    key: 'proficiency_level',
+    label: 'Proficiency Level',
+    type: 'select' as const,
+    options: ['beginner', 'intermediate', 'advanced', 'expert'],
+    placeholder: 'Select proficiency level'
+  },
+  {
+    key: 'years_of_experience',
+    label: 'Years of Experience',
+    type: 'number' as const,
+    placeholder: 'Enter years of experience'
+  }
+];
 
 export const SkillsSection: React.FC<SkillsSectionProps> = ({
   focusedCard,
@@ -35,37 +64,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
 }) => {
   const { user } = useAuth();
   const { theme } = useTheme();
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchSkills = async () => {
-      try {
-        const { supabase } = await import('@/integrations/supabase/client');
-        const { data, error } = await supabase
-          .from('skill')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .order('name');
-
-        if (error) {
-          console.error('Error fetching skills:', error);
-          return;
-        }
-
-        setSkills(data || []);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSkills();
-  }, [user]);
+  const { data: skills = [], isLoading } = useLatestEntities<Skill>('skill');
+  const { handleAccept, handleEdit } = useEntityActions<Skill>('skill');
+  const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
 
   const getProficiencyProgress = (level?: string): number => {
     if (!level) return 0;
@@ -108,7 +109,67 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     return grouped;
   };
 
-  if (loading) {
+  const handleEditClick = (skill: Skill) => {
+    setEditingSkillId(`${skill.logical_entity_id}-${skill.version}`);
+  };
+
+  const handleEditSave = (skill: Skill, updates: Partial<Skill>) => {
+    handleEdit(skill, updates);
+    setEditingSkillId(null);
+  };
+
+  const handleEditCancel = () => {
+    setEditingSkillId(null);
+  };
+
+  const renderSkillItem = (skill: Skill) => {
+    const parsedSkill = parseSkillData(skill.name, skill.category, skill.proficiency_level);
+    
+    return (
+      <div className="space-y-3">
+        <div>
+          <h4 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            {parsedSkill.name}
+          </h4>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {(parsedSkill.category || skill.category) && (
+              <Badge className={`text-xs ${getCategoryColor(parsedSkill.category || skill.category)}`}>
+                {(parsedSkill.category || skill.category)?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {(parsedSkill.proficiency_level || skill.proficiency_level) && (
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                Proficiency
+              </span>
+              <span className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                {formatProficiencyLevel(parsedSkill.proficiency_level || skill.proficiency_level)}
+              </span>
+            </div>
+            <Progress 
+              value={getProficiencyProgress(parsedSkill.proficiency_level || skill.proficiency_level)} 
+              className="h-2"
+            />
+          </div>
+        )}
+
+        {(parsedSkill.years_of_experience || skill.years_of_experience) && (
+          <div className="flex items-center gap-2 text-sm">
+            <Target className="w-4 h-4" />
+            <span className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              {parsedSkill.years_of_experience || skill.years_of_experience} years experience
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -193,55 +254,32 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
               </Badge>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categorySkills.map((skill) => (
-                <Card
-                  key={skill.logical_entity_id}
-                  className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} hover:shadow-lg transition-all duration-200`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
-                          {skill.displayName}
-                        </h4>
-                        <Badge className={`text-xs ${getCategoryColor(skill.displayCategory)}`}>
-                          {skill.displayCategory.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </div>
-
-                    {skill.displayProficiency && (
-                      <div className="mb-3">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                            Proficiency
-                          </span>
-                          <span className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-                            {formatProficiencyLevel(skill.displayProficiency)}
-                          </span>
-                        </div>
-                        <Progress 
-                          value={getProficiencyProgress(skill.displayProficiency)} 
-                          className="h-2"
-                        />
-                      </div>
+            <div className="space-y-3">
+              {categorySkills.map((skill) => {
+                const itemKey = `${skill.logical_entity_id}-${skill.version}`;
+                const isEditing = editingSkillId === itemKey;
+                
+                return (
+                  <div key={itemKey}>
+                    {isEditing ? (
+                      <ProfileItemEditor
+                        item={skill}
+                        editFields={skillEditFields}
+                        title="Skills"
+                        onEdit={handleEditSave}
+                        onCancel={handleEditCancel}
+                      />
+                    ) : (
+                      <ProfileItemDisplay
+                        item={skill}
+                        onAccept={handleAccept}
+                        onEdit={handleEditClick}
+                        renderItem={renderSkillItem}
+                      />
                     )}
-
-                    {skill.displayYears && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Target className="w-4 h-4" />
-                        <span className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                          {skill.displayYears} years experience
-                        </span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
