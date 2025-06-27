@@ -43,6 +43,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
           return;
         }
 
+        console.log('Raw skills data:', data);
         setSkills(data || []);
       } catch (error) {
         console.error('Error:', error);
@@ -93,22 +94,31 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     );
   }
 
-  const skillsByCategory = skills.reduce((acc, skill) => {
+  // Parse and group skills by category
+  const processedSkills = skills.map(skill => {
     const parsedSkill = parseSkillData(skill.name, skill.category, skill.proficiency_level);
-    const category = parsedSkill.category || 'General';
+    console.log('Parsing skill:', skill.name, '-> Result:', parsedSkill);
+    
+    return {
+      ...skill,
+      parsedName: parsedSkill.name,
+      parsedCategory: parsedSkill.category || skill.category || 'General',
+      parsedProficiency: parsedSkill.proficiency_level || skill.proficiency_level,
+      parsedYears: parsedSkill.years_of_experience || skill.years_of_experience
+    };
+  });
+
+  const skillsByCategory = processedSkills.reduce((acc, skill) => {
+    const category = skill.parsedCategory;
     
     if (!acc[category]) {
       acc[category] = [];
     }
-    acc[category].push({
-      ...skill,
-      parsedName: parsedSkill.name,
-      parsedCategory: parsedSkill.category,
-      parsedProficiency: parsedSkill.proficiency_level,
-      parsedYears: parsedSkill.years_of_experience
-    });
+    acc[category].push(skill);
     return acc;
   }, {} as Record<string, any[]>);
+
+  console.log('Processed skills by category:', skillsByCategory);
 
   return (
     <div className="space-y-6">
@@ -136,12 +146,12 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
           key={category}
           id={`skills-${category}`}
           title={category}
-          badgeText={`${Array.isArray(categorySkills) ? categorySkills.length : 0} skills`}
+          badgeText={`${categorySkills.length} skills`}
           isExpanded={expandedSkills[category] || false}
           onToggle={() => toggleSkillExpansion(category)}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.isArray(categorySkills) && categorySkills.map((skill) => (
+            {categorySkills.map((skill) => (
               <Card
                 key={skill.logical_entity_id}
                 className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} hover:shadow-lg transition-all duration-200`}
@@ -155,7 +165,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                       <Badge 
                         className={`text-xs ${getCategoryColor(skill.parsedCategory)}`}
                       >
-                        {skill.parsedCategory || category}
+                        {skill.parsedCategory.replace('_', ' ')}
                       </Badge>
                     </div>
                     <Button variant="ghost" size="sm">
@@ -180,11 +190,11 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                     </div>
                   )}
 
-                  {skill.years_of_experience && (
+                  {skill.parsedYears && (
                     <div className="flex items-center gap-2 text-sm">
                       <Target className="w-4 h-4" />
                       <span className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                        {skill.years_of_experience} years experience
+                        {skill.parsedYears} years experience
                       </span>
                     </div>
                   )}

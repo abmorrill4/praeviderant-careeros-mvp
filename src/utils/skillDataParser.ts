@@ -7,13 +7,15 @@ export interface ParsedSkillData {
 }
 
 export function parseSkillData(skillName: string, skillCategory?: string, skillProficiency?: string): ParsedSkillData {
+  console.log('Parsing skill data:', { skillName, skillCategory, skillProficiency });
+  
   // Handle null/undefined cases
   if (!skillName || skillName === 'null' || skillName === 'undefined') {
     return { name: 'Unknown Skill' };
   }
 
   // First, check if we have proper data in separate fields
-  if (skillCategory || skillProficiency) {
+  if (skillCategory && skillCategory !== 'null' && skillCategory !== 'undefined') {
     return {
       name: cleanSkillName(skillName),
       category: skillCategory,
@@ -24,6 +26,21 @@ export function parseSkillData(skillName: string, skillCategory?: string, skillP
   // Handle [object Object] format
   if (skillName === '[object Object]' || skillName.includes('[object Object]')) {
     return { name: 'Unknown Skill' };
+  }
+
+  // Handle comma-separated key-value pairs (Name:Agile,Category:...)
+  if (skillName.includes('Name:') && skillName.includes(',')) {
+    try {
+      const parsed = parseKeyValueString(skillName);
+      return {
+        name: cleanSkillName(parsed.Name || parsed.name || 'Unknown Skill'),
+        category: parsed.Category || parsed.category,
+        proficiency_level: parsed.ProficiencyLevel || parsed.proficiency_level || parsed.Proficiency,
+        years_of_experience: parsed.YearsOfExperience ? parseInt(parsed.YearsOfExperience) : undefined,
+      };
+    } catch (error) {
+      console.log('Failed to parse key-value string:', skillName, error);
+    }
   }
 
   // Handle JSON string in name field
@@ -82,6 +99,26 @@ export function parseSkillData(skillName: string, skillCategory?: string, skillP
   return { name: cleanSkillName(skillName) };
 }
 
+function parseKeyValueString(str: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  
+  // Split by comma and process each key-value pair
+  const pairs = str.split(',');
+  
+  for (const pair of pairs) {
+    const colonIndex = pair.indexOf(':');
+    if (colonIndex > -1) {
+      const key = pair.substring(0, colonIndex).trim();
+      const value = pair.substring(colonIndex + 1).trim();
+      if (key && value) {
+        result[key] = value;
+      }
+    }
+  }
+  
+  return result;
+}
+
 function cleanSkillName(name: string): string {
   if (!name || typeof name !== 'string') {
     return 'Unknown Skill';
@@ -135,6 +172,7 @@ export function getCategoryColor(category?: string): string {
     'soft_skill': 'bg-pink-100 text-pink-800',
     'technical': 'bg-indigo-100 text-indigo-800',
     'technical_skill': 'bg-indigo-100 text-indigo-800',
+    'general': 'bg-gray-100 text-gray-800',
   };
   
   return colorMap[category.toLowerCase()] || 'bg-gray-100 text-gray-800';
