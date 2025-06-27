@@ -6,13 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
-import { User, Briefcase, GraduationCap, Star, Settings, LogOut, Plus } from 'lucide-react';
+import { User, Briefcase, GraduationCap, Star, Settings, LogOut } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileSidebarProps {
   activeSection: TimelineSection;
   onSectionChange: (section: TimelineSection) => void;
-  onCommandPaletteOpen: () => void;
 }
 
 const navigationItems = [
@@ -25,7 +24,6 @@ const navigationItems = [
 export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   activeSection,
   onSectionChange,
-  onCommandPaletteOpen,
 }) => {
   const { user } = useAuth();
   const { theme } = useTheme();
@@ -52,32 +50,21 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     <div className={`h-full ${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} m-3 p-4 flex flex-col`}>
       {/* User Identity Section */}
       <div className="mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={user?.user_metadata?.avatar_url} />
-              <AvatarFallback className={`${theme === 'dark' ? 'bg-career-gray-dark text-career-text-dark' : 'bg-career-gray-light text-career-text-light'} font-semibold text-sm`}>
-                {getUserInitials()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h2 className={`text-base font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-0.5`}>
-                {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
-              </h2>
-              <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-                Career Professional
-              </p>
-            </div>
+        <div className="flex items-center gap-2 mb-3">
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={user?.user_metadata?.avatar_url} />
+            <AvatarFallback className={`${theme === 'dark' ? 'bg-career-gray-dark text-career-text-dark' : 'bg-career-gray-light text-career-text-light'} font-semibold text-sm`}>
+              {getUserInitials()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h2 className={`text-base font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-0.5`}>
+              {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
+            </h2>
+            <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              Career Professional
+            </p>
           </div>
-          
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onCommandPaletteOpen}
-            className={`w-7 h-7 ${theme === 'dark' ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-accent' : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-accent'} transition-colors`}
-          >
-            <Plus className="w-4 h-4" />
-          </Button>
         </div>
       </div>
 
