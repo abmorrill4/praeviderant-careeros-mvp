@@ -27,13 +27,13 @@ interface SkillFormProps {
 }
 
 const SKILL_CATEGORIES = [
-  'Programming Language',
-  'Framework',
-  'Tool',
-  'Database',
-  'Soft Skill',
-  'Technical Skill',
-  'Other'
+  { value: 'programming_language', label: 'Programming Language' },
+  { value: 'framework', label: 'Framework' },
+  { value: 'tool', label: 'Tool' },
+  { value: 'database', label: 'Database' },
+  { value: 'soft_skill', label: 'Soft Skill' },
+  { value: 'technical_skill', label: 'Technical Skill' },
+  { value: 'other', label: 'Other' }
 ];
 
 const PROFICIENCY_LEVELS = [
@@ -117,8 +117,8 @@ export const SkillForm: React.FC<SkillFormProps> = ({
                   </FormControl>
                   <SelectContent>
                     {SKILL_CATEGORIES.map((category) => (
-                      <SelectItem key={category} value={category.toLowerCase().replace(' ', '_')}>
-                        {category}
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
                       </SelectItem>
                     ))}
                   </SelectContent>

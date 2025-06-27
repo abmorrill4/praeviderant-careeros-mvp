@@ -38,7 +38,7 @@ const skillEditFields = [
       'database',
       'soft_skill',
       'technical_skill',
-      'general'
+      'other'
     ],
     placeholder: 'Select category'
   },
@@ -145,14 +145,40 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   const createNormalizedSkillForEdit = (skill: Skill) => {
     const parsedData = parseSkillData(skill.name, skill.category, skill.proficiency_level);
     
-    // Ensure the category and proficiency_level values match the select options
+    // Map various category formats to the form options
+    const mapCategoryToFormOption = (category?: string): string => {
+      if (!category) return 'other';
+      
+      const normalizedCategory = category.toLowerCase().trim();
+      
+      // Direct mappings
+      const categoryMap: Record<string, string> = {
+        'programming_language': 'programming_language',
+        'programming language': 'programming_language',
+        'programming': 'programming_language',
+        'framework': 'framework',
+        'tool': 'tool',
+        'database': 'database',
+        'soft_skill': 'soft_skill',
+        'soft skill': 'soft_skill',
+        'technical_skill': 'technical_skill',
+        'technical skill': 'technical_skill',
+        'technical': 'technical_skill',
+        'language': 'programming_language',
+        'general': 'other',
+        'other': 'other'
+      };
+      
+      return categoryMap[normalizedCategory] || 'other';
+    };
+
     const normalizedCategory = parsedData.category || skill.category;
     const normalizedProficiency = parsedData.proficiency_level || skill.proficiency_level;
     
     return {
       ...skill,
       name: parsedData.name, // Use parsed name instead of raw JSON
-      category: normalizedCategory ? normalizedCategory.toLowerCase().replace(/\s+/g, '_') : 'general',
+      category: mapCategoryToFormOption(normalizedCategory),
       proficiency_level: normalizedProficiency ? normalizedProficiency.toLowerCase() : 'beginner',
       years_of_experience: parsedData.years_of_experience || skill.years_of_experience || 0
     };
