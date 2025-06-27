@@ -142,6 +142,19 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     setShowAddForm(true);
   };
 
+  // Create a normalized skill object for editing
+  const createNormalizedSkillForEdit = (skill: Skill) => {
+    const parsedData = parseSkillData(skill.name, skill.category, skill.proficiency_level);
+    
+    return {
+      ...skill,
+      name: parsedData.name, // Use parsed name instead of raw JSON
+      category: parsedData.category || skill.category || 'general',
+      proficiency_level: parsedData.proficiency_level || skill.proficiency_level,
+      years_of_experience: parsedData.years_of_experience || skill.years_of_experience || 0
+    };
+  };
+
   const renderSkillItem = (skill: Skill) => {
     const parsedSkill = parseSkillData(skill.name, skill.category, skill.proficiency_level);
     
@@ -318,7 +331,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
                   <div key={itemKey}>
                     {isEditing ? (
                       <ProfileItemEditor
-                        item={skill}
+                        item={createNormalizedSkillForEdit(skill)}
                         editFields={skillEditFields}
                         title="Skills"
                         onEdit={handleEditSave}
