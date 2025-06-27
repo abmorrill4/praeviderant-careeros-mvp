@@ -37,6 +37,7 @@ export interface Skill extends VersionedEntity {
   category?: string;
   proficiency_level?: string;
   years_of_experience?: number;
+  narrative_context?: string;
 }
 
 // Project entity

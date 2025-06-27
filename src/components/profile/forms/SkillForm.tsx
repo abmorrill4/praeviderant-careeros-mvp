@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { X, Save } from 'lucide-react';
@@ -15,6 +16,7 @@ interface SkillFormData {
   category: string;
   proficiency_level: string;
   years_of_experience: number;
+  narrative_context: string;
 }
 
 interface SkillFormProps {
@@ -55,6 +57,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
       category: skill?.category || '',
       proficiency_level: skill?.proficiency_level || '',
       years_of_experience: skill?.years_of_experience || 0,
+      narrative_context: skill?.narrative_context || '',
     }
   });
 
@@ -64,6 +67,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
       category: data.category,
       proficiency_level: data.proficiency_level,
       years_of_experience: data.years_of_experience,
+      narrative_context: data.narrative_context,
     });
   };
 
@@ -163,6 +167,25 @@ export const SkillForm: React.FC<SkillFormProps> = ({
                     placeholder="0"
                     {...field}
                     onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    className={theme === 'dark' ? 'bg-career-gray-dark border-career-gray-dark text-career-text-dark' : 'bg-white border-career-gray-light text-career-text-light'}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="narrative_context"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Context & Story (Optional)</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Describe how you used this skill, key projects, achievements, or any relevant context..."
+                    rows={4}
+                    {...field}
                     className={theme === 'dark' ? 'bg-career-gray-dark border-career-gray-dark text-career-text-dark' : 'bg-white border-career-gray-light text-career-text-light'}
                   />
                 </FormControl>

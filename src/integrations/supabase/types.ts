@@ -1273,6 +1273,7 @@ export type Database = {
           is_active: boolean
           logical_entity_id: string
           name: string
+          narrative_context: string | null
           proficiency_level: string | null
           source: string | null
           source_confidence: number | null
@@ -1287,6 +1288,7 @@ export type Database = {
           is_active?: boolean
           logical_entity_id?: string
           name: string
+          narrative_context?: string | null
           proficiency_level?: string | null
           source?: string | null
           source_confidence?: number | null
@@ -1301,6 +1303,7 @@ export type Database = {
           is_active?: boolean
           logical_entity_id?: string
           name?: string
+          narrative_context?: string | null
           proficiency_level?: string | null
           source?: string | null
           source_confidence?: number | null

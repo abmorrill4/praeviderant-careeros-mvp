@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Edit, Star, Target } from 'lucide-react';
+import { Plus, Edit, Star, Target, MessageSquare } from 'lucide-react';
 import { parseSkillData, formatProficiencyLevel, getCategoryColor } from '@/utils/skillDataParser';
 import { useLatestEntities } from '@/hooks/useVersionedEntities';
 import { useEntityActions } from '@/hooks/useEntityActions';
 import { ProfileItemDisplay } from './ProfileItemDisplay';
 import { ProfileItemEditor } from './ProfileItemEditor';
+import { SkillForm } from './forms/SkillForm';
 import type { Skill } from '@/types/versioned-entities';
 
 interface SkillsSectionProps {
@@ -32,13 +33,12 @@ const skillEditFields = [
     label: 'Category',
     type: 'select' as const,
     options: [
-      'programming',
+      'programming_language',
       'framework',
       'tool',
-      'language',
       'database',
       'soft_skill',
-      'technical',
+      'technical_skill',
       'general'
     ],
     placeholder: 'Select category'
@@ -55,6 +55,12 @@ const skillEditFields = [
     label: 'Years of Experience',
     type: 'number' as const,
     placeholder: 'Enter years of experience'
+  },
+  {
+    key: 'narrative_context',
+    label: 'Context & Story',
+    type: 'textarea' as const,
+    placeholder: 'Describe how you used this skill, key projects, achievements, or any relevant context...'
   }
 ];
 
@@ -67,6 +73,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   const { data: skills = [], isLoading } = useLatestEntities<Skill>('skill');
   const { handleAccept, handleEdit } = useEntityActions<Skill>('skill');
   const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const getProficiencyProgress = (level?: string): number => {
     if (!level) return 0;
@@ -114,7 +121,16 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   };
 
   const handleEditSave = (skill: Skill, updates: Partial<Skill>) => {
-    handleEdit(skill, updates);
+    // Ensure we're only updating the fields that should be editable
+    const cleanUpdates = {
+      name: updates.name,
+      category: updates.category,
+      proficiency_level: updates.proficiency_level,
+      years_of_experience: updates.years_of_experience,
+      narrative_context: updates.narrative_context
+    };
+    
+    handleEdit(skill, cleanUpdates);
     setEditingSkillId(null);
   };
 
@@ -122,11 +138,15 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     setEditingSkillId(null);
   };
 
+  const handleAddSkill = () => {
+    setShowAddForm(true);
+  };
+
   const renderSkillItem = (skill: Skill) => {
     const parsedSkill = parseSkillData(skill.name, skill.category, skill.proficiency_level);
     
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
           <h4 className={`font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
             {parsedSkill.name}
@@ -165,6 +185,20 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
             </span>
           </div>
         )}
+
+        {skill.narrative_context && (
+          <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <MessageSquare className="w-4 h-4" />
+              <span className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                Context & Story
+              </span>
+            </div>
+            <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              {skill.narrative_context}
+            </p>
+          </div>
+        )}
       </div>
     );
   };
@@ -188,7 +222,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
 
   const skillsByCategory = processSkills();
 
-  if (skills.length === 0) {
+  if (skills.length === 0 && !showAddForm) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -200,7 +234,10 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
               Your technical and professional skills
             </p>
           </div>
-          <Button className={`${theme === 'dark' ? 'neumorphic-button dark' : 'neumorphic-button light'}`}>
+          <Button 
+            onClick={handleAddSkill}
+            className={`${theme === 'dark' ? 'neumorphic-button dark' : 'neumorphic-button light'}`}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Skill
           </Button>
@@ -214,7 +251,10 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
           <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-4`}>
             Start building your skills profile by adding your technical and professional expertise.
           </p>
-          <Button className={`${theme === 'dark' ? 'neumorphic-button dark' : 'neumorphic-button light'}`}>
+          <Button 
+            onClick={handleAddSkill}
+            className={`${theme === 'dark' ? 'neumorphic-button dark' : 'neumorphic-button light'}`}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Your First Skill
           </Button>
@@ -235,11 +275,26 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
             Your technical and professional skills
           </p>
         </div>
-        <Button className={`${theme === 'dark' ? 'neumorphic-button dark' : 'neumorphic-button light'}`}>
+        <Button 
+          onClick={handleAddSkill}
+          className={`${theme === 'dark' ? 'neumorphic-button dark' : 'neumorphic-button light'}`}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Skill
         </Button>
       </div>
+
+      {/* Add Skill Form */}
+      {showAddForm && (
+        <SkillForm
+          onSave={(data) => {
+            // Handle save logic here
+            console.log('Adding new skill:', data);
+            setShowAddForm(false);
+          }}
+          onCancel={() => setShowAddForm(false)}
+        />
+      )}
 
       {/* Skills by Category */}
       <div className="space-y-6">
