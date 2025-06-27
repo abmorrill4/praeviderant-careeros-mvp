@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { User, Briefcase, GraduationCap, Star, Target } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, Briefcase, GraduationCap, Star, Target, Upload, Database, Settings, LogOut, BarChart3 } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileSidebarProps {
@@ -18,6 +19,13 @@ const navigationItems = [
   { id: 'education' as const, label: 'Education', icon: GraduationCap },
   { id: 'skills' as const, label: 'Skills', icon: Star },
   { id: 'goals' as const, label: 'Goals', icon: Target },
+  { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
+];
+
+const externalPages = [
+  { path: '/resume-upload-v2', label: 'Resume Upload', icon: Upload },
+  { path: '/data-management', label: 'Data Management', icon: Database },
+  { path: '/entity-graph-admin', label: 'Admin Tools', icon: Settings },
 ];
 
 export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
@@ -26,9 +34,20 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
 }) => {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const navigate = useNavigate();
 
   // Calculate profile completeness (placeholder logic)
   const profileCompleteness = 75;
+
+  const handleSignOut = async () => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      await supabase.auth.signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <div className={`h-full ${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} m-4 p-6 flex flex-col`}>
@@ -60,9 +79,12 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
         <Progress value={profileCompleteness} className="h-2" />
       </div>
 
-      {/* Navigation Menu */}
+      {/* Main Navigation Menu */}
       <nav className="flex-1">
-        <div className="space-y-2">
+        <div className="space-y-2 mb-6">
+          <h3 className={`text-xs font-semibold ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} uppercase tracking-wider mb-3`}>
+            Profile Sections
+          </h3>
           {navigationItems.map((item) => {
             const isActive = activeSection === item.id;
             const Icon = item.icon;
@@ -88,7 +110,49 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             );
           })}
         </div>
+
+        {/* External Pages */}
+        <div className="space-y-2 mb-6">
+          <h3 className={`text-xs font-semibold ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} uppercase tracking-wider mb-3`}>
+            Tools & Data
+          </h3>
+          {externalPages.map((page) => {
+            const Icon = page.icon;
+            
+            return (
+              <Button
+                key={page.path}
+                variant="ghost"
+                onClick={() => navigate(page.path)}
+                className={`w-full justify-start h-12 px-4 ${
+                  theme === 'dark'
+                    ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
+                    : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
+                } transition-all duration-200`}
+              >
+                <Icon className="w-5 h-5 mr-3" />
+                <span className="font-medium">{page.label}</span>
+              </Button>
+            );
+          })}
+        </div>
       </nav>
+
+      {/* Sign Out Button */}
+      <div className="pt-4 border-t border-opacity-20">
+        <Button
+          variant="ghost"
+          onClick={handleSignOut}
+          className={`w-full justify-start h-12 px-4 ${
+            theme === 'dark'
+              ? 'hover:bg-red-900/20 text-red-400 hover:text-red-300'
+              : 'hover:bg-red-50 text-red-600 hover:text-red-700'
+          } transition-all duration-200`}
+        >
+          <LogOut className="w-5 h-5 mr-3" />
+          <span className="font-medium">Sign Out</span>
+        </Button>
+      </div>
     </div>
   );
 };

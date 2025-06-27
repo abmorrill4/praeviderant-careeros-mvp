@@ -8,7 +8,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
 import ProfileTimelinePage from "./pages/ProfileTimelinePage";
 import DataManagement from "./pages/DataManagement";
 import ResumeUploadV2 from "./pages/ResumeUploadV2";
@@ -43,14 +42,10 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
+      
+      {/* Redirect old routes to profile timeline */}
+      <Route path="/dashboard" element={<Navigate to="/profile-timeline" replace />} />
+      
       <Route
         path="/profile-timeline"
         element={
