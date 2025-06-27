@@ -4,13 +4,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router-dom';
-import { User, Briefcase, GraduationCap, Star, Settings, LogOut } from 'lucide-react';
+import { User, Briefcase, GraduationCap, Star, Settings, LogOut, Plus } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileSidebarProps {
   activeSection: TimelineSection;
   onSectionChange: (section: TimelineSection) => void;
+  onCommandPaletteOpen: () => void;
 }
 
 const navigationItems = [
@@ -20,16 +24,28 @@ const navigationItems = [
   { id: 'skills' as const, label: 'Skills', icon: Star },
 ];
 
+// Mock hook for profile completeness - in real app this would be a proper hook
+const useProfileCompleteness = () => {
+  return {
+    percentage: 75,
+    loading: false,
+    topActions: [
+      'Complete your professional summary',
+      'Add 2 more work experiences',
+      'Upload a professional profile photo'
+    ]
+  };
+};
+
 export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   activeSection,
   onSectionChange,
+  onCommandPaletteOpen,
 }) => {
   const { user } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
-
-  // Calculate profile completeness (placeholder logic)
-  const profileCompleteness = 75;
+  const { percentage: profileCompleteness, topActions } = useProfileCompleteness();
 
   const handleSignOut = async () => {
     try {
@@ -41,35 +57,79 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
     }
   };
 
+  // Get user initials for avatar fallback
+  const getUserInitials = () => {
+    const email = user?.email || '';
+    const name = email.split('@')[0];
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <div className={`h-full ${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} m-4 p-6 flex flex-col`}>
       {/* User Identity Section */}
-      <div className="mb-8">
-        <div className={`w-16 h-16 rounded-full ${theme === 'dark' ? 'bg-career-gray-dark shadow-neumorphic-inset-dark' : 'bg-career-gray-light shadow-neumorphic-inset-light'} flex items-center justify-center mb-4`}>
-          <User className={`w-8 h-8 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`} />
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <Avatar className="w-12 h-12">
+              <AvatarImage src={user?.user_metadata?.avatar_url} />
+              <AvatarFallback className={`${theme === 'dark' ? 'bg-career-gray-dark text-career-text-dark' : 'bg-career-gray-light text-career-text-light'} font-semibold`}>
+                {getUserInitials()}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h2 className={`text-lg font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-1`}>
+                {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
+              </h2>
+              <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                Career Professional
+              </p>
+            </div>
+          </div>
+          
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onCommandPaletteOpen}
+            className={`w-8 h-8 ${theme === 'dark' ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-accent' : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-accent'} transition-colors`}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
         </div>
-        
-        <h2 className={`text-lg font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-1`}>
-          {user?.email?.split('@')[0] || 'User'}
-        </h2>
-        
-        <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-          Career Professional
-        </p>
       </div>
 
-      {/* Profile Completeness */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-2">
-          <span className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-            Profile Completeness
-          </span>
-          <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-            {profileCompleteness}%
-          </span>
-        </div>
-        <Progress value={profileCompleteness} className="h-2" />
-      </div>
+      {/* Profile Completeness with Hover Card */}
+      <HoverCard>
+        <HoverCardTrigger asChild>
+          <div className="mb-6 cursor-pointer">
+            <div className="flex justify-between items-center mb-2">
+              <span className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                Profile Completeness
+              </span>
+              <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                {profileCompleteness}%
+              </span>
+            </div>
+            <Progress value={profileCompleteness} className="h-2" />
+          </div>
+        </HoverCardTrigger>
+        <HoverCardContent className={`w-80 ${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'}`}>
+          <div className="space-y-2">
+            <h4 className={`text-sm font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+              Next Steps to Improve Your Profile
+            </h4>
+            <ul className={`text-sm space-y-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              {topActions.map((action, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-career-accent">•</span>
+                  {action}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+
+      <Separator className={`mb-6 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`} />
 
       {/* Main Navigation Menu */}
       <nav className="flex-1">
@@ -88,9 +148,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 onClick={() => onSectionChange(item.id)}
                 className={`w-full justify-start h-12 px-4 ${
                   isActive
-                    ? theme === 'dark'
-                      ? 'neumorphic-button dark bg-career-accent text-white shadow-neumorphic-inset-dark'
-                      : 'neumorphic-button light bg-career-accent text-white shadow-neumorphic-inset-light'
+                    ? 'bg-career-accent text-white shadow-neumorphic-inset-dark hover:bg-career-accent'
                     : theme === 'dark'
                       ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
                       : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
@@ -102,6 +160,8 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             );
           })}
         </div>
+
+        <Separator className={`mb-6 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`} />
 
         {/* Profile Management Section */}
         <div className="space-y-2 mb-6">
@@ -127,13 +187,13 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           <Button
             variant="ghost"
             onClick={handleSignOut}
-            className={`w-full justify-start h-12 px-4 ${
+            className={`w-full justify-start h-12 px-4 group ${
               theme === 'dark'
                 ? 'hover:bg-red-900/20 text-red-400 hover:text-red-300'
                 : 'hover:bg-red-50 text-red-600 hover:text-red-700'
             } transition-all duration-200`}
           >
-            <LogOut className="w-5 h-5 mr-3" />
+            <LogOut className="w-5 h-5 mr-3 group-hover:text-red-500" />
             <span className="font-medium">Sign Out</span>
           </Button>
         </div>
