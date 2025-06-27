@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLatestEntities, useCreateEntity, useUpdateEntity } from '@/hooks/useVersionedEntities';
 import { useToast } from '@/hooks/use-toast';
@@ -96,10 +95,31 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     return <div className="text-center py-8">Loading skills...</div>;
   }
 
-  // Handle the case where skills exist but are empty or undefined
-  const validSkills = skills?.filter(skill => skill && skill.name) || [];
+  // Filter and process skills to handle malformed data
+  const processedSkills = (skills || [])
+    .filter(skill => skill && skill.logical_entity_id) // Ensure skill exists and has ID
+    .map(skill => {
+      // Parse the skill data to clean up any malformed entries
+      const parsedSkill = parseSkillData(skill.name, skill.category, skill.proficiency_level);
+      
+      // Log for debugging
+      console.log('Processing skill:', {
+        original: skill.name,
+        parsed: parsedSkill.name,
+        category: skill.category,
+        proficiency: skill.proficiency_level
+      });
+      
+      return {
+        ...skill,
+        // Keep original data but add parsed name for display
+        displayName: parsedSkill.name,
+        parsedData: parsedSkill
+      };
+    })
+    .filter(skill => skill.parsedData.name !== 'Unknown Skill' || skill.name); // Keep skills unless they're completely unknown
 
-  if (validSkills.length === 0 && !isCreating) {
+  if (processedSkills.length === 0 && !isCreating) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground mb-4">No skills added yet</p>
@@ -142,16 +162,19 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
       )}
 
       {/* Skills list */}
-      {validSkills.map((skill) => {
-        const parsedSkill = parseSkillData(skill.name, skill.category, skill.proficiency_level);
+      {processedSkills.map((skill) => {
         const isEditing = editingSkillId === skill.logical_entity_id;
+        const displayName = skill.displayName || skill.parsedData.name;
+        const badgeText = skill.parsedData.category?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) 
+                         || skill.category?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) 
+                         || 'Uncategorized';
         
         return (
           <TimelineCardFrame
             key={skill.logical_entity_id}
             id={skill.logical_entity_id}
-            title={parsedSkill.name}
-            badgeText={parsedSkill.category?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Uncategorized'}
+            title={displayName}
+            badgeText={badgeText}
             isExpanded={focusedCard === skill.logical_entity_id}
             onToggle={() => handleCardToggle(skill.logical_entity_id)}
           >
