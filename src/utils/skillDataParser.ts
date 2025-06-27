@@ -14,8 +14,9 @@ export function parseSkillData(skillName: string, skillCategory?: string, skillP
     return { name: 'Unknown Skill' };
   }
 
-  // First, check if we have proper data in separate fields
-  if (skillCategory && skillCategory !== 'null' && skillCategory !== 'undefined') {
+  // If we have clean data in separate fields, use it directly
+  if (skillCategory && skillCategory !== 'null' && skillCategory !== 'undefined' && 
+      skillCategory !== 'general' && !skillName.includes('Name:') && !skillName.includes(',')) {
     return {
       name: cleanSkillName(skillName),
       category: skillCategory,
@@ -23,16 +24,35 @@ export function parseSkillData(skillName: string, skillCategory?: string, skillP
     };
   }
 
-  // Handle [object Object] format
-  if (skillName === '[object Object]' || skillName.includes('[object Object]')) {
-    return { name: 'Unknown Skill' };
+  // Handle comma-separated key-value pairs (Name:Agile,Category:Technical,Proficiency_level:Advanced)
+  if (skillName.includes('Name:') && skillName.includes(',')) {
+    console.log('Parsing comma-separated key-value format');
+    try {
+      const parsed = parseCommaSeparatedKeyValue(skillName);
+      console.log('Parsed key-value data:', parsed);
+      
+      return {
+        name: cleanSkillName(parsed.Name || parsed.name || 'Unknown Skill'),
+        category: parsed.Category || parsed.category,
+        proficiency_level: parsed.Proficiency_level || parsed.proficiency_level || parsed.Proficiency,
+        years_of_experience: parsed.Years_of_experience ? parseInt(parsed.Years_of_experience) : undefined,
+      };
+    } catch (error) {
+      console.log('Failed to parse comma-separated format:', error);
+      // Extract just the name part as fallback
+      const nameMatch = skillName.match(/Name:([^,]+)/);
+      if (nameMatch) {
+        return { name: cleanSkillName(nameMatch[1]) };
+      }
+    }
   }
 
-  // Handle JSON string in name field - this is the main issue we're fixing
-  if (skillName && (skillName.startsWith('{') && skillName.endsWith('}'))) {
+  // Handle JSON string format
+  if (skillName.startsWith('{') && skillName.endsWith('}')) {
+    console.log('Parsing JSON format');
     try {
       const parsed = JSON.parse(skillName);
-      console.log('Successfully parsed JSON from skill name:', parsed);
+      console.log('Parsed JSON data:', parsed);
       
       if (typeof parsed === 'object' && parsed !== null) {
         return {
@@ -43,35 +63,17 @@ export function parseSkillData(skillName: string, skillCategory?: string, skillP
         };
       }
     } catch (error) {
-      console.log('Failed to parse skill JSON:', skillName, error);
-      // Fall through to other parsing methods
-    }
-  }
-
-  // Handle comma-separated key-value pairs (Name:Agile,Category:...)
-  if (skillName.includes('Name:') && skillName.includes(',')) {
-    try {
-      const parsed = parseKeyValueString(skillName);
-      return {
-        name: cleanSkillName(parsed.Name || parsed.name || 'Unknown Skill'),
-        category: parsed.Category || parsed.category,
-        proficiency_level: parsed.ProficiencyLevel || parsed.proficiency_level || parsed.Proficiency,
-        years_of_experience: parsed.YearsOfExperience ? parseInt(parsed.YearsOfExperience) : undefined,
-      };
-    } catch (error) {
-      console.log('Failed to parse key-value string:', skillName, error);
+      console.log('Failed to parse JSON format:', error);
     }
   }
 
   // Handle array format
-  if (skillName && skillName.startsWith('[')) {
+  if (skillName.startsWith('[')) {
+    console.log('Parsing array format');
     try {
       const parsed = JSON.parse(skillName);
       
-      // Handle array of skills - take the first one
-      if (Array.isArray(parsed)) {
-        if (parsed.length === 0) return { name: 'Unknown Skill' };
-        
+      if (Array.isArray(parsed) && parsed.length > 0) {
         const firstSkill = parsed[0];
         if (typeof firstSkill === 'object' && firstSkill !== null) {
           return {
@@ -84,28 +86,33 @@ export function parseSkillData(skillName: string, skillCategory?: string, skillP
         return { name: cleanSkillName(String(firstSkill)) };
       }
     } catch (error) {
-      console.log('Failed to parse skill array:', skillName, error);
+      console.log('Failed to parse array format:', error);
     }
   }
 
-  // Handle stringified objects that don't start with { or [
+  // Handle [object Object] format
+  if (skillName === '[object Object]' || skillName.includes('[object Object]')) {
+    return { name: 'Unknown Skill' };
+  }
+
+  // Handle other stringified object formats
   if (skillName.includes('name:') || skillName.includes('"name"')) {
+    console.log('Parsing stringified object format');
     try {
-      // Try to extract name from string representations
       const nameMatch = skillName.match(/(?:name[:\s]*["\']([^"\']+)["\']|"name"[:\s]*"([^"]+)")/i);
       if (nameMatch) {
         return { name: cleanSkillName(nameMatch[1] || nameMatch[2]) };
       }
     } catch (error) {
-      console.log('Failed to extract name from skill string:', skillName);
+      console.log('Failed to extract name from stringified object:', error);
     }
   }
 
-  // Return cleaned skill name for regular text
+  // Return cleaned skill name for any other format
   return { name: cleanSkillName(skillName) };
 }
 
-function parseKeyValueString(str: string): Record<string, string> {
+function parseCommaSeparatedKeyValue(str: string): Record<string, string> {
   const result: Record<string, string> = {};
   
   // Split by comma and process each key-value pair
