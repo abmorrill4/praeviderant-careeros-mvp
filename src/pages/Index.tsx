@@ -17,9 +17,9 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect authenticated users to dashboard
+    // Redirect authenticated users to profile timeline (new main page)
     if (!loading && user) {
-      navigate('/dashboard');
+      navigate('/profile-timeline');
     }
   }, [user, loading, navigate]);
 
@@ -58,3 +58,4 @@ const Index = () => {
 };
 
 export default Index;
+
