@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,8 @@ import Index from '@/pages/Index';
 import ProfileTimelinePage from '@/pages/ProfileTimelinePage';
 import ProfileManagementPage from '@/pages/ProfileManagementPage';
 import ProfileOptimizationPage from '@/pages/ProfileOptimizationPage';
+import ApplicationToolkitPage from '@/pages/ApplicationToolkitPage';
+import InterviewPage from '@/pages/InterviewPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,21 +25,6 @@ const queryClient = new QueryClient({
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
-
-// Simple placeholder pages
-const ApplicationToolkitPage = () => (
-  <div className="min-h-screen p-8">
-    <h1 className="text-3xl font-bold mb-4">Application Toolkit</h1>
-    <p>Coming soon...</p>
-  </div>
-);
-
-const InterviewPage = () => (
-  <div className="min-h-screen p-8">
-    <h1 className="text-3xl font-bold mb-4">Interview Assistant</h1>
-    <p>Coming soon...</p>
-  </div>
-);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
