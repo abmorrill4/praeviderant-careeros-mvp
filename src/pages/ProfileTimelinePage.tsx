@@ -9,13 +9,22 @@ export type TimelineSection = 'overview' | 'experience' | 'education' | 'skills'
 
 const ProfileTimelinePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeSection, setActiveSection] = useState<TimelineSection>('overview');
-
-  // Read section from URL params on mount
-  useEffect(() => {
+  
+  // Initialize state with URL parameter if present, otherwise default to 'overview'
+  const getInitialSection = (): TimelineSection => {
     const sectionParam = searchParams.get('section') as TimelineSection;
     if (sectionParam && ['overview', 'experience', 'education', 'skills'].includes(sectionParam)) {
-      setActiveSection(sectionParam);
+      return sectionParam;
+    }
+    return 'overview';
+  };
+
+  const [activeSection, setActiveSection] = useState<TimelineSection>(getInitialSection);
+
+  // Clean up URL parameter after component mounts
+  useEffect(() => {
+    const sectionParam = searchParams.get('section');
+    if (sectionParam) {
       // Clean up the URL parameter after setting the section
       setSearchParams(new URLSearchParams());
     }
