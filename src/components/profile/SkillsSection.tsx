@@ -15,6 +15,18 @@ interface SkillsSectionProps {
   onCardFocus: (cardId: string | null) => void;
 }
 
+interface ProcessedSkill {
+  logical_entity_id: string;
+  name: string;
+  category?: string;
+  proficiency_level?: string;
+  years_of_experience?: number;
+  parsedName: string;
+  parsedCategory: string;
+  parsedProficiency?: string;
+  parsedYears?: number;
+}
+
 export const SkillsSection: React.FC<SkillsSectionProps> = ({
   focusedCard,
   onCardFocus,
@@ -95,7 +107,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   }
 
   // Parse and group skills by category
-  const processedSkills = skills.map(skill => {
+  const processedSkills: ProcessedSkill[] = skills.map(skill => {
     const parsedSkill = parseSkillData(skill.name, skill.category, skill.proficiency_level);
     console.log('Parsing skill:', skill.name, '-> Result:', parsedSkill);
     
@@ -108,7 +120,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     };
   });
 
-  const skillsByCategory = processedSkills.reduce((acc, skill) => {
+  const skillsByCategory: Record<string, ProcessedSkill[]> = processedSkills.reduce((acc, skill) => {
     const category = skill.parsedCategory;
     
     if (!acc[category]) {
@@ -116,7 +128,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
     }
     acc[category].push(skill);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, ProcessedSkill[]>);
 
   console.log('Processed skills by category:', skillsByCategory);
 
