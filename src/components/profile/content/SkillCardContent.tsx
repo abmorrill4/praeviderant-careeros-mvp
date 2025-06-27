@@ -4,53 +4,74 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, Edit, Plus, Target } from 'lucide-react';
+import { parseSkillData, formatProficiencyLevel, getCategoryColor } from '@/utils/skillDataParser';
 import type { Skill } from '@/types/versioned-entities';
 
 interface SkillCardContentProps {
   item: Skill;
+  onEdit?: () => void;
 }
 
-export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item }) => {
+export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item, onEdit }) => {
   const { theme } = useTheme();
+
+  // Parse the skill data to handle malformed entries
+  const parsedSkill = parseSkillData(
+    item.name,
+    item.category,
+    item.proficiency_level
+  );
 
   const handleAction = (action: string) => {
     console.log(`Action: ${action} for skill ID:`, item.logical_entity_id);
+    if (action === 'Edit Skill' && onEdit) {
+      onEdit();
+    }
   };
 
   return (
     <div className="space-y-6">
+      {/* Skill Name Header */}
+      <div className="border-b pb-4">
+        <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          {parsedSkill.name}
+        </h3>
+      </div>
+
       {/* Basic Information */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {item.category && (
+        {(parsedSkill.category || item.category) && (
           <div>
             <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
               Category
             </h4>
-            <Badge variant="secondary" className={`${theme === 'dark' ? 'bg-career-gray-dark text-career-text-dark' : 'bg-career-gray-light text-career-text-light'}`}>
-              {item.category}
+            <Badge 
+              className={`${getCategoryColor(parsedSkill.category || item.category)} border-0`}
+            >
+              {(parsedSkill.category || item.category)?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </Badge>
           </div>
         )}
         
-        {item.proficiency_level && (
+        {(parsedSkill.proficiency_level || item.proficiency_level) && (
           <div>
             <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
               Proficiency
             </h4>
             <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
               <Star className="w-4 h-4 text-career-accent" />
-              <span>{item.proficiency_level}</span>
+              <span>{formatProficiencyLevel(parsedSkill.proficiency_level || item.proficiency_level)}</span>
             </div>
           </div>
         )}
         
-        {item.years_of_experience && (
+        {(parsedSkill.years_of_experience || item.years_of_experience) && (
           <div>
             <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
               Experience
             </h4>
             <p className={`text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-              {item.years_of_experience} years
+              {parsedSkill.years_of_experience || item.years_of_experience} years
             </p>
           </div>
         )}
@@ -58,7 +79,7 @@ export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item }) => {
 
       {/* Missing Information Prompts */}
       <div className="space-y-3">
-        {!item.category && (
+        {!parsedSkill.category && !item.category && (
           <div className={`p-4 rounded-lg border-2 border-dashed ${theme === 'dark' ? 'border-career-gray-dark' : 'border-career-gray-light'} text-center`}>
             <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-3`}>
               No category assigned
@@ -75,7 +96,7 @@ export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item }) => {
           </div>
         )}
 
-        {!item.proficiency_level && (
+        {!parsedSkill.proficiency_level && !item.proficiency_level && (
           <div className={`p-4 rounded-lg border-2 border-dashed ${theme === 'dark' ? 'border-career-gray-dark' : 'border-career-gray-light'} text-center`}>
             <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-3`}>
               No proficiency level set
