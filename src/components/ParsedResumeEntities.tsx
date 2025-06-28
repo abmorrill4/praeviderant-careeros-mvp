@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Loader2, CheckCircle, XCircle, Clock, RefreshCw, GitMerge, Eye, Sparkles } from 'lucide-react';
+import { FileText, Loader2, CheckCircle, XCircle, Clock, RefreshCw, GitMerge, Eye, Sparkles, BarChart3 } from 'lucide-react';
 import { StructuredDataView } from './resume-upload/StructuredDataView';
 import { MergeDecisionView } from './resume-upload/MergeDecisionView';
 import { PreservedContextMerge } from './resume-upload/PreservedContextMerge';
@@ -123,11 +123,11 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-blue-500" />
-            Enhanced Resume Analysis
+            <BarChart3 className="w-5 h-5 text-blue-500" />
+            Resume Data Analysis
           </CardTitle>
           <CardDescription>
-            Advanced data organization with smart categorization and bulk operations
+            Comprehensive review and organization of your extracted resume data
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -135,14 +135,14 @@ export const ParsedResumeEntities: React.FC<ParsedResumeEntitiesProps> = ({
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="structured" className="flex items-center gap-2">
                 <Eye className="w-4 h-4" />
-                Smart Review
+                Review & Organize
               </TabsTrigger>
               <TabsTrigger value="merge" className="flex items-center gap-2">
                 <GitMerge className="w-4 h-4" />
                 Quick Merge
               </TabsTrigger>
               <TabsTrigger value="context" className="flex items-center gap-2">
-                <FileText className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" />
                 Context Preserve
               </TabsTrigger>
             </TabsList>

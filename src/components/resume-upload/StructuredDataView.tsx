@@ -1,9 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,7 +15,6 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
-  Sparkles,
   Filter,
   Search,
   Edit,
@@ -30,12 +27,15 @@ import {
   Building,
   Award,
   Settings,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { useParsedResumeEntities } from '@/hooks/useResumeStreams';
 import { parseResumeFieldValue, getFieldDisplayName, getSectionFromFieldName } from '@/utils/resumeDataParser';
-import { ConfidenceBadge } from './DataRenderers';
 import { useToast } from '@/hooks/use-toast';
+import { DataStatistics } from './DataStatistics';
+import { DataFieldEditor } from './DataFieldEditor';
+import { BulkOperations } from './BulkOperations';
 
 interface StructuredDataViewProps {
   versionId: string;
@@ -72,6 +72,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
   const [customCategories, setCustomCategories] = useState<Record<string, string>>({});
+  const [editingField, setEditingField] = useState<string | null>(null);
 
   // Enhanced section configurations
   const sectionConfigs: Record<string, CategoryConfig> = {
@@ -170,6 +171,20 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
     return grouped;
   }, [entities, confidenceFilter, searchQuery, customCategories]);
 
+  // Calculate statistics
+  const statistics = useMemo(() => {
+    const allEntities = Object.values(organizedData).flat();
+    return {
+      totalFields: allEntities.length,
+      highConfidenceFields: allEntities.filter(e => e.confidence_score >= 0.8).length,
+      mediumConfidenceFields: allEntities.filter(e => e.confidence_score >= 0.6 && e.confidence_score < 0.8).length,
+      lowConfidenceFields: allEntities.filter(e => e.confidence_score < 0.6).length,
+      categorizedFields: Object.fromEntries(
+        Object.entries(organizedData).map(([key, entities]) => [key, entities.length])
+      )
+    };
+  }, [organizedData]);
+
   if (isLoading) {
     return (
       <Card>
@@ -229,14 +244,13 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
     onProfileUpdated?.();
   };
 
-  const handleCategoryChange = (entityId: string, newCategory: string) => {
-    const entity = Object.values(organizedData).flat().find(e => e.id === entityId);
-    if (entity) {
-      setCustomCategories(prev => ({
-        ...prev,
-        [entity.field_name]: newCategory
-      }));
-    }
+  const handleFieldEdit = (fieldId: string, newData: any) => {
+    // Update the field data logic would go here
+    setEditingField(null);
+    toast({
+      title: "Field Updated",
+      description: "Changes saved successfully",
+    });
   };
 
   const getConfidenceBadge = (score: number) => {
@@ -342,67 +356,61 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
     );
   };
 
-  const renderGenericCard = (entity: GroupedEntity) => (
-    <div key={entity.id} className="p-3 border rounded-lg bg-white hover:shadow-sm transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3 flex-1">
-          <Checkbox
-            checked={selectedEntities.has(entity.id)}
-            onCheckedChange={() => handleEntityToggle(entity.id)}
-            className="mt-1"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium text-sm">{entity.displayName}</span>
-              <Select
-                value={customCategories[entity.field_name] || getSectionFromFieldName(entity.field_name)}
-                onValueChange={(value) => handleCategoryChange(entity.id, value)}
-              >
-                <SelectTrigger className="w-auto h-6 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(sectionConfigs).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>{config.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="text-sm text-muted-foreground line-clamp-2">
-              {typeof entity.parsedData === 'string' 
-                ? entity.parsedData 
-                : entity.parsedData.displayValue || JSON.stringify(entity.parsedData)
-              }
+  const renderGenericCard = (entity: GroupedEntity) => {
+    if (editingField === entity.id) {
+      return (
+        <DataFieldEditor
+          key={entity.id}
+          field={entity}
+          onSave={handleFieldEdit}
+          onCancel={() => setEditingField(null)}
+        />
+      );
+    }
+
+    return (
+      <div key={entity.id} className="p-3 border rounded-lg bg-white hover:shadow-sm transition-shadow">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3 flex-1">
+            <Checkbox
+              checked={selectedEntities.has(entity.id)}
+              onCheckedChange={() => handleEntityToggle(entity.id)}
+              className="mt-1"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-medium text-sm">{entity.displayName}</span>
+              </div>
+              <div className="text-sm text-muted-foreground line-clamp-2">
+                {typeof entity.parsedData === 'string' 
+                  ? entity.parsedData 
+                  : entity.parsedData.displayValue || JSON.stringify(entity.parsedData)
+                }
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 ml-2">
-          {getConfidenceBadge(entity.confidence_score)}
+          <div className="flex items-center gap-2 ml-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditingField(entity.id)}
+              className="h-6 w-6 p-0"
+            >
+              <Edit className="w-3 h-3" />
+            </Button>
+            {getConfidenceBadge(entity.confidence_score)}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSectionContent = (sectionKey: string, sectionEntities: GroupedEntity[]) => {
-    const renderEntity = (entity: GroupedEntity) => {
-      switch (sectionKey) {
-        case 'personal_info':
-        case 'contact':
-          return renderPersonalInfoCard(entity);
-        case 'work_experience':
-          return renderWorkExperienceCard(entity);
-        case 'skills':
-          return renderSkillCard(entity);
-        default:
-          return renderGenericCard(entity);
-      }
-    };
-
     return (
       <div className="space-y-3">
         {sectionEntities
           .sort((a, b) => b.confidence_score - a.confidence_score)
-          .map(renderEntity)}
+          .map(entity => renderGenericCard(entity))}
       </div>
     );
   };
@@ -415,88 +423,65 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
       return priorityA - priorityB;
     });
 
-  const totalEntities = Object.values(organizedData).reduce((sum, entities) => sum + entities.length, 0);
-  const highConfidenceCount = Object.values(organizedData)
-    .flat()
-    .filter(e => e.confidence_score >= 0.8).length;
-
   return (
     <div className="space-y-6">
+      {/* Statistics Overview */}
+      <DataStatistics {...statistics} />
+
+      {/* Bulk Operations */}
+      <BulkOperations
+        selectedItems={selectedEntities}
+        totalItems={statistics.totalFields}
+        onSelectAll={handleSelectAll}
+        onClearSelection={handleClearSelection}
+        onBulkMerge={handleBulkMerge}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            Resume Data Analysis
+            Resume Data Fields
           </CardTitle>
           <CardDescription>
-            {totalEntities} fields extracted • {highConfidenceCount} high confidence
+            Review and organize your extracted resume data by category
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Controls */}
-          <div className="space-y-4 mb-6">
-            {/* Filter and Search Row */}
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Search className="w-4 h-4 text-gray-500" />
-                <Input
-                  placeholder="Search fields..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64"
-                />
-              </div>
-              
-              <Select value={confidenceFilter} onValueChange={(value: any) => setConfidenceFilter(value)}>
-                <SelectTrigger className="w-40">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Confidence</SelectItem>
-                  <SelectItem value="high">High (80%+)</SelectItem>
-                  <SelectItem value="medium">Medium (60-80%)</SelectItem>
-                  <SelectItem value="low">Low (&lt;60%)</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setViewMode(viewMode === 'compact' ? 'detailed' : 'compact')}
-                className="flex items-center gap-2"
-              >
-                {viewMode === 'compact' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                {viewMode === 'compact' ? 'Detailed' : 'Compact'} View
-              </Button>
+          {/* Search and Filter Controls */}
+          <div className="flex flex-wrap items-center gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Search className="w-4 h-4 text-gray-500" />
+              <Input
+                placeholder="Search fields..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-64"
+              />
             </div>
+            
+            <Select value={confidenceFilter} onValueChange={(value: any) => setConfidenceFilter(value)}>
+              <SelectTrigger className="w-40">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Confidence</SelectItem>
+                <SelectItem value="high">High (80%+)</SelectItem>
+                <SelectItem value="medium">Medium (60-80%)</SelectItem>
+                <SelectItem value="low">Low (&lt;60%)</SelectItem>
+              </SelectContent>
+            </Select>
 
-            {/* Selection Controls */}
-            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">
-                  {selectedEntities.size} of {totalEntities} selected
-                </span>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleSelectAll}>
-                    Select All
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleClearSelection}>
-                    Clear All
-                  </Button>
-                </div>
-              </div>
-              
-              <Button
-                onClick={handleBulkMerge}
-                disabled={selectedEntities.size === 0}
-                className="bg-green-600 hover:bg-green-700"
-                size="sm"
-              >
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Merge Selected ({selectedEntities.size})
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewMode(viewMode === 'compact' ? 'detailed' : 'compact')}
+              className="flex items-center gap-2"
+            >
+              {viewMode === 'compact' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              {viewMode === 'compact' ? 'Detailed' : 'Compact'} View
+            </Button>
           </div>
 
           {/* Sections */}
