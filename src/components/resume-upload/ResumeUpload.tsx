@@ -11,7 +11,6 @@ import { ResumeDropzone } from './ResumeDropzone';
 import { UploadProgress } from './UploadProgress';
 import { ParsedResumeEntities } from '../ParsedResumeEntities';
 import { InsightCard } from './InsightCard';
-import { useEnrichmentStatus } from '@/hooks/useEnrichmentStatus';
 
 interface UploadState {
   file: File | null;
@@ -34,9 +33,6 @@ export const ResumeUpload: React.FC = () => {
     error: null,
     completedVersionId: null
   });
-
-  // Get enrichment status for the completed version
-  const { data: enrichmentStatus } = useEnrichmentStatus(uploadState.completedVersionId || undefined);
 
   const handleFileSelect = (file: File) => {
     setUploadState(prev => ({ 
@@ -142,23 +138,6 @@ export const ResumeUpload: React.FC = () => {
     });
   };
 
-  // Only show results when AI enrichment is 100% complete (has all: entities, enrichment, AND narratives)
-  const isAIEnrichmentFullyComplete = enrichmentStatus?.isComplete && enrichmentStatus?.hasEntities && enrichmentStatus?.hasEnrichment && enrichmentStatus?.hasNarratives;
-  
-  // Show processing screen until AI enrichment is completely done
-  const showProcessingScreen = uploadState.completedVersionId && !isAIEnrichmentFullyComplete;
-  
-  // Only show complete results when everything is truly finished
-  const showCompleteResults = uploadState.completedVersionId && isAIEnrichmentFullyComplete;
-
-  console.log('ResumeUpload: State check', {
-    hasCompletedVersionId: !!uploadState.completedVersionId,
-    enrichmentStatus,
-    isAIEnrichmentFullyComplete,
-    showProcessingScreen,
-    showCompleteResults
-  });
-
   return (
     <div className="space-y-6">
       <Card>
@@ -226,35 +205,20 @@ export const ResumeUpload: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Show AI Processing Screen - This appears after upload until AI enrichment is 100% complete */}
-      {showProcessingScreen && (
+      {/* Show results when we have a completed version - InsightCard handles its own state transitions */}
+      {uploadState.completedVersionId && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Processing Your Resume</h3>
+            <h3 className="text-lg font-semibold">Resume Analysis</h3>
             <Button variant="outline" onClick={resetUpload}>
               Upload Another Resume
             </Button>
           </div>
           
-          {/* Only show the InsightCard during processing - no parsed data yet */}
-          <InsightCard versionId={uploadState.completedVersionId} />
-        </div>
-      )}
-
-      {/* Show Complete Results - Only appears when AI enrichment is 100% finished */}
-      {showCompleteResults && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Resume Analysis Complete</h3>
-            <Button variant="outline" onClick={resetUpload}>
-              Upload Another Resume
-            </Button>
-          </div>
-          
-          {/* AI Career Insights - Now shows completed insights */}
+          {/* AI Career Insights - InsightCard manages its own loading/progress/complete states */}
           <InsightCard versionId={uploadState.completedVersionId} />
           
-          {/* Resume Data Analysis - Only shown when everything is 100% complete */}
+          {/* Resume Data Analysis - Always show when we have a version */}
           <ParsedResumeEntities
             versionId={uploadState.completedVersionId}
             processingStatus="completed"
