@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           confidence_score: number | null
           created_at: string
+          enrichment_metadata: Json | null
           id: string
           leadership_explanation: string | null
           leadership_score: number
@@ -32,6 +33,7 @@ export type Database = {
         Insert: {
           confidence_score?: number | null
           created_at?: string
+          enrichment_metadata?: Json | null
           id?: string
           leadership_explanation?: string | null
           leadership_score: number
@@ -51,6 +53,7 @@ export type Database = {
         Update: {
           confidence_score?: number | null
           created_at?: string
+          enrichment_metadata?: Json | null
           id?: string
           leadership_explanation?: string | null
           leadership_score?: number

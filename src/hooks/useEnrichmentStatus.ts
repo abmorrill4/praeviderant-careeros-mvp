@@ -62,7 +62,7 @@ export function useEnrichmentStatus(versionId?: string) {
         const status = data[0];
         console.log('useEnrichmentStatus: Raw status from database:', status);
 
-        // Enhanced stage mapping with better error handling - let TypeScript infer the type
+        // Enhanced stage mapping with better error handling
         const processingStage = mapCurrentStageToProcessingStage(
           status.current_stage, 
           status.processing_status,
