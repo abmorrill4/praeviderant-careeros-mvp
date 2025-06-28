@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,13 @@ import {
   CheckCircle,
   AlertTriangle,
   Eye,
-  EyeOff
+  EyeOff,
+  Sparkles
 } from 'lucide-react';
 import { useParsedResumeEntities } from '@/hooks/useResumeStreams';
+import { useCareerEnrichment, useCareerNarratives, useEnrichResume } from '@/hooks/useEnrichment';
 import { parseResumeFieldValue, getFieldDisplayName, getSectionFromFieldName } from '@/utils/resumeDataParser';
+import { InsightCard } from './InsightCard';
 
 interface CompactDataReviewProps {
   versionId: string;
@@ -35,8 +38,22 @@ export const CompactDataReview: React.FC<CompactDataReviewProps> = ({
   onProfileUpdated 
 }) => {
   const { data: entities, isLoading, error } = useParsedResumeEntities(versionId);
+  const { data: enrichment, isLoading: enrichmentLoading } = useCareerEnrichment(versionId);
+  const { data: narratives = [], isLoading: narrativesLoading } = useCareerNarratives(versionId);
+  const enrichResumeMutation = useEnrichResume();
+  
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['personal_info']));
   const [showAllFields, setShowAllFields] = useState(false);
+  const [autoEnrichmentTriggered, setAutoEnrichmentTriggered] = useState(false);
+
+  // Auto-trigger enrichment when entities are loaded and enrichment doesn't exist
+  useEffect(() => {
+    if (entities && entities.length > 0 && !enrichment && !enrichmentLoading && !narrativesLoading && !autoEnrichmentTriggered) {
+      console.log('Auto-triggering career enrichment for version:', versionId);
+      setAutoEnrichmentTriggered(true);
+      enrichResumeMutation.mutate(versionId);
+    }
+  }, [entities, enrichment, enrichmentLoading, narrativesLoading, versionId, autoEnrichmentTriggered, enrichResumeMutation]);
 
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections);
@@ -128,89 +145,99 @@ export const CompactDataReview: React.FC<CompactDataReviewProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Data Review ({entities.length} fields)
-          </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAllFields(!showAllFields)}
-            className="flex items-center gap-2"
-          >
-            {showAllFields ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {showAllFields ? 'Compact View' : 'Detailed View'}
-          </Button>
-        </div>
-        <CardDescription>
-          Review extracted data and expand sections as needed
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {sortedSections.map(([sectionKey, sectionEntities]) => {
-            const config = sectionConfigs[sectionKey] || { 
-              title: sectionKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), 
-              icon: <FileText className="w-4 h-4" />,
-              priority: 999
-            };
-            
-            const isExpanded = expandedSections.has(sectionKey);
-            const highConfidenceCount = sectionEntities.filter(e => e.confidence_score >= 0.8).length;
-            
-            return (
-              <div key={sectionKey} className="border rounded-lg">
-                <div 
-                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50"
-                  onClick={() => toggleSection(sectionKey)}
-                >
-                  <div className="flex items-center gap-2">
-                    {config.icon}
-                    <span className="font-medium">{config.title}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {sectionEntities.length} field{sectionEntities.length !== 1 ? 's' : ''}
-                    </Badge>
-                    {highConfidenceCount > 0 && (
-                      <Badge variant="default" className="text-xs">
-                        {highConfidenceCount} high confidence
+    <div className="space-y-6">
+      {/* Career Insights Card - Show at the top */}
+      <InsightCard 
+        enrichment={enrichment || undefined}
+        narratives={narratives}
+        isLoading={enrichmentLoading || enrichResumeMutation.isPending}
+      />
+
+      {/* Data Review Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Data Review ({entities.length} fields)
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAllFields(!showAllFields)}
+              className="flex items-center gap-2"
+            >
+              {showAllFields ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showAllFields ? 'Compact View' : 'Detailed View'}
+            </Button>
+          </div>
+          <CardDescription>
+            Review extracted data and expand sections as needed
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {sortedSections.map(([sectionKey, sectionEntities]) => {
+              const config = sectionConfigs[sectionKey] || { 
+                title: sectionKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), 
+                icon: <FileText className="w-4 h-4" />,
+                priority: 999
+              };
+              
+              const isExpanded = expandedSections.has(sectionKey);
+              const highConfidenceCount = sectionEntities.filter(e => e.confidence_score >= 0.8).length;
+              
+              return (
+                <div key={sectionKey} className="border rounded-lg">
+                  <div 
+                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50"
+                    onClick={() => toggleSection(sectionKey)}
+                  >
+                    <div className="flex items-center gap-2">
+                      {config.icon}
+                      <span className="font-medium">{config.title}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {sectionEntities.length} field{sectionEntities.length !== 1 ? 's' : ''}
                       </Badge>
-                    )}
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    {isExpanded ? 'Collapse' : 'Expand'}
-                  </Button>
-                </div>
-                
-                {isExpanded && (
-                  <div className="px-4 pb-4 border-t">
-                    <div className="mt-4 space-y-1">
-                      {sectionEntities
-                        .sort((a, b) => b.confidence_score - a.confidence_score)
-                        .slice(0, showAllFields ? undefined : 5)
-                        .map(renderCompactField)}
-                      
-                      {!showAllFields && sectionEntities.length > 5 && (
-                        <div className="pt-2 text-center">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => setShowAllFields(true)}
-                          >
-                            Show {sectionEntities.length - 5} more fields...
-                          </Button>
-                        </div>
+                      {highConfidenceCount > 0 && (
+                        <Badge variant="default" className="text-xs">
+                          {highConfidenceCount} high confidence
+                        </Badge>
                       )}
                     </div>
+                    <Button variant="ghost" size="sm">
+                      {isExpanded ? 'Collapse' : 'Expand'}
+                    </Button>
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+                  
+                  {isExpanded && (
+                    <div className="px-4 pb-4 border-t">
+                      <div className="mt-4 space-y-1">
+                        {sectionEntities
+                          .sort((a, b) => b.confidence_score - a.confidence_score)
+                          .slice(0, showAllFields ? undefined : 5)
+                          .map(renderCompactField)}
+                        
+                        {!showAllFields && sectionEntities.length > 5 && (
+                          <div className="pt-2 text-center">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setShowAllFields(true)}
+                            >
+                              Show {sectionEntities.length - 5} more fields...
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
