@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,6 @@ import {
   Trash2
 } from 'lucide-react';
 import type { ParsedResumeEntity } from '@/hooks/useResumeStreams';
-import { useCareerEnrichment, useCareerNarratives } from '@/hooks/useEnrichment';
 import { InsightCard } from './InsightCard';
 
 interface CompactDataReviewProps {
@@ -40,9 +40,6 @@ export const CompactDataReview: React.FC<CompactDataReviewProps> = ({
   onDeleteEntity,
   className
 }) => {
-  const { data: enrichment, isLoading: enrichmentLoading } = useCareerEnrichment(versionId);
-  const { data: narratives = [] } = useCareerNarratives(versionId);
-
   const groupedEntities = entities.reduce((acc: { [key: string]: ParsedResumeEntity[] }, entity) => {
     const fieldName = entity.field_name;
     if (!acc[fieldName]) {
@@ -67,12 +64,7 @@ export const CompactDataReview: React.FC<CompactDataReviewProps> = ({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* AI Career Insights */}
-      <InsightCard
-        versionId={versionId}
-        enrichment={enrichment}
-        narratives={narratives}
-        isLoading={enrichmentLoading}
-      />
+      <InsightCard versionId={versionId} />
 
       {/* Extracted Data Sections */}
       {Object.entries(groupedEntities).map(([fieldName, entityGroup]) => (
