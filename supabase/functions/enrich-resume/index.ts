@@ -20,7 +20,10 @@ serve(async (req) => {
     console.log('=== Enrich Resume Starting ===');
     const { versionId }: EnrichRequest = await req.json();
 
+    console.log('Request received with versionId:', versionId);
+
     if (!versionId) {
+      console.error('Version ID is missing from request');
       return new Response(JSON.stringify({ error: 'Version ID is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -32,9 +35,16 @@ serve(async (req) => {
     // Initialize Supabase client with service role key for internal operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    console.log('Supabase configuration:', {
+      url: supabaseUrl ? 'Present' : 'Missing',
+      serviceKey: supabaseServiceKey ? 'Present' : 'Missing'
+    });
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get resume version details with user info
+    console.log('Fetching resume version details...');
     const { data: version, error: versionError } = await supabase
       .from('resume_versions')
       .select(`
@@ -55,14 +65,19 @@ serve(async (req) => {
     console.log('Found version:', version.file_name, 'for user:', version.resume_streams.user_id);
 
     // Check if enrichment already exists
+    console.log('Checking for existing enrichment...');
     const { data: existingEnrichment, error: existingError } = await supabase
       .from('career_enrichment')
       .select('id')
       .eq('resume_version_id', versionId)
       .maybeSingle();
 
+    if (existingError) {
+      console.error('Error checking existing enrichment:', existingError);
+    }
+
     if (existingEnrichment) {
-      console.log('Enrichment already exists for this version');
+      console.log('Enrichment already exists for this version:', existingEnrichment.id);
       return new Response(JSON.stringify({ 
         success: true, 
         message: 'Enrichment already exists',
@@ -73,6 +88,7 @@ serve(async (req) => {
     }
 
     // Get existing parsed entities for this version
+    console.log('Fetching parsed entities...');
     const { data: entities, error: entitiesError } = await supabase
       .from('parsed_resume_entities')
       .select('*')
@@ -97,23 +113,37 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Found ${entities.length} entities to analyze`);
+    console.log(`Found ${entities.length} entities to analyze:`, entities.map(e => ({ id: e.id, field: e.field_name })));
 
     // Process entities to create structured career data
     const careerData = processEntitiesForEnrichment(entities);
-    console.log('Processed career data:', JSON.stringify(careerData, null, 2));
+    console.log('Processed career data structure:', {
+      hasPersonalInfo: !!careerData.personal_info,
+      workExperienceCount: careerData.work_experience?.length || 0,
+      educationCount: careerData.education?.length || 0,
+      skillsCount: careerData.skills?.length || 0,
+      projectsCount: careerData.projects?.length || 0,
+      certificationsCount: careerData.certifications?.length || 0,
+      hasSummary: !!careerData.summary
+    });
 
     // Generate AI enrichment using OpenAI
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
+      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
     console.log('Calling OpenAI for career enrichment...');
     const enrichmentResult = await generateCareerEnrichment(careerData, openaiApiKey);
-    console.log('AI enrichment generated successfully');
+    console.log('AI enrichment generated successfully:', {
+      roleArchetype: enrichmentResult.role_archetype,
+      personaType: enrichmentResult.persona_type,
+      narrativesCount: enrichmentResult.narratives?.length || 0
+    });
 
     // Store enrichment data
+    console.log('Storing enrichment data...');
     const { data: enrichmentData, error: enrichmentError } = await supabase
       .from('career_enrichment')
       .upsert({
@@ -147,11 +177,13 @@ serve(async (req) => {
       throw new Error('Failed to store enrichment data');
     }
 
-    console.log('Enrichment data stored successfully');
+    console.log('Enrichment data stored successfully with ID:', enrichmentData.id);
 
     // Store career narratives
-    const narrativePromises = enrichmentResult.narratives.map(narrative => 
-      supabase
+    console.log('Storing career narratives...');
+    const narrativePromises = enrichmentResult.narratives.map(narrative => {
+      console.log('Storing narrative:', narrative.type);
+      return supabase
         .from('career_narratives')
         .upsert({
           user_id: version.resume_streams.user_id,
@@ -162,11 +194,11 @@ serve(async (req) => {
           model_version: 'gpt-4o'
         }, {
           onConflict: 'user_id,resume_version_id,narrative_type'
-        })
-    );
+        });
+    });
 
-    await Promise.all(narrativePromises);
-    console.log('Career narratives stored successfully');
+    const narrativeResults = await Promise.all(narrativePromises);
+    console.log('Career narratives stored:', narrativeResults.length);
 
     // Log success to job logs
     const { data: jobData } = await supabase
@@ -319,6 +351,7 @@ Scoring Guidelines:
 Provide realistic, evidence-based scores. Be thoughtful and specific in your analysis.
 `;
 
+  console.log('Sending prompt to OpenAI...');
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -349,6 +382,8 @@ Provide realistic, evidence-based scores. Be thoughtful and specific in your ana
   }
 
   const result = await response.json();
+  console.log('OpenAI response received:', result.choices?.[0]?.message?.content ? 'Success' : 'No content');
+  
   const content = result.choices[0]?.message?.content;
   
   if (!content) {

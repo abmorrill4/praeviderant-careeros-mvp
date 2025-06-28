@@ -12,7 +12,8 @@ import {
   Award,
   Sparkles,
   CheckCircle,
-  Info
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import { useCareerEnrichment, useCareerNarratives } from '@/hooks/useEnrichment';
 import { useEnrichmentStatus } from '@/hooks/useEnrichmentStatus';
@@ -24,19 +25,55 @@ interface InsightCardProps {
 }
 
 export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
-  const { data: status } = useEnrichmentStatus(versionId);
-  const { data: enrichment } = useCareerEnrichment(versionId);
-  const { data: narratives } = useCareerNarratives(versionId);
+  const { data: status, isLoading: statusLoading, error: statusError } = useEnrichmentStatus(versionId);
+  const { data: enrichment, isLoading: enrichmentLoading, error: enrichmentError } = useCareerEnrichment(versionId);
+  const { data: narratives, isLoading: narrativesLoading, error: narrativesError } = useCareerNarratives(versionId);
 
   console.log('InsightCard Debug:', {
     versionId,
     status,
+    statusLoading,
+    statusError,
     enrichment,
-    narratives: narratives?.length || 0
+    enrichmentLoading,
+    enrichmentError,
+    narratives: narratives?.length || 0,
+    narrativesLoading,
+    narrativesError,
+    timestamp: new Date().toISOString()
   });
+
+  // Show error state if any queries failed
+  if (statusError || enrichmentError || narrativesError) {
+    const error = statusError || enrichmentError || narrativesError;
+    console.error('InsightCard: Error detected:', error);
+    
+    return (
+      <>
+        <SmartEnrichmentTrigger versionId={versionId} />
+        <Card className="border-red-200 bg-red-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-800">
+              <AlertCircle className="w-4 h-4" />
+              AI Analysis Error
+            </CardTitle>
+            <CardDescription>
+              There was an issue loading your career insights. Please try refreshing the page.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-red-700">
+              Error: {error?.message || 'Unknown error occurred'}
+            </p>
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
 
   // Show progress while processing
   if (!status?.isComplete) {
+    console.log('InsightCard: Showing progress - not complete yet');
     return (
       <>
         <SmartEnrichmentTrigger versionId={versionId} />
@@ -47,6 +84,8 @@ export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
 
   // Show insights when complete
   if (status.isComplete && enrichment && narratives) {
+    console.log('InsightCard: Showing completed insights');
+    
     const getScoreVariant = (score: number) => {
       if (score >= 80) return 'default';
       if (score >= 60) return 'secondary';
@@ -56,6 +95,12 @@ export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
     const careerSummary = narratives.find(n => n.narrative_type === 'career_summary');
     const keyStrengths = narratives.find(n => n.narrative_type === 'key_strengths');
     const growthTrajectory = narratives.find(n => n.narrative_type === 'growth_trajectory');
+
+    console.log('InsightCard: Narrative breakdown:', {
+      careerSummary: !!careerSummary,
+      keyStrengths: !!keyStrengths,
+      growthTrajectory: !!growthTrajectory
+    });
 
     return (
       <>
@@ -205,6 +250,27 @@ export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
     );
   }
 
-  // Fallback - should not reach here with the new logic
-  return null;
+  // Loading state
+  console.log('InsightCard: Showing loading state');
+  return (
+    <>
+      <SmartEnrichmentTrigger versionId={versionId} />
+      <Card className="border-blue-200 bg-blue-50/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="w-4 h-4 text-blue-600" />
+            Loading AI Insights...
+          </CardTitle>
+          <CardDescription>
+            Preparing your career analysis
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Please wait while we load your career insights...
+          </p>
+        </CardContent>
+      </Card>
+    </>
+  );
 };
