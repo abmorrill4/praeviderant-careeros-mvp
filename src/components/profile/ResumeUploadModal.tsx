@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
   Dialog,
@@ -13,7 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ResumeDropzone } from '@/components/resume-upload/ResumeDropzone';
 import { UploadProgress } from '@/components/resume-upload/UploadProgress';
-import { ParsedResumeEntities } from '@/components/ParsedResumeEntities';
 
 interface ResumeUploadModalProps {
   children?: React.ReactNode;
@@ -25,13 +26,13 @@ interface UploadState {
   uploadProgress: number;
   currentStage: string;
   error: string | null;
-  completedVersionId: string | null;
 }
 
 export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }) => {
   const { theme } = useTheme();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   
   const [uploadState, setUploadState] = useState<UploadState>({
@@ -39,16 +40,14 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
     isUploading: false,
     uploadProgress: 0,
     currentStage: 'upload',
-    error: null,
-    completedVersionId: null
+    error: null
   });
 
   const handleFileSelect = (file: File) => {
     setUploadState(prev => ({ 
       ...prev, 
       file, 
-      error: null,
-      completedVersionId: null
+      error: null
     }));
   };
 
@@ -56,8 +55,7 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
     setUploadState(prev => ({ 
       ...prev, 
       file: null, 
-      error: null,
-      completedVersionId: null
+      error: null
     }));
   };
 
@@ -71,15 +69,14 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
       return;
     }
 
-    console.log('Starting simplified upload process...');
+    console.log('Starting modal upload and redirecting to processing page...');
     
     setUploadState(prev => ({ 
       ...prev, 
       isUploading: true,
       uploadProgress: 10,
       currentStage: 'upload',
-      error: null,
-      completedVersionId: null
+      error: null
     }));
 
     try {
@@ -97,29 +94,40 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
         throw error;
       }
 
-      console.log('Upload result:', data);
+      console.log('Modal upload result:', data);
 
       if (data.success) {
         setUploadState(prev => ({ 
           ...prev,
           uploadProgress: 100,
           currentStage: 'complete',
-          isUploading: false,
-          completedVersionId: data.versionId || null
+          isUploading: false
         }));
 
         toast({
           title: "Upload Successful",
           description: data.isDuplicate 
-            ? "File already exists in your collection" 
-            : "Resume uploaded and processing started",
+            ? "File already exists in your collection. Redirecting to processing..." 
+            : "Resume uploaded successfully. Redirecting to processing...",
         });
+
+        // Close modal and redirect to processing page
+        setOpen(false);
+        
+        if (data.versionId) {
+          setTimeout(() => {
+            navigate(`/processing/${data.versionId}`);
+          }, 500); // Small delay to allow modal to close
+        } else {
+          console.error('No versionId returned from upload');
+          throw new Error('Upload completed but no processing ID was returned');
+        }
       } else {
         throw new Error(data.message || 'Upload failed');
       }
 
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Modal upload error:', error);
       setUploadState(prev => ({ 
         ...prev, 
         isUploading: false,
@@ -141,8 +149,7 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
       isUploading: false,
       uploadProgress: 0,
       currentStage: 'upload',
-      error: null,
-      completedVersionId: null
+      error: null
     });
   };
 
@@ -179,7 +186,7 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
             onClearFile={handleClearFile}
           />
 
-          {uploadState.file && !uploadState.completedVersionId && (
+          {uploadState.file && (
             <>
               <Separator />
               
@@ -222,27 +229,6 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
               progress={uploadState.uploadProgress}
               error={uploadState.error}
             />
-          )}
-
-          {uploadState.completedVersionId && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Resume Analysis Results</h3>
-                <Button variant="outline" onClick={resetUpload}>
-                  Upload Another Resume
-                </Button>
-              </div>
-              <ParsedResumeEntities
-                versionId={uploadState.completedVersionId}
-                processingStatus="completed"
-                onProfileUpdated={() => {
-                  toast({
-                    title: "Profile Updated",
-                    description: "Your profile has been updated with the resume data",
-                  });
-                }}
-              />
-            </div>
           )}
         </div>
       </DialogContent>

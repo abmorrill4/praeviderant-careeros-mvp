@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +11,7 @@ import ProfileManagementPage from '@/pages/ProfileManagementPage';
 import ProfileOptimizationPage from '@/pages/ProfileOptimizationPage';
 import ApplicationToolkitPage from '@/pages/ApplicationToolkitPage';
 import InterviewPage from '@/pages/InterviewPage';
+import ProcessingPage from '@/pages/ProcessingPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,6 +61,11 @@ const App = () => (
                 <Route path="/interview" element={
                   <ProtectedRoute>
                     <InterviewPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/processing/:enrichmentId" element={
+                  <ProtectedRoute>
+                    <ProcessingPage />
                   </ProtectedRoute>
                 } />
                 {/* Keep legacy route for any existing bookmarks, redirect to profile management */}
