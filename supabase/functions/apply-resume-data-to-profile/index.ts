@@ -74,66 +74,124 @@ serve(async (req) => {
     let errors = 0
     const results = []
 
+    // Helper function to safely parse JSON
+    const safeJsonParse = (value: string) => {
+      try {
+        return JSON.parse(value)
+      } catch {
+        return { value: value, type: 'text' }
+      }
+    }
+
+    // Helper function to extract string value safely
+    const extractStringValue = (data: any, fallback: string = '') => {
+      if (typeof data === 'string') return data
+      if (data && typeof data.value === 'string') return data.value
+      if (data && typeof data === 'object') {
+        // Try common field names
+        for (const key of ['name', 'title', 'value', 'text']) {
+          if (data[key] && typeof data[key] === 'string') return data[key]
+        }
+      }
+      return fallback
+    }
+
     // Process each parsed entity
     for (const entity of parsedEntities) {
       try {
         console.log(`Processing entity ${entity.id} - ${entity.field_name}`)
 
-        // Parse the raw value to determine entity type and data
-        let parsedData
-        try {
-          parsedData = JSON.parse(entity.raw_value)
-        } catch (parseError) {
-          // If it's not JSON, treat as simple text
-          parsedData = { value: entity.raw_value, type: 'text' }
-        }
-
-        // Determine which table to insert into based on field name
+        const parsedData = safeJsonParse(entity.raw_value)
         const fieldName = entity.field_name.toLowerCase()
-        let tableName = null
-        let entityData = null
 
         if (fieldName.includes('work') || fieldName.includes('experience') || fieldName.includes('job')) {
-          tableName = 'work_experience'
-          if (parsedData.type === 'object' && parsedData.value) {
-            entityData = {
-              user_id: user.id,
-              company: parsedData.value.company || parsedData.value.employer || 'Unknown Company',
-              title: parsedData.value.title || parsedData.value.position || parsedData.value.role || 'Unknown Title',
-              start_date: parsedData.value.start_date || null,
-              end_date: parsedData.value.end_date || null,
-              description: parsedData.value.description || parsedData.value.responsibilities?.join('\n') || null,
-              source: 'resume_upload',
-              source_confidence: entity.confidence_score || 0.8
-            }
+          // Handle work experience
+          const entityData = {
+            user_id: user.id,
+            company: extractStringValue(parsedData?.value?.company || parsedData?.value?.employer, 'Unknown Company'),
+            title: extractStringValue(parsedData?.value?.title || parsedData?.value?.position || parsedData?.value?.role, 'Unknown Title'),
+            start_date: extractStringValue(parsedData?.value?.start_date),
+            end_date: extractStringValue(parsedData?.value?.end_date),
+            description: extractStringValue(parsedData?.value?.description || 
+              (Array.isArray(parsedData?.value?.responsibilities) ? parsedData.value.responsibilities.join('\n') : '')),
+            source: 'resume_upload',
+            source_confidence: entity.confidence_score || 0.8
           }
+
+          const { data: insertResult, error: insertError } = await supabaseClient
+            .from('work_experience')
+            .insert([entityData])
+            .select()
+            .single()
+
+          if (insertError) {
+            console.error(`Error inserting work experience:`, insertError)
+            errors++
+            results.push({
+              entity_type: 'work_experience',
+              action: 'error',
+              error: insertError.message
+            })
+          } else {
+            entitiesCreated++
+            results.push({
+              entity_type: 'work_experience',
+              action: 'created',
+              entity_id: insertResult.logical_entity_id
+            })
+            console.log(`Created work experience: ${insertResult.logical_entity_id}`)
+          }
+
         } else if (fieldName.includes('education') || fieldName.includes('degree')) {
-          tableName = 'education'
-          if (parsedData.type === 'object' && parsedData.value) {
-            entityData = {
-              user_id: user.id,
-              institution: parsedData.value.institution || parsedData.value.school || parsedData.value.university || 'Unknown Institution',
-              degree: parsedData.value.degree || parsedData.value.program || parsedData.value.field_of_study || 'Unknown Degree',
-              field_of_study: parsedData.value.field_of_study || parsedData.value.major || null,
-              start_date: parsedData.value.start_date || null,
-              end_date: parsedData.value.end_date || parsedData.value.graduation_date || null,
-              gpa: parsedData.value.gpa || null,
-              description: parsedData.value.description || null,
-              source: 'resume_upload',
-              source_confidence: entity.confidence_score || 0.8
-            }
+          // Handle education
+          const entityData = {
+            user_id: user.id,
+            institution: extractStringValue(parsedData?.value?.institution || parsedData?.value?.school || parsedData?.value?.university, 'Unknown Institution'),
+            degree: extractStringValue(parsedData?.value?.degree || parsedData?.value?.program || parsedData?.value?.field_of_study, 'Unknown Degree'),
+            field_of_study: extractStringValue(parsedData?.value?.field_of_study || parsedData?.value?.major),
+            start_date: extractStringValue(parsedData?.value?.start_date),
+            end_date: extractStringValue(parsedData?.value?.end_date || parsedData?.value?.graduation_date),
+            gpa: extractStringValue(parsedData?.value?.gpa),
+            description: extractStringValue(parsedData?.value?.description),
+            source: 'resume_upload',
+            source_confidence: entity.confidence_score || 0.8
           }
+
+          const { data: insertResult, error: insertError } = await supabaseClient
+            .from('education')
+            .insert([entityData])
+            .select()
+            .single()
+
+          if (insertError) {
+            console.error(`Error inserting education:`, insertError)
+            errors++
+            results.push({
+              entity_type: 'education',
+              action: 'error',
+              error: insertError.message
+            })
+          } else {
+            entitiesCreated++
+            results.push({
+              entity_type: 'education',
+              action: 'created',
+              entity_id: insertResult.logical_entity_id
+            })
+            console.log(`Created education: ${insertResult.logical_entity_id}`)
+          }
+
         } else if (fieldName.includes('skill')) {
-          tableName = 'skill'
+          // Handle skills (can be array or single)
           if (parsedData.type === 'array' && Array.isArray(parsedData.value)) {
             // Handle multiple skills
             for (const skillItem of parsedData.value) {
               const skillData = {
                 user_id: user.id,
-                name: typeof skillItem === 'string' ? skillItem : skillItem.name || skillItem.skill || 'Unknown Skill',
-                category: typeof skillItem === 'object' ? skillItem.category : null,
-                proficiency_level: typeof skillItem === 'object' ? skillItem.level || skillItem.proficiency : null,
-                years_of_experience: typeof skillItem === 'object' ? skillItem.years_experience : null,
+                name: extractStringValue(skillItem, 'Unknown Skill'),
+                category: typeof skillItem === 'object' ? extractStringValue(skillItem.category) : null,
+                proficiency_level: typeof skillItem === 'object' ? extractStringValue(skillItem.level || skillItem.proficiency) : null,
+                years_of_experience: typeof skillItem === 'object' && skillItem.years_experience ? parseInt(skillItem.years_experience) || null : null,
                 source: 'resume_upload',
                 source_confidence: entity.confidence_score || 0.8
               }
@@ -161,82 +219,124 @@ serve(async (req) => {
                 })
               }
             }
-            continue // Skip the normal processing for this entity
-          } else if (parsedData.type === 'object' && parsedData.value) {
-            entityData = {
+          } else {
+            // Handle single skill
+            const skillData = {
               user_id: user.id,
-              name: parsedData.value.name || parsedData.value.skill || 'Unknown Skill',
-              category: parsedData.value.category || null,
-              proficiency_level: parsedData.value.level || parsedData.value.proficiency || null,
-              years_of_experience: parsedData.value.years_experience || null,
+              name: extractStringValue(parsedData?.value?.name || parsedData?.value?.skill || parsedData?.value, 'Unknown Skill'),
+              category: extractStringValue(parsedData?.value?.category),
+              proficiency_level: extractStringValue(parsedData?.value?.level || parsedData?.value?.proficiency),
+              years_of_experience: parsedData?.value?.years_experience ? parseInt(parsedData.value.years_experience) || null : null,
               source: 'resume_upload',
               source_confidence: entity.confidence_score || 0.8
             }
-          }
-        } else if (fieldName.includes('project')) {
-          tableName = 'project'
-          if (parsedData.type === 'object' && parsedData.value) {
-            entityData = {
-              user_id: user.id,
-              name: parsedData.value.name || parsedData.value.title || parsedData.value.project_name || 'Unknown Project',
-              description: parsedData.value.description || null,
-              technologies_used: parsedData.value.technologies_used || parsedData.value.technologies || parsedData.value.tech_stack || null,
-              start_date: parsedData.value.start_date || null,
-              end_date: parsedData.value.end_date || null,
-              project_url: parsedData.value.project_url || parsedData.value.demo_url || null,
-              repository_url: parsedData.value.repository_url || parsedData.value.github_url || parsedData.value.repo_url || null,
-              source: 'resume_upload',
-              source_confidence: entity.confidence_score || 0.8
-            }
-          }
-        } else if (fieldName.includes('cert')) {
-          tableName = 'certification'
-          if (parsedData.type === 'object' && parsedData.value) {
-            entityData = {
-              user_id: user.id,
-              name: parsedData.value.name || parsedData.value.certification || parsedData.value.title || 'Unknown Certification',
-              issuing_organization: parsedData.value.issuer || parsedData.value.organization || parsedData.value.provider || 'Unknown Issuer',
-              issue_date: parsedData.value.issue_date || parsedData.value.date || null,
-              expiration_date: parsedData.value.expiry_date || parsedData.value.expiration_date || null,
-              credential_id: parsedData.value.credential_id || null,
-              credential_url: parsedData.value.credential_url || null,
-              source: 'resume_upload',
-              source_confidence: entity.confidence_score || 0.8
-            }
-          }
-        }
 
-        // Insert the entity if we have valid data and table
-        if (tableName && entityData) {
+            const { data: insertResult, error: insertError } = await supabaseClient
+              .from('skill')
+              .insert([skillData])
+              .select()
+              .single()
+
+            if (insertError) {
+              console.error(`Error inserting skill:`, insertError)
+              errors++
+              results.push({
+                entity_type: 'skill',
+                action: 'error',
+                error: insertError.message
+              })
+            } else {
+              entitiesCreated++
+              results.push({
+                entity_type: 'skill',
+                action: 'created',
+                entity_id: insertResult.logical_entity_id
+              })
+            }
+          }
+
+        } else if (fieldName.includes('project')) {
+          // Handle projects
+          const entityData = {
+            user_id: user.id,
+            name: extractStringValue(parsedData?.value?.name || parsedData?.value?.title || parsedData?.value?.project_name, 'Unknown Project'),
+            description: extractStringValue(parsedData?.value?.description),
+            technologies_used: Array.isArray(parsedData?.value?.technologies_used) ? parsedData.value.technologies_used : 
+              (parsedData?.value?.technologies ? [parsedData.value.technologies] : null),
+            start_date: extractStringValue(parsedData?.value?.start_date),
+            end_date: extractStringValue(parsedData?.value?.end_date),
+            project_url: extractStringValue(parsedData?.value?.project_url || parsedData?.value?.demo_url),
+            repository_url: extractStringValue(parsedData?.value?.repository_url || parsedData?.value?.github_url || parsedData?.value?.repo_url),
+            source: 'resume_upload',
+            source_confidence: entity.confidence_score || 0.8
+          }
+
           const { data: insertResult, error: insertError } = await supabaseClient
-            .from(tableName)
+            .from('project')
             .insert([entityData])
             .select()
             .single()
 
           if (insertError) {
-            console.error(`Error inserting ${tableName}:`, insertError)
+            console.error(`Error inserting project:`, insertError)
             errors++
             results.push({
-              entity_type: tableName,
+              entity_type: 'project',
               action: 'error',
               error: insertError.message
             })
           } else {
             entitiesCreated++
             results.push({
-              entity_type: tableName,
+              entity_type: 'project',
               action: 'created',
-              entity_id: insertResult.logical_entity_id || insertResult.id
+              entity_id: insertResult.logical_entity_id
             })
-            console.log(`Created ${tableName} entity: ${insertResult.logical_entity_id || insertResult.id}`)
           }
+
+        } else if (fieldName.includes('cert')) {
+          // Handle certifications
+          const entityData = {
+            user_id: user.id,
+            name: extractStringValue(parsedData?.value?.name || parsedData?.value?.certification || parsedData?.value?.title, 'Unknown Certification'),
+            issuing_organization: extractStringValue(parsedData?.value?.issuer || parsedData?.value?.organization || parsedData?.value?.provider, 'Unknown Issuer'),
+            issue_date: extractStringValue(parsedData?.value?.issue_date || parsedData?.value?.date),
+            expiration_date: extractStringValue(parsedData?.value?.expiry_date || parsedData?.value?.expiration_date),
+            credential_id: extractStringValue(parsedData?.value?.credential_id),
+            credential_url: extractStringValue(parsedData?.value?.credential_url),
+            source: 'resume_upload',
+            source_confidence: entity.confidence_score || 0.8
+          }
+
+          const { data: insertResult, error: insertError } = await supabaseClient
+            .from('certification')
+            .insert([entityData])
+            .select()
+            .single()
+
+          if (insertError) {
+            console.error(`Error inserting certification:`, insertError)
+            errors++
+            results.push({
+              entity_type: 'certification',
+              action: 'error',
+              error: insertError.message
+            })
+          } else {
+            entitiesCreated++
+            results.push({
+              entity_type: 'certification',
+              action: 'created',
+              entity_id: insertResult.logical_entity_id
+            })
+          }
+
         } else {
-          console.log(`Skipped entity ${entity.id} - field: ${entity.field_name} (no matching table or invalid data)`)
+          console.log(`Skipped entity ${entity.id} - field: ${entity.field_name} (no matching table)`)
           results.push({
             entity_type: 'unknown',
-            action: 'error',
-            error: `No matching table for field: ${entity.field_name}`
+            action: 'skipped',
+            reason: `No matching table for field: ${entity.field_name}`
           })
         }
 
