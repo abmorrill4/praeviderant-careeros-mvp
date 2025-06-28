@@ -145,7 +145,7 @@ function mapCurrentStageToProcessingStage(
   hasEntities: boolean,
   hasEnrichment: boolean,
   hasNarratives: boolean
-): 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed' {
+): EnrichmentStatus['processingStage'] {
   // Check for explicit failed status first
   if (processingStatus === 'failed') return 'failed';
   
