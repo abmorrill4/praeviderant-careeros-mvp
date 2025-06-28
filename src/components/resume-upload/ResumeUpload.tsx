@@ -143,22 +143,26 @@ export const ResumeUpload: React.FC = () => {
     });
   };
 
-  // Enhanced display logic using comprehensive processing status
+  // FIXED: More precise display logic
   const hasCompletedVersionId = !!uploadState.completedVersionId;
-  const isProcessingComplete = processingStatus?.isComplete === true;
+  const isProcessingComplete = processingStatus?.processingProgress === 100 && processingStatus?.isComplete === true;
   const isStatusLoading = statusLoading;
-  const isProcessingInProgress = processingStatus && !processingStatus.isComplete && processingStatus.processingStage !== 'failed';
+  const isProcessingInProgress = processingStatus && processingStatus.processingProgress < 100;
   const hasProcessingFailed = processingStatus?.processingStage === 'failed';
   
   const showUploadingState = uploadState.isUploading || uploadState.error;
   const showWaitingForProcessing = hasCompletedVersionId && (isStatusLoading || isProcessingInProgress);
-  const showProcessingResults = hasCompletedVersionId && isProcessingComplete;
+  const showProcessingResults = hasCompletedVersionId && isProcessingComplete && !isStatusLoading;
   const showProcessingError = hasCompletedVersionId && hasProcessingFailed;
 
-  console.log('ResumeUpload: Enhanced Display Logic', {
+  console.log('ResumeUpload: FIXED Display Logic', {
     hasCompletedVersionId,
     isStatusLoading,
-    processingStatus,
+    processingStatus: processingStatus ? {
+      progress: processingStatus.processingProgress,
+      isComplete: processingStatus.isComplete,
+      stage: processingStatus.currentStage
+    } : null,
     isProcessingComplete,
     isProcessingInProgress,
     hasProcessingFailed,
@@ -354,7 +358,7 @@ export const ResumeUpload: React.FC = () => {
         </Card>
       )}
 
-      {/* Results - ONLY show when processing is 100% complete */}
+      {/* Results - ONLY show when processing is 100% complete AND not loading */}
       {showProcessingResults && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
