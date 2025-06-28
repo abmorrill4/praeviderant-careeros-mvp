@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -24,32 +23,16 @@ serve(async (req) => {
     
     // Enhanced request body parsing with validation
     let requestData: EnrichRequest;
-    const rawBody = await req.text();
-    console.log('Raw request body:', rawBody);
-    
-    if (!rawBody || rawBody.trim() === '') {
-      console.error('Empty request body received');
-      return new Response(JSON.stringify({ 
-        success: false,
-        error: 'Request body is empty',
-        details: 'No data provided in request'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
     
     try {
-      requestData = JSON.parse(rawBody);
+      requestData = await req.json();
       console.log('Parsed request data:', requestData);
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
-      console.error('Raw body that failed to parse:', rawBody);
       return new Response(JSON.stringify({ 
         success: false,
         error: 'Invalid JSON in request body',
-        details: parseError.message,
-        rawBody: rawBody.substring(0, 200) // First 200 chars for debugging
+        details: parseError.message
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

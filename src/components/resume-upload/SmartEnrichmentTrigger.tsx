@@ -170,6 +170,8 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
             variant: "default",
           });
 
+          console.log('SmartEnrichmentTrigger: Calling supabase.functions.invoke with body:', { versionId });
+
           const { data, error } = await supabase.functions.invoke('enrich-resume', {
             body: { versionId },
             headers: {
