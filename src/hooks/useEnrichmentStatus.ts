@@ -50,7 +50,7 @@ export function useEnrichmentStatus(versionId?: string) {
             hasNarratives: false,
             isComplete: false,
             lastUpdated: new Date().toISOString(),
-            processingStage: 'failed'
+            processingStage: 'failed' as const
           };
         }
 
@@ -63,7 +63,7 @@ export function useEnrichmentStatus(versionId?: string) {
         console.log('useEnrichmentStatus: Raw status from database:', status);
 
         // Enhanced stage mapping with better error handling
-        const processingStage = mapCurrentStageToProcessingStage(
+        const processingStage: 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed' = mapCurrentStageToProcessingStage(
           status.current_stage, 
           status.processing_status,
           status.has_entities,
@@ -102,7 +102,7 @@ export function useEnrichmentStatus(versionId?: string) {
           hasNarratives: false,
           isComplete: false,
           lastUpdated: new Date().toISOString(),
-          processingStage: 'failed'
+          processingStage: 'failed' as const
         };
       }
     },
