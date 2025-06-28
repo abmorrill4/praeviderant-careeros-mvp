@@ -7,6 +7,8 @@ import { ExperienceSection } from './ExperienceSection';
 import { EducationSection } from './EducationSection';
 import { SkillsSection } from './SkillsSection';
 import { ResumeUploadModal } from './ResumeUploadModal';
+import { NewUserGuidance } from './NewUserGuidance';
+import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileTimelineProps {
@@ -20,10 +22,14 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
 }) => {
   const { theme } = useTheme();
   const [focusedCard, setFocusedCard] = useState<string | null>(null);
+  const profileCompleteness = useProfileCompleteness();
 
   const handleCardFocus = (cardId: string | null) => {
     setFocusedCard(cardId);
   };
+
+  // Show new user guidance if the user has very little or no data
+  const showNewUserGuidance = profileCompleteness.isNewUser || profileCompleteness.completionPercentage < 25;
 
   return (
     <div className="h-full flex flex-col">
@@ -48,7 +54,16 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
       <div className="flex-1 overflow-y-auto p-6">
         <Tabs value={activeSection} onValueChange={(value) => onSectionChange(value as TimelineSection)}>
           <TabsContent value="overview" className="mt-0">
-            <ProfileOverview focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+            {showNewUserGuidance ? (
+              <NewUserGuidance
+                hasResumeData={profileCompleteness.hasResumeData}
+                hasExperience={profileCompleteness.hasExperience}
+                hasEducation={profileCompleteness.hasEducation}
+                hasSkills={profileCompleteness.hasSkills}
+              />
+            ) : (
+              <ProfileOverview focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+            )}
           </TabsContent>
           
           <TabsContent value="experience" className="mt-0">
