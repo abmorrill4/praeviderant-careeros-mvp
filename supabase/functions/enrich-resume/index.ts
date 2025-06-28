@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -55,6 +54,24 @@ serve(async (req) => {
 
     console.log('Found version:', version.file_name, 'for user:', version.resume_streams.user_id);
 
+    // Check if enrichment already exists
+    const { data: existingEnrichment, error: existingError } = await supabase
+      .from('career_enrichment')
+      .select('id')
+      .eq('resume_version_id', versionId)
+      .maybeSingle();
+
+    if (existingEnrichment) {
+      console.log('Enrichment already exists for this version');
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'Enrichment already exists',
+        enrichment_id: existingEnrichment.id
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Get existing parsed entities for this version
     const { data: entities, error: entitiesError } = await supabase
       .from('parsed_resume_entities')
@@ -107,8 +124,11 @@ serve(async (req) => {
         persona_type: enrichmentResult.persona_type,
         persona_explanation: enrichmentResult.persona_explanation,
         leadership_score: enrichmentResult.leadership_score,
+        leadership_explanation: enrichmentResult.leadership_explanation || '',
         scope_score: enrichmentResult.scope_score,
+        scope_explanation: enrichmentResult.scope_explanation || '',
         technical_depth_score: enrichmentResult.technical_depth_score,
+        technical_depth_explanation: enrichmentResult.technical_depth_explanation || '',
         confidence_score: enrichmentResult.confidence_score || 0.9,
         model_version: 'gpt-4o',
         enrichment_metadata: {
@@ -266,8 +286,11 @@ Return a JSON object with this exact structure:
   "persona_type": "one of: Executor, Strategist, Innovator, Collaborator, or Specialist", 
   "persona_explanation": "2-3 sentence explanation of this persona",
   "leadership_score": 85,
+  "leadership_explanation": "Brief explanation of leadership assessment",
   "scope_score": 78,
+  "scope_explanation": "Brief explanation of scope/impact assessment", 
   "technical_depth_score": 92,
+  "technical_depth_explanation": "Brief explanation of technical depth assessment",
   "confidence_score": 0.9,
   "narratives": [
     {

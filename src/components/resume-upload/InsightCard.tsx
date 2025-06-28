@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -15,24 +15,128 @@ import {
   CheckCircle,
   Info,
   Clock,
-  Zap
+  Zap,
+  AlertCircle
 } from 'lucide-react';
-import type { CareerEnrichment, CareerNarrative } from '@/types/enrichment';
+import { useCareerEnrichment, useCareerNarratives } from '@/hooks/useEnrichment';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface InsightCardProps {
   versionId: string;
-  enrichment?: CareerEnrichment;
-  narratives: CareerNarrative[];
+  enrichment?: any;
+  narratives: any[];
   isLoading?: boolean;
 }
 
 export const InsightCard: React.FC<InsightCardProps> = ({
   versionId,
-  enrichment,
-  narratives,
-  isLoading
+  enrichment: propEnrichment,
+  narratives: propNarratives,
+  isLoading: propIsLoading
 }) => {
-  if (isLoading) {
+  const { toast } = useToast();
+  const { data: enrichmentData, isLoading: enrichmentLoading, refetch: refetchEnrichment } = useCareerEnrichment(versionId);
+  const { data: narrativesData, isLoading: narrativesLoading, refetch: refetchNarratives } = useCareerNarratives(versionId);
+
+  // Use hook data if available, otherwise use props
+  const enrichment = enrichmentData || propEnrichment;
+  const narratives = narrativesData || propNarratives || [];
+  const isLoading = propIsLoading || enrichmentLoading || narrativesLoading;
+
+  console.log('InsightCard Debug:', {
+    versionId,
+    enrichmentData,
+    enrichment,
+    narrativesData,
+    narratives,
+    isLoading,
+    enrichmentLoading,
+    narrativesLoading
+  });
+
+  // Check enrichment status periodically
+  useEffect(() => {
+    if (!versionId) return;
+
+    const checkEnrichmentStatus = async () => {
+      try {
+        console.log('Checking enrichment status for version:', versionId);
+        
+        // Check if enrichment exists
+        const { data: enrichmentCheck, error: enrichmentError } = await supabase
+          .from('career_enrichment')
+          .select('*')
+          .eq('resume_version_id', versionId)
+          .maybeSingle();
+
+        console.log('Enrichment check result:', { enrichmentCheck, enrichmentError });
+
+        if (enrichmentCheck) {
+          refetchEnrichment();
+          refetchNarratives();
+          return;
+        }
+
+        // Check resume version processing status
+        const { data: versionData, error: versionError } = await supabase
+          .from('resume_versions')
+          .select('processing_status, created_at')
+          .eq('id', versionId)
+          .single();
+
+        console.log('Version status:', { versionData, versionError });
+
+        if (versionError) {
+          console.error('Error checking version status:', versionError);
+          toast({
+            title: "Error",
+            description: "Failed to check processing status",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // If resume was uploaded recently and no enrichment exists, trigger it
+        const uploadTime = new Date(versionData.created_at);
+        const now = new Date();
+        const timeDiff = now.getTime() - uploadTime.getTime();
+        const minutesDiff = timeDiff / (1000 * 60);
+
+        if (minutesDiff < 5 && !enrichmentCheck) {
+          console.log('Triggering enrichment for recent upload...');
+          
+          const { data: triggerResult, error: triggerError } = await supabase.functions.invoke('enrich-resume', {
+            body: { versionId }
+          });
+
+          if (triggerError) {
+            console.error('Error triggering enrichment:', triggerError);
+            toast({
+              title: "Processing Error",
+              description: "Failed to start AI analysis. Please try refreshing the page.",
+              variant: "destructive",
+            });
+          } else {
+            console.log('Enrichment triggered successfully:', triggerResult);
+          }
+        }
+      } catch (error) {
+        console.error('Error in checkEnrichmentStatus:', error);
+      }
+    };
+
+    // Check immediately
+    checkEnrichmentStatus();
+
+    // Set up polling for updates
+    const interval = setInterval(checkEnrichmentStatus, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [versionId, refetchEnrichment, refetchNarratives, toast]);
+
+  // Show loading state
+  if (isLoading || (!enrichment && !enrichmentData)) {
     return (
       <Card className="border-blue-200 bg-blue-50/50">
         <CardHeader>
@@ -65,27 +169,27 @@ export const InsightCard: React.FC<InsightCardProps> = ({
     );
   }
 
-  // Show processing message if no enrichment data exists yet
-  if (!enrichment || narratives.length === 0) {
+  // Show error state if no enrichment data after loading
+  if (!enrichment) {
     return (
       <Card className="border-amber-200 bg-amber-50/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-amber-800">
-            <Clock className="w-4 h-4" />
+            <AlertCircle className="w-4 h-4" />
             AI Career Insights
           </CardTitle>
           <CardDescription className="flex items-center gap-2">
             <Info className="w-3 h-3" />
-            Processing your resume data automatically
+            Processing your resume data
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center py-6">
           <Brain className="w-12 h-12 mx-auto text-amber-400 mb-4" />
           <p className="text-amber-700 mb-2 font-medium">
-            AI insights are being generated automatically
+            AI insights are being generated
           </p>
           <p className="text-amber-600 text-sm">
-            This process typically takes 15-30 seconds. The insights will appear here once complete.
+            This process typically takes 15-30 seconds. Please wait or refresh the page if it takes longer.
           </p>
         </CardContent>
       </Card>
@@ -96,12 +200,6 @@ export const InsightCard: React.FC<InsightCardProps> = ({
     if (score >= 80) return 'default';
     if (score >= 60) return 'secondary';
     return 'outline';
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
   };
 
   const careerSummary = narratives.find(n => n.narrative_type === 'career_summary');

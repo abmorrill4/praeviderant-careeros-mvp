@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,6 +18,8 @@ export function useCareerEnrichment(versionId?: string) {
     queryFn: async (): Promise<CareerEnrichment | null> => {
       if (!versionId || !user) return null;
       
+      console.log('Fetching career enrichment for version:', versionId);
+      
       const { data, error } = await supabase
         .from('career_enrichment')
         .select('*')
@@ -32,9 +33,12 @@ export function useCareerEnrichment(versionId?: string) {
         throw error;
       }
 
+      console.log('Career enrichment data:', data);
       return data;
     },
     enabled: !!versionId && !!user,
+    refetchInterval: (data) => data ? false : 5000, // Poll every 5 seconds if no data
+    staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
   });
 }
 
@@ -46,6 +50,8 @@ export function useCareerNarratives(versionId?: string) {
     queryKey: ['career-narratives', versionId],
     queryFn: async (): Promise<CareerNarrative[]> => {
       if (!versionId || !user) return [];
+      
+      console.log('Fetching career narratives for version:', versionId);
       
       const { data, error } = await supabase
         .from('career_narratives')
@@ -59,12 +65,15 @@ export function useCareerNarratives(versionId?: string) {
         throw error;
       }
 
+      console.log('Career narratives data:', data);
       return (data || []).map(row => ({
         ...row,
         narrative_type: row.narrative_type as CareerNarrative['narrative_type']
       }));
     },
     enabled: !!versionId && !!user,
+    refetchInterval: (data) => data && data.length > 0 ? false : 5000, // Poll every 5 seconds if no data
+    staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
   });
 }
 
