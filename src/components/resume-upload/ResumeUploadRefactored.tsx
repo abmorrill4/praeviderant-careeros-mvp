@@ -1,46 +1,48 @@
+
 import React, { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Upload, Loader2 } from 'lucide-react';
+import { FileText, Upload, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useResumeUpload, useResumeStreams } from '@/hooks/useResumeStreams';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { ResumeDropzone } from '@/components/resume-upload/ResumeDropzone';
-import { UploadProgress } from '@/components/resume-upload/UploadProgress';
-import { ParsedResumeEntities } from '@/components/ParsedResumeEntities';
-
-interface ResumeUploadModalProps {
-  children?: React.ReactNode;
-}
+import { ResumeDropzone } from './ResumeDropzone';
+import { StreamConfiguration } from './StreamConfiguration';
+import { UploadProgress } from './UploadProgress';
+import { ResumeCollectionView } from './ResumeCollectionView';
+import { ParsedResumeEntities } from '../ParsedResumeEntities';
 
 interface UploadState {
   file: File | null;
+  streamName: string;
+  tags: string[];
+  tagInput: string;
   isUploading: boolean;
   uploadProgress: number;
   currentStage: string;
   error: string | null;
   completedVersionId: string | null;
+  uploadResult: any | null;
 }
 
-export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }) => {
-  const { theme } = useTheme();
+export const ResumeUploadRefactored: React.FC = () => {
   const { user } = useAuth();
+  const { data: streams, isLoading: streamsLoading } = useResumeStreams();
+  const uploadMutation = useResumeUpload();
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
   
   const [uploadState, setUploadState] = useState<UploadState>({
     file: null,
+    streamName: 'Default Resume',
+    tags: [],
+    tagInput: '',
     isUploading: false,
     uploadProgress: 0,
     currentStage: 'upload',
     error: null,
-    completedVersionId: null
+    completedVersionId: null,
+    uploadResult: null
   });
 
   const handleFileSelect = (file: File) => {
@@ -48,7 +50,8 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
       ...prev, 
       file, 
       error: null,
-      completedVersionId: null
+      completedVersionId: null,
+      uploadResult: null
     }));
   };
 
@@ -57,7 +60,8 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
       ...prev, 
       file: null, 
       error: null,
-      completedVersionId: null
+      completedVersionId: null,
+      uploadResult: null
     }));
   };
 
@@ -71,7 +75,7 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
       return;
     }
 
-    console.log('Starting simplified upload process...');
+    console.log('Starting upload process...');
     
     setUploadState(prev => ({ 
       ...prev, 
@@ -79,43 +83,40 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
       uploadProgress: 10,
       currentStage: 'upload',
       error: null,
-      completedVersionId: null
+      completedVersionId: null,
+      uploadResult: null
     }));
 
     try {
+      // Simulate progress during upload
       setUploadState(prev => ({ ...prev, uploadProgress: 30 }));
 
-      const formData = new FormData();
-      formData.append('file', uploadState.file);
-      formData.append('streamName', 'Resume Upload');
-
-      const { data, error } = await supabase.functions.invoke('resume-upload-v2', {
-        body: formData,
+      const result = await uploadMutation.mutateAsync({
+        file: uploadState.file,
+        streamName: uploadState.streamName,
+        tags: uploadState.tags
       });
 
-      if (error) {
-        throw error;
-      }
+      console.log('Upload result:', result);
 
-      console.log('Upload result:', data);
-
-      if (data.success) {
+      if (result.success) {
         setUploadState(prev => ({ 
           ...prev,
           uploadProgress: 100,
           currentStage: 'complete',
           isUploading: false,
-          completedVersionId: data.versionId || null
+          completedVersionId: result.version?.id || null,
+          uploadResult: result
         }));
 
         toast({
           title: "Upload Successful",
-          description: data.isDuplicate 
+          description: result.isDuplicate 
             ? "File already exists in your collection" 
             : "Resume uploaded and processing started",
         });
       } else {
-        throw new Error(data.message || 'Upload failed');
+        throw new Error(result.message || 'Upload failed');
       }
 
     } catch (error) {
@@ -138,40 +139,39 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
   const resetUpload = () => {
     setUploadState({
       file: null,
+      streamName: 'Default Resume',
+      tags: [],
+      tagInput: '',
       isUploading: false,
       uploadProgress: 0,
       currentStage: 'upload',
       error: null,
-      completedVersionId: null
+      completedVersionId: null,
+      uploadResult: null
     });
   };
 
+  if (streamsLoading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children || (
-          <Button 
-            variant="outline" 
-            size="sm"
-            className={`${
-              theme === 'dark' 
-                ? 'border-career-gray-dark hover:bg-career-gray-dark text-career-text-dark' 
-                : 'border-career-gray-light hover:bg-career-gray-light text-career-text-light'
-            }`}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Upload Resume
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent 
-        className={`max-w-4xl max-h-[90vh] overflow-y-auto ${
-          theme === 'dark' 
-            ? 'bg-career-panel-dark border-career-gray-dark' 
-            : 'bg-career-panel-light border-career-gray-light'
-        }`}
-      >
-        <div className="space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            Resume Upload & Analysis
+          </CardTitle>
+          <CardDescription>
+            Upload your resume for AI-powered data extraction and organization. Create collections to manage different versions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
           <ResumeDropzone
             onFileSelect={handleFileSelect}
             isUploading={uploadState.isUploading}
@@ -183,6 +183,18 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
             <>
               <Separator />
               
+              <StreamConfiguration
+                streamName={uploadState.streamName}
+                onStreamNameChange={(name) => setUploadState(prev => ({ ...prev, streamName: name }))}
+                tags={uploadState.tags}
+                onTagsChange={(tags) => setUploadState(prev => ({ ...prev, tags }))}
+                tagInput={uploadState.tagInput}
+                onTagInputChange={(input) => setUploadState(prev => ({ ...prev, tagInput: input }))}
+                disabled={uploadState.isUploading}
+              />
+
+              <Separator />
+
               <div className="flex gap-3">
                 <Button
                   onClick={handleUpload}
@@ -223,29 +235,31 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
               error={uploadState.error}
             />
           )}
+        </CardContent>
+      </Card>
 
-          {uploadState.completedVersionId && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Resume Analysis Results</h3>
-                <Button variant="outline" onClick={resetUpload}>
-                  Upload Another Resume
-                </Button>
-              </div>
-              <ParsedResumeEntities
-                versionId={uploadState.completedVersionId}
-                processingStatus="completed"
-                onProfileUpdated={() => {
-                  toast({
-                    title: "Profile Updated",
-                    description: "Your profile has been updated with the resume data",
-                  });
-                }}
-              />
-            </div>
-          )}
+      {uploadState.completedVersionId && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Resume Analysis Results</h3>
+            <Button variant="outline" onClick={resetUpload}>
+              Upload Another Resume
+            </Button>
+          </div>
+          <ParsedResumeEntities
+            versionId={uploadState.completedVersionId}
+            processingStatus="completed"
+            onProfileUpdated={() => {
+              toast({
+                title: "Profile Updated",
+                description: "Your profile has been updated with the resume data",
+              });
+            }}
+          />
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+
+      <ResumeCollectionView streams={streams || []} />
+    </div>
   );
 };
