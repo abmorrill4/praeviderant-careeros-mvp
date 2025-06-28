@@ -36,7 +36,7 @@ export const ResumeUpload: React.FC = () => {
   });
 
   // Get enrichment status for the completed version
-  const { data: enrichmentStatus } = useEnrichmentStatus(uploadState.completedVersionId || undefined);
+  const { data: enrichmentStatus, isLoading: enrichmentStatusLoading } = useEnrichmentStatus(uploadState.completedVersionId || undefined);
 
   const handleFileSelect = (file: File) => {
     setUploadState(prev => ({ 
@@ -142,18 +142,26 @@ export const ResumeUpload: React.FC = () => {
     });
   };
 
-  // Determine what to show based on upload and processing state
+  // Fixed display logic with better debugging
+  const hasCompletedVersionId = !!uploadState.completedVersionId;
+  const isEnrichmentComplete = enrichmentStatus?.isComplete === true;
+  const isEnrichmentStatusLoading = enrichmentStatusLoading;
+  const isProcessingButNotComplete = enrichmentStatus && !enrichmentStatus.isComplete;
+  
   const showUploadingState = uploadState.isUploading || uploadState.error;
-  const showWaitingForProcessing = uploadState.completedVersionId && (!enrichmentStatus || !enrichmentStatus.isComplete);
-  const showProcessingResults = uploadState.completedVersionId && enrichmentStatus && enrichmentStatus.isComplete;
+  const showWaitingForProcessing = hasCompletedVersionId && (isEnrichmentStatusLoading || isProcessingButNotComplete);
+  const showProcessingResults = hasCompletedVersionId && isEnrichmentComplete;
 
-  console.log('ResumeUpload: Display logic', {
-    hasCompletedVersionId: !!uploadState.completedVersionId,
+  console.log('ResumeUpload: DETAILED Display logic', {
+    hasCompletedVersionId,
+    isEnrichmentStatusLoading,
     enrichmentStatus,
-    isComplete: enrichmentStatus?.isComplete,
+    isEnrichmentComplete,
+    isProcessingButNotComplete,
     showUploadingState,
     showWaitingForProcessing,
-    showProcessingResults
+    showProcessingResults,
+    timestamp: new Date().toISOString()
   });
 
   return (
@@ -223,7 +231,7 @@ export const ResumeUpload: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Show waiting/processing state - Upload complete but AI analysis is still running */}
+      {/* Show AI processing state - This should ALWAYS show when processing but not complete */}
       {showWaitingForProcessing && (
         <Card className="border-blue-200 bg-blue-50/50">
           <CardHeader>
@@ -240,11 +248,23 @@ export const ResumeUpload: React.FC = () => {
               <div className="text-center space-y-2">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
                 <p className="text-sm text-muted-foreground">
+                  {isEnrichmentStatusLoading && 'Loading enrichment status...'}
                   {enrichmentStatus?.processingStage === 'pending' && 'Initializing AI analysis pipeline...'}
                   {enrichmentStatus?.processingStage === 'parsing' && 'Extracting resume data...'}
                   {enrichmentStatus?.processingStage === 'enriching' && 'Analyzing career patterns and generating insights...'}
-                  {!enrichmentStatus && 'Starting analysis...'}
+                  {!enrichmentStatus && !isEnrichmentStatusLoading && 'Starting analysis...'}
                 </p>
+                
+                {/* Debug info - remove this in production */}
+                <div className="mt-4 p-2 bg-gray-100 rounded text-xs text-left">
+                  <strong>Debug Info:</strong><br/>
+                  Status Loading: {String(isEnrichmentStatusLoading)}<br/>
+                  Processing Stage: {enrichmentStatus?.processingStage || 'null'}<br/>
+                  Is Complete: {String(enrichmentStatus?.isComplete)}<br/>
+                  Has Entities: {String(enrichmentStatus?.hasEntities)}<br/>
+                  Has Enrichment: {String(enrichmentStatus?.hasEnrichment)}<br/>
+                  Has Narratives: {String(enrichmentStatus?.hasNarratives)}
+                </div>
               </div>
             </div>
             <div className="flex justify-end mt-4">
@@ -260,10 +280,14 @@ export const ResumeUpload: React.FC = () => {
       {showProcessingResults && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Resume Analysis Complete</h3>
+            <h3 className="text-lg font-semibold">Resume Analysis Complete ✅</h3>
             <Button variant="outline" onClick={resetUpload}>
               Upload Another Resume
             </Button>
+          </div>
+          
+          <div className="p-2 bg-green-100 rounded text-sm text-green-800 mb-4">
+            <strong>✅ AI Analysis Complete:</strong> All processing stages finished successfully.
           </div>
           
           {/* AI Career Insights - Should show completed state since isComplete is true */}
