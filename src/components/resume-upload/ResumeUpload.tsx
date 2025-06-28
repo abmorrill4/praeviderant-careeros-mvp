@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ResumeDropzone } from './ResumeDropzone';
 import { UploadProgress } from './UploadProgress';
 import { ParsedResumeEntities } from '../ParsedResumeEntities';
+import { InsightCard } from './InsightCard';
 
 interface UploadState {
   file: File | null;
@@ -212,6 +212,11 @@ export const ResumeUpload: React.FC = () => {
               Upload Another Resume
             </Button>
           </div>
+          
+          {/* AI Career Insights - Shows progress until complete */}
+          <InsightCard versionId={uploadState.completedVersionId} />
+          
+          {/* Resume Data Analysis */}
           <ParsedResumeEntities
             versionId={uploadState.completedVersionId}
             processingStatus="completed"
