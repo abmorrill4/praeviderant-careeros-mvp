@@ -474,15 +474,13 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
       >
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
-            <Checkbox
-              checked={selectedEntities.has(entity.id)}
-              onCheckedChange={(e) => {
-                e?.stopPropagation?.();
-                handleEntityToggle(entity.id);
-              }}
-              onClick={(e) => e.stopPropagation()}
-              className="mt-1"
-            />
+            <div onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                checked={selectedEntities.has(entity.id)}
+                onCheckedChange={() => handleEntityToggle(entity.id)}
+                className="mt-1"
+              />
+            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
