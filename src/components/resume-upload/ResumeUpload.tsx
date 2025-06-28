@@ -144,12 +144,13 @@ export const ResumeUpload: React.FC = () => {
 
   // Determine what to show based on upload and processing state
   const showUploadingState = uploadState.isUploading || uploadState.error;
-  const showWaitingForProcessing = uploadState.completedVersionId && (!enrichmentStatus || enrichmentStatus.processingStage === 'pending');
-  const showProcessingResults = uploadState.completedVersionId && enrichmentStatus && (enrichmentStatus.hasEntities || enrichmentStatus.processingStage !== 'pending');
+  const showWaitingForProcessing = uploadState.completedVersionId && (!enrichmentStatus || !enrichmentStatus.isComplete);
+  const showProcessingResults = uploadState.completedVersionId && enrichmentStatus && enrichmentStatus.isComplete;
 
   console.log('ResumeUpload: Display logic', {
     hasCompletedVersionId: !!uploadState.completedVersionId,
     enrichmentStatus,
+    isComplete: enrichmentStatus?.isComplete,
     showUploadingState,
     showWaitingForProcessing,
     showProcessingResults
@@ -222,16 +223,16 @@ export const ResumeUpload: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Show waiting state - Upload complete but AI processing hasn't started yet */}
+      {/* Show waiting/processing state - Upload complete but AI analysis is still running */}
       {showWaitingForProcessing && (
         <Card className="border-blue-200 bg-blue-50/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-blue-600" />
-              Preparing AI Analysis
+              AI Analysis in Progress
             </CardTitle>
             <CardDescription>
-              Your resume has been uploaded successfully. AI processing will begin shortly.
+              Your resume has been uploaded successfully. AI analysis is running...
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -239,7 +240,10 @@ export const ResumeUpload: React.FC = () => {
               <div className="text-center space-y-2">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
                 <p className="text-sm text-muted-foreground">
-                  Initializing AI analysis pipeline...
+                  {enrichmentStatus?.processingStage === 'pending' && 'Initializing AI analysis pipeline...'}
+                  {enrichmentStatus?.processingStage === 'parsing' && 'Extracting resume data...'}
+                  {enrichmentStatus?.processingStage === 'enriching' && 'Analyzing career patterns and generating insights...'}
+                  {!enrichmentStatus && 'Starting analysis...'}
                 </p>
               </div>
             </div>
@@ -252,20 +256,20 @@ export const ResumeUpload: React.FC = () => {
         </Card>
       )}
 
-      {/* Show results when AI processing has actually begun */}
+      {/* Show results ONLY when AI processing is 100% complete */}
       {showProcessingResults && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Resume Analysis</h3>
+            <h3 className="text-lg font-semibold">Resume Analysis Complete</h3>
             <Button variant="outline" onClick={resetUpload}>
               Upload Another Resume
             </Button>
           </div>
           
-          {/* AI Career Insights - InsightCard manages its own loading/progress/complete states */}
+          {/* AI Career Insights - Should show completed state since isComplete is true */}
           <InsightCard versionId={uploadState.completedVersionId} />
           
-          {/* Resume Data Analysis - Show when we have entities or processing has started */}
+          {/* Resume Data Analysis - Show completed results */}
           <ParsedResumeEntities
             versionId={uploadState.completedVersionId}
             processingStatus="completed"
