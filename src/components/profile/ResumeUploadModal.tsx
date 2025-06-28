@@ -1,17 +1,13 @@
-
 import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Upload, FileText, Loader2 } from 'lucide-react';
+import { Upload, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -175,21 +171,7 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
             : 'bg-career-panel-light border-career-gray-light'
         }`}
       >
-        <DialogHeader>
-          <DialogTitle className={`flex items-center gap-2 ${
-            theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'
-          }`}>
-            <FileText className="w-5 h-5" />
-            Upload Resume
-          </DialogTitle>
-          <DialogDescription className={
-            theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'
-          }>
-            Upload your resume to automatically extract and organize your career data.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="mt-4 space-y-6">
+        <div className="space-y-6">
           <ResumeDropzone
             onFileSelect={handleFileSelect}
             isUploading={uploadState.isUploading}
