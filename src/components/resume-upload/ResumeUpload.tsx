@@ -143,28 +143,37 @@ export const ResumeUpload: React.FC = () => {
     });
   };
 
-  // FIXED: More precise display logic
+  // ULTRA CONSERVATIVE: Only show results when everything is definitively complete
   const hasCompletedVersionId = !!uploadState.completedVersionId;
-  const isProcessingComplete = processingStatus?.processingProgress === 100 && processingStatus?.isComplete === true;
-  const isStatusLoading = statusLoading;
-  const isProcessingInProgress = processingStatus && processingStatus.processingProgress < 100;
   const hasProcessingFailed = processingStatus?.processingStage === 'failed';
   
+  // Much stricter completion check - ALL conditions must be true
+  const isDefinitivelyComplete = processingStatus && 
+    processingStatus.processingProgress === 100 && 
+    processingStatus.isComplete === true && 
+    processingStatus.processingStatus === 'completed' &&
+    processingStatus.hasEntities === true &&
+    processingStatus.hasEnrichment === true &&
+    processingStatus.hasNarratives === true;
+  
   const showUploadingState = uploadState.isUploading || uploadState.error;
-  const showWaitingForProcessing = hasCompletedVersionId && (isStatusLoading || isProcessingInProgress);
-  const showProcessingResults = hasCompletedVersionId && isProcessingComplete && !isStatusLoading;
+  const showWaitingForProcessing = hasCompletedVersionId && !isDefinitivelyComplete && !hasProcessingFailed;
+  const showProcessingResults = hasCompletedVersionId && isDefinitivelyComplete && !statusLoading;
   const showProcessingError = hasCompletedVersionId && hasProcessingFailed;
 
-  console.log('ResumeUpload: FIXED Display Logic', {
+  console.log('ResumeUpload: ULTRA CONSERVATIVE Display Logic', {
     hasCompletedVersionId,
-    isStatusLoading,
+    statusLoading,
     processingStatus: processingStatus ? {
       progress: processingStatus.processingProgress,
       isComplete: processingStatus.isComplete,
+      processingStatus: processingStatus.processingStatus,
+      hasEntities: processingStatus.hasEntities,
+      hasEnrichment: processingStatus.hasEnrichment,
+      hasNarratives: processingStatus.hasNarratives,
       stage: processingStatus.currentStage
     } : null,
-    isProcessingComplete,
-    isProcessingInProgress,
+    isDefinitivelyComplete,
     hasProcessingFailed,
     showUploadingState,
     showWaitingForProcessing,
@@ -174,7 +183,7 @@ export const ResumeUpload: React.FC = () => {
   });
 
   const getProcessingMessage = () => {
-    if (isStatusLoading) return 'Loading processing status...';
+    if (statusLoading) return 'Loading processing status...';
     if (!processingStatus) return 'Initializing analysis...';
     
     const progress = processingStatus.processingProgress || 0;
@@ -266,7 +275,7 @@ export const ResumeUpload: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced AI Processing Status Card */}
+      {/* Enhanced AI Processing Status Card - STAY HERE UNTIL 100% COMPLETE */}
       {showWaitingForProcessing && (
         <Card className="border-blue-200 bg-blue-50/50">
           <CardHeader>
@@ -358,7 +367,7 @@ export const ResumeUpload: React.FC = () => {
         </Card>
       )}
 
-      {/* Results - ONLY show when processing is 100% complete AND not loading */}
+      {/* Results - ONLY show when EVERYTHING is definitively complete */}
       {showProcessingResults && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
