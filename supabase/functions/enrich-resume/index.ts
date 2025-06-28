@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -18,13 +19,31 @@ serve(async (req) => {
 
   try {
     console.log('=== Enrich Resume Starting ===');
-    const { versionId }: EnrichRequest = await req.json();
+    
+    // Parse request body with better error handling
+    let requestData: EnrichRequest;
+    try {
+      requestData = await req.json();
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError);
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Invalid request format' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
+    const { versionId } = requestData;
     console.log('Request received with versionId:', versionId);
 
     if (!versionId) {
       console.error('Version ID is missing from request');
-      return new Response(JSON.stringify({ error: 'Version ID is required' }), {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Version ID is required' 
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -33,14 +52,21 @@ serve(async (req) => {
     console.log('Processing version ID for enrichment:', versionId);
 
     // Initialize Supabase client with service role key for internal operations
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    console.log('Supabase configuration:', {
-      url: supabaseUrl ? 'Present' : 'Missing',
-      serviceKey: supabaseServiceKey ? 'Present' : 'Missing'
-    });
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase configuration');
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Server configuration error' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
+    console.log('Supabase configuration verified');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get resume version details with user info
@@ -56,7 +82,10 @@ serve(async (req) => {
 
     if (versionError || !version) {
       console.error('Error fetching resume version:', versionError);
-      return new Response(JSON.stringify({ error: 'Resume version not found' }), {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Resume version not found' 
+      }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -96,7 +125,10 @@ serve(async (req) => {
 
     if (entitiesError) {
       console.error('Error fetching entities:', entitiesError);
-      return new Response(JSON.stringify({ error: 'Failed to fetch parsed entities' }), {
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Failed to fetch parsed entities' 
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -105,10 +137,11 @@ serve(async (req) => {
     if (!entities || entities.length === 0) {
       console.log('No entities found for enrichment');
       return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'No entities to enrich',
+        success: false, 
+        error: 'No entities to enrich - resume may not be fully parsed yet',
         enrichment_count: 0
       }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -131,7 +164,13 @@ serve(async (req) => {
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
       console.error('OpenAI API key not configured');
-      throw new Error('OpenAI API key not configured');
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'AI service not configured' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('Calling OpenAI for career enrichment...');
@@ -174,7 +213,13 @@ serve(async (req) => {
 
     if (enrichmentError) {
       console.error('Error storing enrichment:', enrichmentError);
-      throw new Error('Failed to store enrichment data');
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Failed to store enrichment data' 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('Enrichment data stored successfully with ID:', enrichmentData.id);
@@ -197,32 +242,44 @@ serve(async (req) => {
         });
     });
 
-    const narrativeResults = await Promise.all(narrativePromises);
-    console.log('Career narratives stored:', narrativeResults.length);
+    const narrativeResults = await Promise.allSettled(narrativePromises);
+    
+    // Check if any narratives failed
+    const failedNarratives = narrativeResults.filter(result => result.status === 'rejected');
+    if (failedNarratives.length > 0) {
+      console.error('Some narratives failed to store:', failedNarratives);
+    }
+    
+    const successfulNarratives = narrativeResults.filter(result => result.status === 'fulfilled').length;
+    console.log('Career narratives stored:', successfulNarratives, 'out of', narrativeResults.length);
 
-    // Log success to job logs
-    const { data: jobData } = await supabase
-      .from('jobs')
-      .select('id')
-      .eq('user_id', version.resume_streams.user_id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Log success to job logs (optional, don't fail if this errors)
+    try {
+      const { data: jobData } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('user_id', version.resume_streams.user_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (jobData) {
-      await supabase
-        .from('job_logs')
-        .insert({
-          job_id: jobData.id,
-          stage: 'enrich',
-          level: 'info',
-          message: `AI career enrichment completed successfully. Generated ${enrichmentResult.narratives.length} narratives.`,
-          metadata: {
-            version_id: versionId,
-            entities_analyzed: entities.length,
-            enrichment_id: enrichmentData.id
-          }
-        });
+      if (jobData) {
+        await supabase
+          .from('job_logs')
+          .insert({
+            job_id: jobData.id,
+            stage: 'enrich',
+            level: 'info',
+            message: `AI career enrichment completed successfully. Generated ${successfulNarratives} narratives.`,
+            metadata: {
+              version_id: versionId,
+              entities_analyzed: entities.length,
+              enrichment_id: enrichmentData.id
+            }
+          });
+      }
+    } catch (logError) {
+      console.warn('Failed to log to job_logs (non-critical):', logError);
     }
 
     console.log('=== Enrich Resume Complete ===');
@@ -231,7 +288,7 @@ serve(async (req) => {
       success: true,
       message: 'Career enrichment completed successfully',
       enrichment_id: enrichmentData.id,
-      narratives_count: enrichmentResult.narratives.length
+      narratives_count: successfulNarratives
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -239,6 +296,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in enrich-resume:', error);
     return new Response(JSON.stringify({
+      success: false,
       error: 'Internal server error',
       message: error.message
     }), {

@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { 
   Brain, 
   TrendingUp, 
@@ -13,7 +14,8 @@ import {
   Sparkles,
   CheckCircle,
   Info,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useCareerEnrichment, useCareerNarratives } from '@/hooks/useEnrichment';
 import { useEnrichmentStatus } from '@/hooks/useEnrichmentStatus';
@@ -25,9 +27,10 @@ interface InsightCardProps {
 }
 
 export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
-  const { data: status, isLoading: statusLoading, error: statusError } = useEnrichmentStatus(versionId);
-  const { data: enrichment, isLoading: enrichmentLoading, error: enrichmentError } = useCareerEnrichment(versionId);
-  const { data: narratives, isLoading: narrativesLoading, error: narrativesError } = useCareerNarratives(versionId);
+  const [retryCount, setRetryCount] = useState(0);
+  const { data: status, isLoading: statusLoading, error: statusError, refetch: refetchStatus } = useEnrichmentStatus(versionId);
+  const { data: enrichment, isLoading: enrichmentLoading, error: enrichmentError, refetch: refetchEnrichment } = useCareerEnrichment(versionId);
+  const { data: narratives, isLoading: narrativesLoading, error: narrativesError, refetch: refetchNarratives } = useCareerNarratives(versionId);
 
   console.log('InsightCard Debug:', {
     versionId,
@@ -40,8 +43,21 @@ export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
     narratives: narratives?.length || 0,
     narrativesLoading,
     narrativesError,
+    retryCount,
     timestamp: new Date().toISOString()
   });
+
+  const handleRetry = async () => {
+    console.log('InsightCard: Manual retry triggered');
+    setRetryCount(prev => prev + 1);
+    
+    // Refetch all data
+    await Promise.all([
+      refetchStatus(),
+      refetchEnrichment(),
+      refetchNarratives()
+    ]);
+  };
 
   // Show error state if any queries failed
   if (statusError || enrichmentError || narrativesError) {
@@ -58,13 +74,56 @@ export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
               AI Analysis Error
             </CardTitle>
             <CardDescription>
-              There was an issue loading your career insights. Please try refreshing the page.
+              There was an issue loading your career insights.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <p className="text-sm text-red-700">
               Error: {error?.message || 'Unknown error occurred'}
             </p>
+            <Button 
+              variant="outline" 
+              onClick={handleRetry}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Retry Analysis
+            </Button>
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
+
+  // Show failed state if processing failed
+  if (status?.processingStage === 'failed') {
+    return (
+      <>
+        <SmartEnrichmentTrigger versionId={versionId} />
+        <Card className="border-red-200 bg-red-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-800">
+              <AlertCircle className="w-4 h-4" />
+              AI Analysis Failed
+            </CardTitle>
+            <CardDescription>
+              The AI analysis process encountered an error
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-red-700">
+              Please try refreshing the page or uploading your resume again.
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handleRetry}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Retry Analysis
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </>
@@ -269,6 +328,19 @@ export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
           <p className="text-sm text-muted-foreground">
             Please wait while we load your career insights...
           </p>
+          {retryCount > 0 && (
+            <div className="mt-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleRetry}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Retry
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </>

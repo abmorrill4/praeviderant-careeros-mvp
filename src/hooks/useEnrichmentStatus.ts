@@ -74,16 +74,16 @@ export function useEnrichmentStatus(versionId?: string) {
         const hasNarratives = narratives && narratives.length > 0;
         console.log('useEnrichmentStatus: Narratives check result:', { hasNarratives, narrativesCount: narratives?.length || 0 });
 
-        // Determine processing stage
+        // Determine processing stage with better logic
         let processingStage: EnrichmentStatus['processingStage'] = 'pending';
         if (hasEntities && hasEnrichment && hasNarratives) {
           processingStage = 'complete';
         } else if (hasEntities && hasEnrichment) {
-          processingStage = 'enriching';
+          processingStage = 'enriching'; // Enrichment exists but narratives are still being generated
         } else if (hasEntities) {
-          processingStage = 'enriching';
+          processingStage = 'enriching'; // Entities exist, now enriching
         } else {
-          processingStage = 'parsing';
+          processingStage = 'parsing'; // Still parsing entities
         }
 
         const isComplete = hasEntities && hasEnrichment && hasNarratives;
@@ -102,16 +102,35 @@ export function useEnrichmentStatus(versionId?: string) {
         return result;
       } catch (error) {
         console.error('useEnrichmentStatus: Query failed:', error);
-        throw error;
+        
+        // Return a failed state instead of throwing
+        return {
+          versionId,
+          hasEntities: false,
+          hasEnrichment: false,
+          hasNarratives: false,
+          isComplete: false,
+          processingStage: 'failed',
+          lastUpdated: new Date().toISOString()
+        };
       }
     },
     enabled: !!versionId && !!user,
     refetchInterval: (query) => {
       const data = query.state.data;
-      const shouldPoll = !data?.isComplete;
-      console.log('useEnrichmentStatus: Refetch interval decision:', { isComplete: data?.isComplete, shouldPoll });
-      return shouldPoll ? 3000 : false; // Poll every 3 seconds until complete
+      const shouldPoll = data && !data.isComplete && data.processingStage !== 'failed';
+      console.log('useEnrichmentStatus: Refetch interval decision:', { 
+        isComplete: data?.isComplete, 
+        processingStage: data?.processingStage,
+        shouldPoll 
+      });
+      return shouldPoll ? 2000 : false; // Poll every 2 seconds until complete or failed
     },
-    staleTime: 1000 * 30, // Consider data stale after 30 seconds
+    staleTime: 1000 * 15, // Consider data stale after 15 seconds
+    retry: (failureCount, error) => {
+      console.log('useEnrichmentStatus: Retry decision:', { failureCount, error });
+      return failureCount < 3; // Retry up to 3 times
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 }
