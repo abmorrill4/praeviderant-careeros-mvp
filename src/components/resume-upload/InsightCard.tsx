@@ -3,7 +3,6 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
 import { 
   Brain, 
   TrendingUp, 
@@ -15,10 +14,9 @@ import {
   Loader2,
   CheckCircle,
   Info,
-  AlertCircle
+  Clock
 } from 'lucide-react';
 import type { CareerEnrichment, CareerNarrative } from '@/types/enrichment';
-import { useEnrichResume } from '@/hooks/useEnrichment';
 
 interface InsightCardProps {
   versionId: string;
@@ -33,13 +31,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
   narratives,
   isLoading
 }) => {
-  const enrichResumeMutation = useEnrichResume();
-
-  const handleTriggerEnrichment = () => {
-    enrichResumeMutation.mutate(versionId);
-  };
-
-  if (isLoading || enrichResumeMutation.isPending) {
+  if (isLoading) {
     return (
       <Card className="border-blue-200 bg-blue-50/50">
         <CardHeader>
@@ -71,43 +63,28 @@ export const InsightCard: React.FC<InsightCardProps> = ({
     );
   }
 
-  // Show trigger button if no enrichment data exists
+  // Show processing message if no enrichment data exists yet
   if (!enrichment || narratives.length === 0) {
     return (
-      <Card className="border-gray-200 bg-gray-50/50">
+      <Card className="border-amber-200 bg-amber-50/50">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-800">
-            <Brain className="w-4 h-4" />
+          <CardTitle className="flex items-center gap-2 text-amber-800">
+            <Clock className="w-4 h-4" />
             AI Career Insights
-            <AlertCircle className="w-4 h-4 text-gray-500" />
           </CardTitle>
           <CardDescription className="flex items-center gap-2">
             <Info className="w-3 h-3" />
-            Generate AI-powered insights from your resume data
+            Processing your resume data automatically
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center py-6">
-          <Brain className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600 mb-4">
-            Ready to unlock AI-powered insights about your career profile?
+          <Brain className="w-12 h-12 mx-auto text-amber-400 mb-4" />
+          <p className="text-amber-700 mb-2 font-medium">
+            AI insights are being generated automatically
           </p>
-          <Button 
-            onClick={handleTriggerEnrichment} 
-            className="flex items-center gap-2"
-            disabled={enrichResumeMutation.isPending}
-          >
-            {enrichResumeMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Generate AI Insights
-              </>
-            )}
-          </Button>
+          <p className="text-amber-600 text-sm">
+            This process typically takes 1-2 minutes. The insights will appear here once complete.
+          </p>
         </CardContent>
       </Card>
     );

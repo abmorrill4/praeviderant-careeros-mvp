@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -280,60 +279,130 @@ serve(async (req) => {
     console.log('Triggering parsing process...');
     
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const parseResponse = await fetch(`${supabaseUrl}/functions/v1/parse-resume-structured`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${supabaseServiceKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        versionId: versionData.id
-      }),
-    });
+    
+    // Use background task for parsing to avoid blocking the response
+    EdgeRuntime.waitUntil((async () => {
+      try {
+        const parseResponse = await fetch(`${supabaseUrl}/functions/v1/parse-resume-structured`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            versionId: versionData.id
+          }),
+        });
 
-    if (!parseResponse.ok) {
-      console.error('Parse function failed:', await parseResponse.text());
-      
-      // Update processing status to failed
-      await supabase
-        .from('resume_versions')
-        .update({ processing_status: 'failed' })
-        .eq('id', versionData.id);
+        if (!parseResponse.ok) {
+          console.error('Parse function failed:', await parseResponse.text());
+          
+          // Update processing status to failed
+          await supabase
+            .from('resume_versions')
+            .update({ processing_status: 'failed' })
+            .eq('id', versionData.id);
 
-      // Log the error
-      if (jobData) {
-        await supabase
-          .from('job_logs')
-          .insert({
-            job_id: jobData.id,
-            stage: 'parse',
-            level: 'error',
-            message: 'Failed to start parsing process',
-            metadata: { error: 'Parse function invocation failed' }
-          });
+          // Log the error
+          if (jobData) {
+            await supabase
+              .from('job_logs')
+              .insert({
+                job_id: jobData.id,
+                stage: 'parse',
+                level: 'error',
+                message: 'Failed to start parsing process',
+                metadata: { error: 'Parse function invocation failed' }
+              });
+          }
+          return;
+        }
+
+        console.log('Parse function triggered successfully');
+        
+        // Log parsing start
+        if (jobData) {
+          await supabase
+            .from('job_logs')
+            .insert({
+              job_id: jobData.id,
+              stage: 'parse',
+              level: 'info',
+              message: 'Resume parsing started',
+              metadata: { version_id: versionData.id }
+            });
+        }
+
+        // Wait a bit for parsing to complete, then trigger enrichment
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        console.log('Triggering AI enrichment process...');
+        
+        const enrichResponse = await fetch(`${supabaseUrl}/functions/v1/enrich-resume`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            versionId: versionData.id
+          }),
+        });
+
+        if (!enrichResponse.ok) {
+          console.error('Enrichment function failed:', await enrichResponse.text());
+          
+          // Log the error
+          if (jobData) {
+            await supabase
+              .from('job_logs')
+              .insert({
+                job_id: jobData.id,
+                stage: 'enrich',
+                level: 'error',
+                message: 'Failed to start AI enrichment process',
+                metadata: { error: 'Enrichment function invocation failed' }
+              });
+          }
+        } else {
+          console.log('AI enrichment triggered successfully');
+          
+          // Log enrichment start
+          if (jobData) {
+            await supabase
+              .from('job_logs')
+              .insert({
+                job_id: jobData.id,
+                stage: 'enrich',
+                level: 'info',
+                message: 'AI career enrichment started',
+                metadata: { version_id: versionData.id }
+              });
+          }
+        }
+
+      } catch (error) {
+        console.error('Error in background processing:', error);
+        
+        if (jobData) {
+          await supabase
+            .from('job_logs')
+            .insert({
+              job_id: jobData.id,
+              stage: 'background',
+              level: 'error',
+              message: 'Background processing failed',
+              metadata: { error: error.message }
+            });
+        }
       }
-    } else {
-      console.log('Parse function triggered successfully');
-      
-      // Log parsing start
-      if (jobData) {
-        await supabase
-          .from('job_logs')
-          .insert({
-            job_id: jobData.id,
-            stage: 'parse',
-            level: 'info',
-            message: 'Resume parsing started',
-            metadata: { version_id: versionData.id }
-          });
-      }
-    }
+    })());
 
     console.log('=== Resume Upload V2 Complete ===');
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Resume uploaded and processing started',
+      message: 'Resume uploaded and processing started (including AI insights)',
       versionId: versionData.id,
       streamId: streamId,
       jobId: jobData?.id
