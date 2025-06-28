@@ -14,7 +14,8 @@ import {
   Loader2,
   CheckCircle,
   Info,
-  Clock
+  Clock,
+  Zap
 } from 'lucide-react';
 import type { CareerEnrichment, CareerNarrative } from '@/types/enrichment';
 
@@ -39,8 +40,9 @@ export const InsightCard: React.FC<InsightCardProps> = ({
             <Loader2 className="w-4 h-4 animate-spin" />
             Generating AI Career Insights...
           </CardTitle>
-          <CardDescription>
-            OpenAI is analyzing your career profile and generating personalized insights
+          <CardDescription className="flex items-center gap-2">
+            <Zap className="w-3 h-3 text-blue-500" />
+            Fast processing with OpenAI GPT-4o • Typically completes in 15-30 seconds
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -83,7 +85,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
             AI insights are being generated automatically
           </p>
           <p className="text-amber-600 text-sm">
-            This process typically takes 1-2 minutes. The insights will appear here once complete.
+            This process typically takes 15-30 seconds. The insights will appear here once complete.
           </p>
         </CardContent>
       </Card>

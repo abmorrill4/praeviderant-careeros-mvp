@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -275,14 +276,15 @@ serve(async (req) => {
         });
     }
 
-    // Trigger parsing process
-    console.log('Triggering parsing process...');
+    // Trigger parsing and enrichment processes immediately in background
+    console.log('Triggering fast background processing pipeline...');
     
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    // Use background task for parsing to avoid blocking the response
+    // Use background task for the entire pipeline
     EdgeRuntime.waitUntil((async () => {
       try {
+        console.log('Starting parse process...');
         const parseResponse = await fetch(`${supabaseUrl}/functions/v1/parse-resume-structured`, {
           method: 'POST',
           headers: {
@@ -318,9 +320,9 @@ serve(async (req) => {
           return;
         }
 
-        console.log('Parse function triggered successfully');
+        console.log('Parse function completed, immediately triggering AI enrichment...');
         
-        // Log parsing start
+        // Log parsing success and start enrichment immediately
         if (jobData) {
           await supabase
             .from('job_logs')
@@ -328,15 +330,13 @@ serve(async (req) => {
               job_id: jobData.id,
               stage: 'parse',
               level: 'info',
-              message: 'Resume parsing started',
+              message: 'Resume parsing completed successfully',
               metadata: { version_id: versionData.id }
             });
         }
 
-        // Wait a bit for parsing to complete, then trigger enrichment
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
-        console.log('Triggering AI enrichment process...');
+        // Trigger enrichment immediately - no delay
+        console.log('Starting AI enrichment process immediately...');
         
         const enrichResponse = await fetch(`${supabaseUrl}/functions/v1/enrich-resume`, {
           method: 'POST',
@@ -365,7 +365,7 @@ serve(async (req) => {
               });
           }
         } else {
-          console.log('AI enrichment triggered successfully');
+          console.log('AI enrichment started successfully');
           
           // Log enrichment start
           if (jobData) {
@@ -382,7 +382,7 @@ serve(async (req) => {
         }
 
       } catch (error) {
-        console.error('Error in background processing:', error);
+        console.error('Error in fast background processing:', error);
         
         if (jobData) {
           await supabase
@@ -391,7 +391,7 @@ serve(async (req) => {
               job_id: jobData.id,
               stage: 'background',
               level: 'error',
-              message: 'Background processing failed',
+              message: 'Fast background processing failed',
               metadata: { error: error.message }
             });
         }
@@ -402,7 +402,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Resume uploaded and processing started (including AI insights)',
+      message: 'Resume uploaded and fast AI processing started',
       versionId: versionData.id,
       streamId: streamId,
       jobId: jobData?.id
