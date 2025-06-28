@@ -16,8 +16,20 @@ export function useLatestEntities<T extends VersionedEntity>(tableName: EntityTy
   
   return useQuery({
     queryKey: ['entities', tableName, user?.id],
-    queryFn: () => getLatestEntities<T>(tableName, user!.id),
+    queryFn: async () => {
+      if (!user?.id) {
+        console.log(`No user ID available for fetching ${tableName}`);
+        return [];
+      }
+      
+      console.log(`Fetching latest entities for ${tableName}, user: ${user.id}`);
+      const result = await getLatestEntities<T>(tableName, user.id);
+      console.log(`Fetched ${result.length} entities of type ${tableName}:`, result);
+      return result;
+    },
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10, // 10 minutes
   });
 }
 
@@ -33,7 +45,9 @@ export function useCreateEntity<T extends VersionedEntity>(tableName: EntityType
       sourceConfidence?: number;
     }) => createEntity<T>(tableName, entityData, source, sourceConfidence),
     onSuccess: () => {
+      console.log(`Successfully created ${tableName} entity, invalidating queries`);
       queryClient.invalidateQueries({ queryKey: ['entities', tableName, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['entities'] });
     },
   });
 }
@@ -51,7 +65,9 @@ export function useUpdateEntity<T extends VersionedEntity>(tableName: EntityType
       sourceConfidence?: number;
     }) => updateEntity<T>(tableName, logicalEntityId, updates, source, sourceConfidence),
     onSuccess: () => {
+      console.log(`Successfully updated ${tableName} entity, invalidating queries`);
       queryClient.invalidateQueries({ queryKey: ['entities', tableName, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['entities'] });
     },
   });
 }
@@ -67,7 +83,9 @@ export function useDeleteEntity(tableName: EntityType) {
       source?: string;
     }) => deleteEntity(tableName, logicalEntityId, source),
     onSuccess: () => {
+      console.log(`Successfully deleted ${tableName} entity, invalidating queries`);
       queryClient.invalidateQueries({ queryKey: ['entities', tableName, user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['entities'] });
     },
   });
 }

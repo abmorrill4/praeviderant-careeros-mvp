@@ -23,6 +23,8 @@ import { useApplyResumeDataToProfile } from '@/hooks/useApplyResumeDataToProfile
 import { parseResumeFieldValue, getFieldDisplayName } from '@/utils/resumeDataParser';
 import { DataRenderer, ConfidenceBadge } from './DataRenderers';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import type { MergeReviewItem } from '@/types/merge-decisions';
 
 interface MergeDecisionViewProps {
@@ -48,9 +50,26 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({
   const applyDecisionsMutation = useApplyMergeDecisions();
   const applyResumeDataMutation = useApplyResumeDataToProfile();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   const [decisions, setDecisions] = useState<MergeDecisionState>({});
   const [showOverrideInput, setShowOverrideInput] = useState<{ [key: string]: boolean }>({});
+
+  const refreshProfileData = () => {
+    // Invalidate all profile-related queries to force refresh
+    queryClient.invalidateQueries({ queryKey: ['entities'] });
+    queryClient.invalidateQueries({ queryKey: ['user-confirmed-profile'] });
+    
+    // Specifically refresh each entity type
+    const entityTypes = ['work_experience', 'education', 'skill', 'project', 'certification'];
+    entityTypes.forEach(entityType => {
+      queryClient.invalidateQueries({ queryKey: ['entities', entityType, user?.id] });
+    });
+    
+    // Notify parent component
+    onProfileUpdated?.();
+  };
 
   if (reviewLoading) {
     return (
@@ -176,8 +195,8 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({
       setDecisions({});
       setShowOverrideInput({});
       
-      // Notify parent component
-      onProfileUpdated?.();
+      // Force refresh of profile data
+      refreshProfileData();
     } catch (error) {
       console.error('Error applying decisions:', error);
       toast({
@@ -201,8 +220,8 @@ export const MergeDecisionView: React.FC<MergeDecisionViewProps> = ({
         description: `Added ${result.entitiesCreated} new entities to your profile`,
       });
       
-      // Notify parent component
-      onProfileUpdated?.();
+      // Force refresh of profile data
+      refreshProfileData();
       
       // Refetch review items to update the UI
       refetchReviewItems();
