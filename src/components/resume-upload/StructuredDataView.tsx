@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +65,136 @@ interface CategoryConfig {
   priority: number;
   color: string;
 }
+
+// Helper function to extract meaningful content from parsed data
+const extractMeaningfulContent = (parsedData: any, fieldName: string): { title: string; subtitle?: string } => {
+  if (!parsedData || !parsedData.value) {
+    return { title: 'No data available' };
+  }
+
+  // Handle different data types
+  if (parsedData.type === 'object' && parsedData.value) {
+    const obj = parsedData.value;
+    
+    // Work experience patterns
+    if (fieldName.toLowerCase().includes('work') || fieldName.toLowerCase().includes('experience')) {
+      if (obj.title && obj.company) {
+        return { title: obj.title, subtitle: obj.company };
+      }
+      if (obj.position && obj.employer) {
+        return { title: obj.position, subtitle: obj.employer };
+      }
+      if (obj.role && obj.organization) {
+        return { title: obj.role, subtitle: obj.organization };
+      }
+    }
+    
+    // Education patterns
+    if (fieldName.toLowerCase().includes('education')) {
+      if (obj.degree && obj.institution) {
+        return { title: obj.degree, subtitle: obj.institution };
+      }
+      if (obj.program && obj.school) {
+        return { title: obj.program, subtitle: obj.school };
+      }
+    }
+    
+    // Skills patterns
+    if (fieldName.toLowerCase().includes('skill')) {
+      if (obj.name) {
+        return { title: obj.name, subtitle: obj.category || obj.level };
+      }
+      if (obj.skill) {
+        return { title: obj.skill, subtitle: obj.proficiency };
+      }
+    }
+    
+    // Projects patterns
+    if (fieldName.toLowerCase().includes('project')) {
+      if (obj.name) {
+        return { title: obj.name, subtitle: obj.description ? obj.description.substring(0, 50) + '...' : undefined };
+      }
+      if (obj.title) {
+        return { title: obj.title, subtitle: obj.summary ? obj.summary.substring(0, 50) + '...' : undefined };
+      }
+    }
+    
+    // Certifications patterns
+    if (fieldName.toLowerCase().includes('cert')) {
+      if (obj.name && obj.issuer) {
+        return { title: obj.name, subtitle: obj.issuer };
+      }
+      if (obj.certification && obj.organization) {
+        return { title: obj.certification, subtitle: obj.organization };
+      }
+    }
+    
+    // Generic object handling - try to find the most meaningful fields
+    const meaningfulFields = ['name', 'title', 'position', 'degree', 'certification', 'skill', 'project'];
+    const subtitleFields = ['company', 'institution', 'organization', 'issuer', 'employer', 'school'];
+    
+    let title = '';
+    let subtitle = '';
+    
+    // Find title
+    for (const field of meaningfulFields) {
+      if (obj[field] && typeof obj[field] === 'string') {
+        title = obj[field];
+        break;
+      }
+    }
+    
+    // Find subtitle
+    for (const field of subtitleFields) {
+      if (obj[field] && typeof obj[field] === 'string') {
+        subtitle = obj[field];
+        break;
+      }
+    }
+    
+    if (title) {
+      return { title, subtitle: subtitle || undefined };
+    }
+    
+    // Fallback: use the first non-empty string value
+    const firstValue = Object.values(obj).find(v => typeof v === 'string' && v.trim());
+    if (firstValue) {
+      return { title: String(firstValue) };
+    }
+  }
+  
+  // Handle arrays
+  if (parsedData.type === 'array' && Array.isArray(parsedData.value)) {
+    const items = parsedData.value;
+    if (items.length > 0) {
+      const firstItem = items[0];
+      if (typeof firstItem === 'string') {
+        return { 
+          title: firstItem, 
+          subtitle: items.length > 1 ? `+${items.length - 1} more` : undefined 
+        };
+      }
+      if (typeof firstItem === 'object' && firstItem.name) {
+        return { 
+          title: firstItem.name,
+          subtitle: items.length > 1 ? `+${items.length - 1} more` : undefined 
+        };
+      }
+    }
+    return { title: `${items.length} items` };
+  }
+  
+  // Handle simple text
+  if (parsedData.type === 'text' || typeof parsedData.value === 'string') {
+    const text = String(parsedData.value).trim();
+    if (text && text !== 'No data') {
+      return { title: text };
+    }
+  }
+  
+  // Fallback
+  return { title: parsedData.displayValue || 'Unknown data' };
+};
 
 export const StructuredDataView: React.FC<StructuredDataViewProps> = ({ 
   versionId, 
@@ -321,6 +450,9 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
       );
     }
 
+    // Extract meaningful content for display
+    const content = extractMeaningfulContent(entity.parsedData, entity.field_name);
+
     return (
       <div key={entity.id} className="p-3 border rounded-lg bg-white hover:shadow-sm transition-shadow">
         <div className="flex items-start justify-between">
@@ -332,13 +464,15 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-sm">{entity.displayName}</span>
+                <span className="font-semibold text-sm text-gray-900">{content.title}</span>
               </div>
-              <div className="text-sm text-muted-foreground line-clamp-2">
-                {typeof entity.parsedData === 'string' 
-                  ? entity.parsedData 
-                  : entity.parsedData.displayValue || JSON.stringify(entity.parsedData)
-                }
+              {content.subtitle && (
+                <div className="text-sm text-gray-600 mb-1">
+                  {content.subtitle}
+                </div>
+              )}
+              <div className="text-xs text-muted-foreground">
+                {entity.displayName}
               </div>
             </div>
           </div>
