@@ -83,16 +83,59 @@ serve(async (req) => {
       }
     }
 
-    // Helper function to extract string value safely
-    const extractStringValue = (data: any, fallback: string = '') => {
-      if (typeof data === 'string') return data
-      if (data && typeof data.value === 'string') return data.value
-      if (data && typeof data === 'object') {
-        // Try common field names
-        for (const key of ['name', 'title', 'value', 'text']) {
-          if (data[key] && typeof data[key] === 'string') return data[key]
+    // Improved helper function to extract values from parsed data
+    const extractValue = (parsedData: any, fieldNames: string[] = [], fallback: string = '') => {
+      console.log('Extracting value from:', JSON.stringify(parsedData, null, 2))
+      
+      // If it's already a simple string, return it
+      if (typeof parsedData === 'string' && parsedData.trim() && parsedData !== 'null') {
+        return parsedData.trim()
+      }
+      
+      // Handle nested value structure
+      if (parsedData && typeof parsedData === 'object') {
+        // Try to get the value property first
+        if (parsedData.value) {
+          // If value is a string, return it
+          if (typeof parsedData.value === 'string' && parsedData.value.trim() && parsedData.value !== 'null') {
+            return parsedData.value.trim()
+          }
+          
+          // If value is an object, look for specific field names
+          if (typeof parsedData.value === 'object' && parsedData.value) {
+            for (const fieldName of fieldNames) {
+              if (parsedData.value[fieldName] && 
+                  typeof parsedData.value[fieldName] === 'string' && 
+                  parsedData.value[fieldName].trim() &&
+                  parsedData.value[fieldName] !== 'null') {
+                return parsedData.value[fieldName].trim()
+              }
+            }
+            
+            // Try common field names if specific ones don't work
+            const commonFields = ['name', 'title', 'company', 'employer', 'organization', 'institution', 'school', 'degree', 'skill']
+            for (const field of commonFields) {
+              if (parsedData.value[field] && 
+                  typeof parsedData.value[field] === 'string' && 
+                  parsedData.value[field].trim() &&
+                  parsedData.value[field] !== 'null') {
+                return parsedData.value[field].trim()
+              }
+            }
+          }
+        }
+        
+        // Try looking in the root object for field names
+        for (const fieldName of fieldNames) {
+          if (parsedData[fieldName] && 
+              typeof parsedData[fieldName] === 'string' && 
+              parsedData[fieldName].trim() &&
+              parsedData[fieldName] !== 'null') {
+            return parsedData[fieldName].trim()
+          }
         }
       }
+      
       return fallback
     }
 
@@ -100,20 +143,28 @@ serve(async (req) => {
     for (const entity of parsedEntities) {
       try {
         console.log(`Processing entity ${entity.id} - ${entity.field_name}`)
+        console.log(`Raw value: ${entity.raw_value}`)
 
         const parsedData = safeJsonParse(entity.raw_value)
         const fieldName = entity.field_name.toLowerCase()
 
         if (fieldName.includes('work') || fieldName.includes('experience') || fieldName.includes('job')) {
           // Handle work experience
+          const company = extractValue(parsedData, ['company', 'employer', 'organization'], 'Company Name Not Available')
+          const title = extractValue(parsedData, ['title', 'position', 'role', 'job_title'], 'Job Title Not Available')
+          const startDate = extractValue(parsedData, ['start_date', 'startDate', 'from'], '')
+          const endDate = extractValue(parsedData, ['end_date', 'endDate', 'to'], '')
+          const description = extractValue(parsedData, ['description', 'summary', 'details'], '')
+
+          console.log(`Work experience extracted - Company: ${company}, Title: ${title}`)
+
           const entityData = {
             user_id: user.id,
-            company: extractStringValue(parsedData?.value?.company || parsedData?.value?.employer, 'Unknown Company'),
-            title: extractStringValue(parsedData?.value?.title || parsedData?.value?.position || parsedData?.value?.role, 'Unknown Title'),
-            start_date: extractStringValue(parsedData?.value?.start_date),
-            end_date: extractStringValue(parsedData?.value?.end_date),
-            description: extractStringValue(parsedData?.value?.description || 
-              (Array.isArray(parsedData?.value?.responsibilities) ? parsedData.value.responsibilities.join('\n') : '')),
+            company: company,
+            title: title,
+            start_date: startDate,
+            end_date: endDate,
+            description: description,
             source: 'resume_upload',
             source_confidence: entity.confidence_score || 0.8
           }
@@ -144,15 +195,25 @@ serve(async (req) => {
 
         } else if (fieldName.includes('education') || fieldName.includes('degree')) {
           // Handle education
+          const institution = extractValue(parsedData, ['institution', 'school', 'university', 'college'], 'Institution Not Available')
+          const degree = extractValue(parsedData, ['degree', 'program', 'field_of_study', 'major'], 'Degree Not Available')
+          const fieldOfStudy = extractValue(parsedData, ['field_of_study', 'major', 'subject'], '')
+          const startDate = extractValue(parsedData, ['start_date', 'startDate', 'from'], '')
+          const endDate = extractValue(parsedData, ['end_date', 'endDate', 'graduation_date', 'to'], '')
+          const gpa = extractValue(parsedData, ['gpa', 'grade'], '')
+          const description = extractValue(parsedData, ['description', 'details'], '')
+
+          console.log(`Education extracted - Institution: ${institution}, Degree: ${degree}`)
+
           const entityData = {
             user_id: user.id,
-            institution: extractStringValue(parsedData?.value?.institution || parsedData?.value?.school || parsedData?.value?.university, 'Unknown Institution'),
-            degree: extractStringValue(parsedData?.value?.degree || parsedData?.value?.program || parsedData?.value?.field_of_study, 'Unknown Degree'),
-            field_of_study: extractStringValue(parsedData?.value?.field_of_study || parsedData?.value?.major),
-            start_date: extractStringValue(parsedData?.value?.start_date),
-            end_date: extractStringValue(parsedData?.value?.end_date || parsedData?.value?.graduation_date),
-            gpa: extractStringValue(parsedData?.value?.gpa),
-            description: extractStringValue(parsedData?.value?.description),
+            institution: institution,
+            degree: degree,
+            field_of_study: fieldOfStudy,
+            start_date: startDate,
+            end_date: endDate,
+            gpa: gpa,
+            description: description,
             source: 'resume_upload',
             source_confidence: entity.confidence_score || 0.8
           }
@@ -186,12 +247,18 @@ serve(async (req) => {
           if (parsedData.type === 'array' && Array.isArray(parsedData.value)) {
             // Handle multiple skills
             for (const skillItem of parsedData.value) {
+              const skillName = extractValue(skillItem, ['name', 'skill', 'technology'], 'Skill Name Not Available')
+              const category = extractValue(skillItem, ['category', 'type'], '')
+              const proficiency = extractValue(skillItem, ['level', 'proficiency', 'rating'], '')
+              
+              console.log(`Skill extracted: ${skillName}`)
+
               const skillData = {
                 user_id: user.id,
-                name: extractStringValue(skillItem, 'Unknown Skill'),
-                category: typeof skillItem === 'object' ? extractStringValue(skillItem.category) : null,
-                proficiency_level: typeof skillItem === 'object' ? extractStringValue(skillItem.level || skillItem.proficiency) : null,
-                years_of_experience: typeof skillItem === 'object' && skillItem.years_experience ? parseInt(skillItem.years_experience) || null : null,
+                name: skillName,
+                category: category || null,
+                proficiency_level: proficiency || null,
+                years_of_experience: null,
                 source: 'resume_upload',
                 source_confidence: entity.confidence_score || 0.8
               }
@@ -221,12 +288,18 @@ serve(async (req) => {
             }
           } else {
             // Handle single skill
+            const skillName = extractValue(parsedData, ['name', 'skill', 'technology'], 'Skill Name Not Available')
+            const category = extractValue(parsedData, ['category', 'type'], '')
+            const proficiency = extractValue(parsedData, ['level', 'proficiency', 'rating'], '')
+            
+            console.log(`Single skill extracted: ${skillName}`)
+
             const skillData = {
               user_id: user.id,
-              name: extractStringValue(parsedData?.value?.name || parsedData?.value?.skill || parsedData?.value, 'Unknown Skill'),
-              category: extractStringValue(parsedData?.value?.category),
-              proficiency_level: extractStringValue(parsedData?.value?.level || parsedData?.value?.proficiency),
-              years_of_experience: parsedData?.value?.years_experience ? parseInt(parsedData.value.years_experience) || null : null,
+              name: skillName,
+              category: category || null,
+              proficiency_level: proficiency || null,
+              years_of_experience: null,
               source: 'resume_upload',
               source_confidence: entity.confidence_score || 0.8
             }
@@ -257,16 +330,24 @@ serve(async (req) => {
 
         } else if (fieldName.includes('project')) {
           // Handle projects
+          const projectName = extractValue(parsedData, ['name', 'title', 'project_name'], 'Project Name Not Available')
+          const description = extractValue(parsedData, ['description', 'summary'], '')
+          const startDate = extractValue(parsedData, ['start_date', 'startDate'], '')
+          const endDate = extractValue(parsedData, ['end_date', 'endDate'], '')
+          const projectUrl = extractValue(parsedData, ['project_url', 'demo_url', 'url'], '')
+          const repoUrl = extractValue(parsedData, ['repository_url', 'github_url', 'repo_url'], '')
+
+          console.log(`Project extracted: ${projectName}`)
+
           const entityData = {
             user_id: user.id,
-            name: extractStringValue(parsedData?.value?.name || parsedData?.value?.title || parsedData?.value?.project_name, 'Unknown Project'),
-            description: extractStringValue(parsedData?.value?.description),
-            technologies_used: Array.isArray(parsedData?.value?.technologies_used) ? parsedData.value.technologies_used : 
-              (parsedData?.value?.technologies ? [parsedData.value.technologies] : null),
-            start_date: extractStringValue(parsedData?.value?.start_date),
-            end_date: extractStringValue(parsedData?.value?.end_date),
-            project_url: extractStringValue(parsedData?.value?.project_url || parsedData?.value?.demo_url),
-            repository_url: extractStringValue(parsedData?.value?.repository_url || parsedData?.value?.github_url || parsedData?.value?.repo_url),
+            name: projectName,
+            description: description || null,
+            technologies_used: null,
+            start_date: startDate || null,
+            end_date: endDate || null,
+            project_url: projectUrl || null,
+            repository_url: repoUrl || null,
             source: 'resume_upload',
             source_confidence: entity.confidence_score || 0.8
           }
@@ -296,14 +377,23 @@ serve(async (req) => {
 
         } else if (fieldName.includes('cert')) {
           // Handle certifications
+          const certName = extractValue(parsedData, ['name', 'certification', 'title'], 'Certification Name Not Available')
+          const issuer = extractValue(parsedData, ['issuer', 'organization', 'provider'], 'Issuer Not Available')
+          const issueDate = extractValue(parsedData, ['issue_date', 'date'], '')
+          const expiryDate = extractValue(parsedData, ['expiry_date', 'expiration_date'], '')
+          const credentialId = extractValue(parsedData, ['credential_id'], '')
+          const credentialUrl = extractValue(parsedData, ['credential_url'], '')
+
+          console.log(`Certification extracted: ${certName}`)
+
           const entityData = {
             user_id: user.id,
-            name: extractStringValue(parsedData?.value?.name || parsedData?.value?.certification || parsedData?.value?.title, 'Unknown Certification'),
-            issuing_organization: extractStringValue(parsedData?.value?.issuer || parsedData?.value?.organization || parsedData?.value?.provider, 'Unknown Issuer'),
-            issue_date: extractStringValue(parsedData?.value?.issue_date || parsedData?.value?.date),
-            expiration_date: extractStringValue(parsedData?.value?.expiry_date || parsedData?.value?.expiration_date),
-            credential_id: extractStringValue(parsedData?.value?.credential_id),
-            credential_url: extractStringValue(parsedData?.value?.credential_url),
+            name: certName,
+            issuing_organization: issuer,
+            issue_date: issueDate || null,
+            expiration_date: expiryDate || null,
+            credential_id: credentialId || null,
+            credential_url: credentialUrl || null,
             source: 'resume_upload',
             source_confidence: entity.confidence_score || 0.8
           }
