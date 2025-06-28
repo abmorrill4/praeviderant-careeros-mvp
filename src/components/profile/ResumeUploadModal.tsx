@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Upload, FileText } from 'lucide-react';
-import { ResumeUploadRefactored } from '@/components/resume-upload/ResumeUploadRefactored';
+import { ResumeUpload } from '@/components/resume-upload/ResumeUpload';
 
 interface ResumeUploadModalProps {
   children?: React.ReactNode;
@@ -56,12 +56,12 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
           <DialogDescription className={
             theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'
           }>
-            Upload and analyze your resume to automatically populate your profile with structured career data.
+            Upload your resume to automatically extract and organize your career data.
           </DialogDescription>
         </DialogHeader>
         
         <div className="mt-4">
-          <ResumeUploadRefactored />
+          <ResumeUpload />
         </div>
       </DialogContent>
     </Dialog>

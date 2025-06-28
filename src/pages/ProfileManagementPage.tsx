@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileLayout } from '@/components/layout/ProfileLayout';
 import { Upload, Database, Settings, User } from 'lucide-react';
-import { ResumeUploadRefactored } from '@/components/resume-upload/ResumeUploadRefactored';
+import { ResumeUpload } from '@/components/resume-upload/ResumeUpload';
 import { DataManagementTab } from '@/components/profile-management/DataManagementTab';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
@@ -75,7 +75,7 @@ const ProfileManagementPage: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="uploads" className="mt-0">
-              <ResumeUploadRefactored />
+              <ResumeUpload />
             </TabsContent>
 
             <TabsContent value="data" className="mt-0">

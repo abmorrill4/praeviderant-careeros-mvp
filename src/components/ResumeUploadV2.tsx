@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { ResumeUploadRefactored } from './resume-upload/ResumeUploadRefactored';
+import { ResumeUpload } from './resume-upload/ResumeUpload';
 
 export const ResumeUploadV2: React.FC = () => {
-  return <ResumeUploadRefactored />;
+  return <ResumeUpload />;
 };
