@@ -799,6 +799,47 @@ export type Database = {
           },
         ]
       }
+      processing_telemetry: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          event_type: string
+          id: string
+          memory_usage_mb: number | null
+          metadata: Json | null
+          resume_version_id: string
+          stage: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          event_type: string
+          id?: string
+          memory_usage_mb?: number | null
+          metadata?: Json | null
+          resume_version_id: string
+          stage: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          event_type?: string
+          id?: string
+          memory_usage_mb?: number | null
+          metadata?: Json | null
+          resume_version_id?: string
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processing_telemetry_resume_version_id_fkey"
+            columns: ["resume_version_id"]
+            isOneToOne: false
+            referencedRelation: "resume_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_deltas: {
         Row: {
           created_at: string | null
@@ -1213,13 +1254,18 @@ export type Database = {
       resume_versions: {
         Row: {
           created_at: string
+          current_stage: string | null
           file_hash: string
           file_name: string
           file_path: string
           file_size: number
           id: string
           mime_type: string
+          processing_errors: Json | null
+          processing_progress: number | null
+          processing_stages: Json | null
           processing_status: string
+          processing_telemetry: Json | null
           resume_metadata: Json | null
           stream_id: string
           updated_at: string
@@ -1228,13 +1274,18 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_stage?: string | null
           file_hash: string
           file_name: string
           file_path: string
           file_size: number
           id?: string
           mime_type: string
+          processing_errors?: Json | null
+          processing_progress?: number | null
+          processing_stages?: Json | null
           processing_status?: string
+          processing_telemetry?: Json | null
           resume_metadata?: Json | null
           stream_id: string
           updated_at?: string
@@ -1243,13 +1294,18 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_stage?: string | null
           file_hash?: string
           file_name?: string
           file_path?: string
           file_size?: number
           id?: string
           mime_type?: string
+          processing_errors?: Json | null
+          processing_progress?: number | null
+          processing_stages?: Json | null
           processing_status?: string
+          processing_telemetry?: Json | null
           resume_metadata?: Json | null
           stream_id?: string
           updated_at?: string
@@ -1459,6 +1515,21 @@ export type Database = {
           recent_summaries: Json
         }[]
       }
+      get_resume_processing_status: {
+        Args: { p_version_id: string }
+        Returns: {
+          version_id: string
+          current_stage: string
+          processing_progress: number
+          processing_status: string
+          stages: Json
+          has_entities: boolean
+          has_enrichment: boolean
+          has_narratives: boolean
+          is_complete: boolean
+          last_updated: string
+        }[]
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown
@@ -1560,6 +1631,16 @@ export type Database = {
           table_name: string
           rows_to_delete: number
         }[]
+      }
+      update_resume_processing_stage: {
+        Args: {
+          p_version_id: string
+          p_stage: string
+          p_status?: string
+          p_error?: string
+          p_progress?: number
+        }
+        Returns: boolean
       }
       vector_avg: {
         Args: { "": number[] }

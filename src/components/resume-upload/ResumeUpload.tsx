@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Upload, Loader2, Clock } from 'lucide-react';
+import { FileText, Upload, Loader2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,7 @@ import { UploadProgress } from './UploadProgress';
 import { ParsedResumeEntities } from '../ParsedResumeEntities';
 import { InsightCard } from './InsightCard';
 import { useEnrichmentStatus } from '@/hooks/useEnrichmentStatus';
+import { Progress } from '@/components/ui/progress';
 
 interface UploadState {
   file: File | null;
@@ -35,8 +36,8 @@ export const ResumeUpload: React.FC = () => {
     completedVersionId: null
   });
 
-  // Get enrichment status for the completed version
-  const { data: enrichmentStatus, isLoading: enrichmentStatusLoading } = useEnrichmentStatus(uploadState.completedVersionId || undefined);
+  // Get comprehensive processing status for the completed version
+  const { data: processingStatus, isLoading: statusLoading } = useEnrichmentStatus(uploadState.completedVersionId || undefined);
 
   const handleFileSelect = (file: File) => {
     setUploadState(prev => ({ 
@@ -66,7 +67,7 @@ export const ResumeUpload: React.FC = () => {
       return;
     }
 
-    console.log('Starting simplified upload process...');
+    console.log('Starting enhanced upload process...');
     
     setUploadState(prev => ({ 
       ...prev, 
@@ -83,7 +84,7 @@ export const ResumeUpload: React.FC = () => {
 
       const formData = new FormData();
       formData.append('file', uploadState.file);
-      formData.append('streamName', 'Resume Upload'); // Use a simple default name
+      formData.append('streamName', 'Resume Upload');
 
       const { data, error } = await supabase.functions.invoke('resume-upload-v2', {
         body: formData,
@@ -142,27 +143,57 @@ export const ResumeUpload: React.FC = () => {
     });
   };
 
-  // Fixed display logic with better debugging
+  // Enhanced display logic using comprehensive processing status
   const hasCompletedVersionId = !!uploadState.completedVersionId;
-  const isEnrichmentComplete = enrichmentStatus?.isComplete === true;
-  const isEnrichmentStatusLoading = enrichmentStatusLoading;
-  const isProcessingButNotComplete = enrichmentStatus && !enrichmentStatus.isComplete;
+  const isProcessingComplete = processingStatus?.isComplete === true;
+  const isStatusLoading = statusLoading;
+  const isProcessingInProgress = processingStatus && !processingStatus.isComplete && processingStatus.processingStage !== 'failed';
+  const hasProcessingFailed = processingStatus?.processingStage === 'failed';
   
   const showUploadingState = uploadState.isUploading || uploadState.error;
-  const showWaitingForProcessing = hasCompletedVersionId && (isEnrichmentStatusLoading || isProcessingButNotComplete);
-  const showProcessingResults = hasCompletedVersionId && isEnrichmentComplete;
+  const showWaitingForProcessing = hasCompletedVersionId && (isStatusLoading || isProcessingInProgress);
+  const showProcessingResults = hasCompletedVersionId && isProcessingComplete;
+  const showProcessingError = hasCompletedVersionId && hasProcessingFailed;
 
-  console.log('ResumeUpload: DETAILED Display logic', {
+  console.log('ResumeUpload: Enhanced Display Logic', {
     hasCompletedVersionId,
-    isEnrichmentStatusLoading,
-    enrichmentStatus,
-    isEnrichmentComplete,
-    isProcessingButNotComplete,
+    isStatusLoading,
+    processingStatus,
+    isProcessingComplete,
+    isProcessingInProgress,
+    hasProcessingFailed,
     showUploadingState,
     showWaitingForProcessing,
     showProcessingResults,
+    showProcessingError,
     timestamp: new Date().toISOString()
   });
+
+  const getProcessingMessage = () => {
+    if (isStatusLoading) return 'Loading processing status...';
+    if (!processingStatus) return 'Initializing analysis...';
+    
+    const progress = processingStatus.processingProgress || 0;
+    switch (processingStatus.currentStage) {
+      case 'upload':
+        return 'File uploaded, preparing for analysis...';
+      case 'parse':
+        return 'Extracting resume data and structure...';
+      case 'enrich':
+        return 'Analyzing career patterns and generating insights...';
+      case 'complete':
+        return 'Analysis complete!';
+      default:
+        return `Processing (${progress}%)...`;
+    }
+  };
+
+  const getStageIcon = (stage: string, isActive: boolean, isComplete: boolean, hasFailed: boolean) => {
+    if (hasFailed) return <AlertCircle className="w-4 h-4 text-red-500" />;
+    if (isComplete) return <CheckCircle className="w-4 h-4 text-green-500" />;
+    if (isActive) return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+    return <Clock className="w-4 h-4 text-gray-400" />;
+  };
 
   return (
     <div className="space-y-6">
@@ -231,7 +262,7 @@ export const ResumeUpload: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Show AI processing state - This should ALWAYS show when processing but not complete */}
+      {/* Enhanced AI Processing Status Card */}
       {showWaitingForProcessing && (
         <Card className="border-blue-200 bg-blue-50/50">
           <CardHeader>
@@ -243,30 +274,47 @@ export const ResumeUpload: React.FC = () => {
               Your resume has been uploaded successfully. AI analysis is running...
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Processing Progress</span>
+                <span>{processingStatus?.processingProgress || 0}%</span>
+              </div>
+              <Progress value={processingStatus?.processingProgress || 0} className="w-full" />
+            </div>
+
+            {/* Current Status Message */}
             <div className="flex items-center justify-center py-4">
               <div className="text-center space-y-2">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
                 <p className="text-sm text-muted-foreground">
-                  {isEnrichmentStatusLoading && 'Loading enrichment status...'}
-                  {enrichmentStatus?.processingStage === 'pending' && 'Initializing AI analysis pipeline...'}
-                  {enrichmentStatus?.processingStage === 'parsing' && 'Extracting resume data...'}
-                  {enrichmentStatus?.processingStage === 'enriching' && 'Analyzing career patterns and generating insights...'}
-                  {!enrichmentStatus && !isEnrichmentStatusLoading && 'Starting analysis...'}
+                  {getProcessingMessage()}
                 </p>
-                
-                {/* Debug info - remove this in production */}
-                <div className="mt-4 p-2 bg-gray-100 rounded text-xs text-left">
-                  <strong>Debug Info:</strong><br/>
-                  Status Loading: {String(isEnrichmentStatusLoading)}<br/>
-                  Processing Stage: {enrichmentStatus?.processingStage || 'null'}<br/>
-                  Is Complete: {String(enrichmentStatus?.isComplete)}<br/>
-                  Has Entities: {String(enrichmentStatus?.hasEntities)}<br/>
-                  Has Enrichment: {String(enrichmentStatus?.hasEnrichment)}<br/>
-                  Has Narratives: {String(enrichmentStatus?.hasNarratives)}
-                </div>
               </div>
             </div>
+
+            {/* Processing Stages */}
+            <div className="grid grid-cols-4 gap-4 pt-4 border-t">
+              {['upload', 'parse', 'enrich', 'complete'].map((stage, index) => {
+                const isActive = processingStatus?.currentStage === stage;
+                const isComplete = processingStatus && (
+                  (stage === 'upload' && processingStatus.processingProgress >= 25) ||
+                  (stage === 'parse' && processingStatus.processingProgress >= 50) ||
+                  (stage === 'enrich' && processingStatus.processingProgress >= 75) ||
+                  (stage === 'complete' && processingStatus.processingProgress >= 100)
+                );
+                const hasFailed = processingStatus?.processingStage === 'failed';
+                
+                return (
+                  <div key={stage} className="flex flex-col items-center space-y-1">
+                    {getStageIcon(stage, isActive, isComplete, hasFailed)}
+                    <span className="text-xs text-center capitalize">{stage}</span>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="flex justify-end mt-4">
               <Button variant="outline" onClick={resetUpload}>
                 Upload Another Resume
@@ -276,24 +324,60 @@ export const ResumeUpload: React.FC = () => {
         </Card>
       )}
 
-      {/* Show results ONLY when AI processing is 100% complete */}
+      {/* Processing Error State */}
+      {showProcessingError && (
+        <Card className="border-red-200 bg-red-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-700">
+              <AlertCircle className="w-4 h-4" />
+              Processing Failed
+            </CardTitle>
+            <CardDescription>
+              We encountered an error while analyzing your resume.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-4 space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Progress reached: {processingStatus?.processingProgress || 0}%
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Failed at stage: {processingStatus?.currentStage}
+              </p>
+            </div>
+            <div className="flex justify-center gap-2 mt-4">
+              <Button variant="outline" onClick={resetUpload}>
+                Try Another Resume
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Results - ONLY show when processing is 100% complete */}
       {showProcessingResults && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Resume Analysis Complete ✅</h3>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              Resume Analysis Complete
+            </h3>
             <Button variant="outline" onClick={resetUpload}>
               Upload Another Resume
             </Button>
           </div>
           
-          <div className="p-2 bg-green-100 rounded text-sm text-green-800 mb-4">
-            <strong>✅ AI Analysis Complete:</strong> All processing stages finished successfully.
+          <div className="p-3 bg-green-100 rounded-lg text-sm text-green-800 border border-green-200">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" />
+              <strong>Analysis Complete:</strong> All processing stages finished successfully at {processingStatus?.processingProgress}% completion.
+            </div>
           </div>
           
-          {/* AI Career Insights - Should show completed state since isComplete is true */}
+          {/* AI Career Insights */}
           <InsightCard versionId={uploadState.completedVersionId} />
           
-          {/* Resume Data Analysis - Show completed results */}
+          {/* Resume Data Analysis */}
           <ParsedResumeEntities
             versionId={uploadState.completedVersionId}
             processingStatus="completed"

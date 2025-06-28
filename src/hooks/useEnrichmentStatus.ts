@@ -5,12 +5,16 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface EnrichmentStatus {
   versionId: string;
+  currentStage: string;
+  processingProgress: number;
+  processingStatus: string;
+  stages: any;
   hasEntities: boolean;
   hasEnrichment: boolean;
   hasNarratives: boolean;
   isComplete: boolean;
-  processingStage: 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed';
   lastUpdated: string;
+  processingStage: 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed';
 }
 
 export function useEnrichmentStatus(versionId?: string) {
@@ -24,81 +28,45 @@ export function useEnrichmentStatus(versionId?: string) {
         return null;
       }
       
-      console.log('useEnrichmentStatus: Checking enrichment status for version:', versionId);
+      console.log('useEnrichmentStatus: Checking comprehensive processing status for version:', versionId);
       
       try {
-        // Check parsed entities
-        const { data: entities, error: entitiesError } = await supabase
-          .from('parsed_resume_entities')
-          .select('id')
-          .eq('resume_version_id', versionId)
-          .limit(1);
+        // Use the new comprehensive status function
+        const { data, error } = await supabase.rpc('get_resume_processing_status', {
+          p_version_id: versionId
+        });
 
-        if (entitiesError) {
-          console.error('useEnrichmentStatus: Error checking entities:', entitiesError);
-          throw entitiesError;
+        if (error) {
+          console.error('useEnrichmentStatus: Error getting processing status:', error);
+          throw error;
         }
 
-        const hasEntities = entities && entities.length > 0;
-        console.log('useEnrichmentStatus: Entities check result:', { hasEntities, entitiesCount: entities?.length || 0 });
-
-        // Check career enrichment
-        const { data: enrichment, error: enrichmentError } = await supabase
-          .from('career_enrichment')
-          .select('id')
-          .eq('resume_version_id', versionId)
-          .eq('user_id', user.id)
-          .limit(1);
-
-        if (enrichmentError) {
-          console.error('useEnrichmentStatus: Error checking enrichment:', enrichmentError);
-          throw enrichmentError;
+        if (!data || data.length === 0) {
+          console.log('useEnrichmentStatus: No processing status found for version:', versionId);
+          return null;
         }
 
-        const hasEnrichment = enrichment && enrichment.length > 0;
-        console.log('useEnrichmentStatus: Enrichment check result:', { hasEnrichment, enrichmentCount: enrichment?.length || 0 });
+        const status = data[0];
+        console.log('useEnrichmentStatus: Raw status from database:', status);
 
-        // Check career narratives
-        const { data: narratives, error: narrativesError } = await supabase
-          .from('career_narratives')
-          .select('id')
-          .eq('resume_version_id', versionId)
-          .eq('user_id', user.id)
-          .limit(1);
-
-        if (narrativesError) {
-          console.error('useEnrichmentStatus: Error checking narratives:', narrativesError);
-          throw narrativesError;
-        }
-
-        const hasNarratives = narratives && narratives.length > 0;
-        console.log('useEnrichmentStatus: Narratives check result:', { hasNarratives, narrativesCount: narratives?.length || 0 });
-
-        // Determine processing stage with better logic
-        let processingStage: EnrichmentStatus['processingStage'] = 'pending';
-        if (hasEntities && hasEnrichment && hasNarratives) {
-          processingStage = 'complete';
-        } else if (hasEntities && hasEnrichment) {
-          processingStage = 'enriching'; // Enrichment exists but narratives are still being generated
-        } else if (hasEntities) {
-          processingStage = 'enriching'; // Entities exist, now enriching
-        } else {
-          processingStage = 'parsing'; // Still parsing entities
-        }
-
-        const isComplete = hasEntities && hasEnrichment && hasNarratives;
-
-        const result = {
-          versionId,
-          hasEntities,
-          hasEnrichment,
-          hasNarratives,
-          isComplete,
-          processingStage,
-          lastUpdated: new Date().toISOString()
+        // Map the database status to our interface
+        const processingStage = mapCurrentStageToProcessingStage(status.current_stage, status.processing_status);
+        
+        const result: EnrichmentStatus = {
+          versionId: status.version_id,
+          currentStage: status.current_stage,
+          processingProgress: status.processing_progress || 0,
+          processingStatus: status.processing_status,
+          stages: status.stages || {},
+          hasEntities: status.has_entities || false,
+          hasEnrichment: status.has_enrichment || false,
+          hasNarratives: status.has_narratives || false,
+          isComplete: status.is_complete || false,
+          lastUpdated: status.last_updated,
+          processingStage
         };
 
-        console.log('useEnrichmentStatus: Final result:', result);
+        console.log('useEnrichmentStatus: Mapped result:', result);
         return result;
       } catch (error) {
         console.error('useEnrichmentStatus: Query failed:', error);
@@ -106,12 +74,16 @@ export function useEnrichmentStatus(versionId?: string) {
         // Return a failed state instead of throwing
         return {
           versionId,
+          currentStage: 'upload',
+          processingProgress: 0,
+          processingStatus: 'failed',
+          stages: {},
           hasEntities: false,
           hasEnrichment: false,
           hasNarratives: false,
           isComplete: false,
-          processingStage: 'failed',
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
+          processingStage: 'failed'
         };
       }
     },
@@ -133,4 +105,22 @@ export function useEnrichmentStatus(versionId?: string) {
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
+}
+
+function mapCurrentStageToProcessingStage(currentStage: string, processingStatus: string): EnrichmentStatus['processingStage'] {
+  if (processingStatus === 'failed') return 'failed';
+  if (processingStatus === 'completed') return 'complete';
+  
+  switch (currentStage) {
+    case 'upload':
+      return 'pending';
+    case 'parse':
+      return 'parsing';
+    case 'enrich':
+      return 'enriching';
+    case 'complete':
+      return 'complete';
+    default:
+      return 'pending';
+  }
 }
