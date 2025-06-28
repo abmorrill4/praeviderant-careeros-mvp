@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -297,7 +296,8 @@ serve(async (req) => {
         });
 
         if (!parseResponse.ok) {
-          console.error('Parse function failed:', await parseResponse.text());
+          const parseErrorText = await parseResponse.text();
+          console.error('Parse function failed:', parseErrorText);
           
           // Update processing status to failed
           await supabase
@@ -314,15 +314,15 @@ serve(async (req) => {
                 stage: 'parse',
                 level: 'error',
                 message: 'Failed to start parsing process',
-                metadata: { error: 'Parse function invocation failed' }
+                metadata: { error: 'Parse function invocation failed', details: parseErrorText }
               });
           }
           return;
         }
 
-        console.log('Parse function completed, immediately triggering AI enrichment...');
+        console.log('Parse function completed, starting AI enrichment with delay...');
         
-        // Log parsing success and start enrichment immediately
+        // Log parsing success
         if (jobData) {
           await supabase
             .from('job_logs')
@@ -335,8 +335,10 @@ serve(async (req) => {
             });
         }
 
-        // Trigger enrichment immediately - no delay
-        console.log('Starting AI enrichment process immediately...');
+        // Add a short delay to ensure parsing is fully complete
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+        
+        console.log('Starting AI enrichment process...');
         
         const enrichResponse = await fetch(`${supabaseUrl}/functions/v1/enrich-resume`, {
           method: 'POST',
@@ -350,7 +352,8 @@ serve(async (req) => {
         });
 
         if (!enrichResponse.ok) {
-          console.error('Enrichment function failed:', await enrichResponse.text());
+          const enrichErrorText = await enrichResponse.text();
+          console.error('Enrichment function failed:', enrichErrorText);
           
           // Log the error
           if (jobData) {
@@ -361,22 +364,27 @@ serve(async (req) => {
                 stage: 'enrich',
                 level: 'error',
                 message: 'Failed to start AI enrichment process',
-                metadata: { error: 'Enrichment function invocation failed' }
+                metadata: { error: 'Enrichment function invocation failed', details: enrichErrorText }
               });
           }
         } else {
-          console.log('AI enrichment started successfully');
+          const enrichResult = await enrichResponse.json();
+          console.log('AI enrichment response:', enrichResult);
           
-          // Log enrichment start
+          // Log enrichment result
           if (jobData) {
             await supabase
               .from('job_logs')
               .insert({
                 job_id: jobData.id,
                 stage: 'enrich',
-                level: 'info',
-                message: 'AI career enrichment started',
-                metadata: { version_id: versionData.id }
+                level: enrichResult.success ? 'info' : 'warn',
+                message: enrichResult.success ? 'AI career enrichment completed successfully' : 'AI enrichment completed with warnings',
+                metadata: { 
+                  version_id: versionData.id,
+                  success: enrichResult.success,
+                  message: enrichResult.message
+                }
               });
           }
         }
@@ -392,7 +400,10 @@ serve(async (req) => {
               stage: 'background',
               level: 'error',
               message: 'Fast background processing failed',
-              metadata: { error: error.message }
+              metadata: { 
+                error: error.message,
+                stack: error.stack?.substring(0, 500) // Truncate stack for storage
+              }
             });
         }
       }
@@ -414,7 +425,8 @@ serve(async (req) => {
     console.error('Error in resume-upload-v2:', error);
     return new Response(JSON.stringify({
       error: 'Internal server error',
-      message: error.message
+      message: error.message,
+      type: error.constructor.name
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -31,14 +31,27 @@ export function useEnrichmentStatus(versionId?: string) {
       console.log('useEnrichmentStatus: Checking comprehensive processing status for version:', versionId);
       
       try {
-        // Use the new comprehensive status function
+        // Use the comprehensive status function with enhanced error handling
         const { data, error } = await supabase.rpc('get_resume_processing_status', {
           p_version_id: versionId
         });
 
         if (error) {
           console.error('useEnrichmentStatus: Error getting processing status:', error);
-          throw error;
+          // Don't throw - return a safe fallback state
+          return {
+            versionId,
+            currentStage: 'upload',
+            processingProgress: 0,
+            processingStatus: 'failed',
+            stages: {},
+            hasEntities: false,
+            hasEnrichment: false,
+            hasNarratives: false,
+            isComplete: false,
+            lastUpdated: new Date().toISOString(),
+            processingStage: 'failed'
+          };
         }
 
         if (!data || data.length === 0) {
@@ -49,20 +62,26 @@ export function useEnrichmentStatus(versionId?: string) {
         const status = data[0];
         console.log('useEnrichmentStatus: Raw status from database:', status);
 
-        // Map the database status to our interface
-        const processingStage = mapCurrentStageToProcessingStage(status.current_stage, status.processing_status);
+        // Enhanced stage mapping with better error handling
+        const processingStage = mapCurrentStageToProcessingStage(
+          status.current_stage, 
+          status.processing_status,
+          status.has_entities,
+          status.has_enrichment,
+          status.has_narratives
+        );
         
         const result: EnrichmentStatus = {
           versionId: status.version_id,
-          currentStage: status.current_stage,
-          processingProgress: status.processing_progress || 0,
-          processingStatus: status.processing_status,
+          currentStage: status.current_stage || 'upload',
+          processingProgress: Math.max(0, Math.min(100, status.processing_progress || 0)),
+          processingStatus: status.processing_status || 'pending',
           stages: status.stages || {},
-          hasEntities: status.has_entities || false,
-          hasEnrichment: status.has_enrichment || false,
-          hasNarratives: status.has_narratives || false,
-          isComplete: status.is_complete || false,
-          lastUpdated: status.last_updated,
+          hasEntities: Boolean(status.has_entities),
+          hasEnrichment: Boolean(status.has_enrichment),
+          hasNarratives: Boolean(status.has_narratives),
+          isComplete: Boolean(status.is_complete),
+          lastUpdated: status.last_updated || new Date().toISOString(),
           processingStage
         };
 
@@ -71,7 +90,7 @@ export function useEnrichmentStatus(versionId?: string) {
       } catch (error) {
         console.error('useEnrichmentStatus: Query failed:', error);
         
-        // Return a failed state instead of throwing
+        // Return a safe fallback state instead of throwing
         return {
           versionId,
           currentStage: 'upload',
@@ -90,37 +109,71 @@ export function useEnrichmentStatus(versionId?: string) {
     enabled: !!versionId && !!user,
     refetchInterval: (query) => {
       const data = query.state.data;
-      const shouldPoll = data && !data.isComplete && data.processingStage !== 'failed';
+      
+      // Don't poll if we have no data or if processing failed
+      if (!data || data.processingStage === 'failed') {
+        return false;
+      }
+      
+      // Don't poll if complete
+      if (data.isComplete && data.processingStage === 'complete') {
+        return false;
+      }
+      
+      // Poll more frequently during active processing
+      const shouldPoll = !data.isComplete && data.processingStage !== 'failed';
       console.log('useEnrichmentStatus: Refetch interval decision:', { 
-        isComplete: data?.isComplete, 
-        processingStage: data?.processingStage,
+        isComplete: data.isComplete, 
+        processingStage: data.processingStage,
         shouldPoll 
       });
-      return shouldPoll ? 2000 : false; // Poll every 2 seconds until complete or failed
+      
+      return shouldPoll ? 3000 : false; // Poll every 3 seconds during processing
     },
-    staleTime: 1000 * 15, // Consider data stale after 15 seconds
+    staleTime: 1000 * 10, // Consider data stale after 10 seconds
     retry: (failureCount, error) => {
       console.log('useEnrichmentStatus: Retry decision:', { failureCount, error });
-      return failureCount < 3; // Retry up to 3 times
+      return failureCount < 2; // Retry up to 2 times
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff, max 10s
   });
 }
 
-function mapCurrentStageToProcessingStage(currentStage: string, processingStatus: string): EnrichmentStatus['processingStage'] {
+function mapCurrentStageToProcessingStage(
+  currentStage: string, 
+  processingStatus: string,
+  hasEntities: boolean,
+  hasEnrichment: boolean,
+  hasNarratives: boolean
+): EnrichmentStatus['processingStage'] {
+  // Check for explicit failed status first
   if (processingStatus === 'failed') return 'failed';
-  if (processingStatus === 'completed') return 'complete';
   
-  switch (currentStage) {
-    case 'upload':
-      return 'pending';
-    case 'parse':
-      return 'parsing';
-    case 'enrich':
-      return 'enriching';
-    case 'complete':
-      return 'complete';
-    default:
-      return 'pending';
+  // Check for complete status
+  if (processingStatus === 'completed' && hasNarratives && hasEnrichment) {
+    return 'complete';
+  }
+  
+  // Determine stage based on data availability and current stage
+  if (hasNarratives && hasEnrichment && hasEntities) {
+    return 'complete';
+  } else if (hasEnrichment && hasEntities) {
+    return 'enriching';
+  } else if (hasEntities) {
+    return 'parsing';
+  } else {
+    // Map stage names to processing stages
+    switch (currentStage) {
+      case 'upload':
+        return 'pending';
+      case 'parse':
+        return 'parsing';
+      case 'enrich':
+        return 'enriching';
+      case 'complete':
+        return 'complete';
+      default:
+        return 'pending';
+    }
   }
 }

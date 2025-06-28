@@ -19,16 +19,37 @@ serve(async (req) => {
 
   try {
     console.log('=== Enrich Resume Starting ===');
+    console.log('Request method:', req.method);
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     
-    // Parse request body with better error handling
+    // Enhanced request body parsing with validation
     let requestData: EnrichRequest;
-    try {
-      requestData = await req.json();
-    } catch (parseError) {
-      console.error('Error parsing request body:', parseError);
+    const rawBody = await req.text();
+    console.log('Raw request body:', rawBody);
+    
+    if (!rawBody || rawBody.trim() === '') {
+      console.error('Empty request body received');
       return new Response(JSON.stringify({ 
         success: false,
-        error: 'Invalid request format' 
+        error: 'Request body is empty',
+        details: 'No data provided in request'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    try {
+      requestData = JSON.parse(rawBody);
+      console.log('Parsed request data:', requestData);
+    } catch (parseError) {
+      console.error('JSON parsing error:', parseError);
+      console.error('Raw body that failed to parse:', rawBody);
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Invalid JSON in request body',
+        details: parseError.message,
+        rawBody: rawBody.substring(0, 200) // First 200 chars for debugging
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -36,20 +57,19 @@ serve(async (req) => {
     }
 
     const { versionId } = requestData;
-    console.log('Request received with versionId:', versionId);
+    console.log('Processing enrichment for versionId:', versionId);
 
-    if (!versionId) {
-      console.error('Version ID is missing from request');
+    if (!versionId || typeof versionId !== 'string') {
+      console.error('Invalid or missing versionId:', versionId);
       return new Response(JSON.stringify({ 
         success: false,
-        error: 'Version ID is required' 
+        error: 'Version ID is required and must be a valid string',
+        received: typeof versionId
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    console.log('Processing version ID for enrichment:', versionId);
 
     // Initialize Supabase client with service role key for internal operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -59,7 +79,7 @@ serve(async (req) => {
       console.error('Missing Supabase configuration');
       return new Response(JSON.stringify({ 
         success: false,
-        error: 'Server configuration error' 
+        error: 'Server configuration error - missing Supabase credentials'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -84,7 +104,8 @@ serve(async (req) => {
       console.error('Error fetching resume version:', versionError);
       return new Response(JSON.stringify({ 
         success: false,
-        error: 'Resume version not found' 
+        error: 'Resume version not found',
+        details: versionError?.message || 'No version data returned'
       }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -93,16 +114,17 @@ serve(async (req) => {
 
     console.log('Found version:', version.file_name, 'for user:', version.resume_streams.user_id);
 
-    // Check if enrichment already exists
+    // Check if enrichment already exists (enhanced check)
     console.log('Checking for existing enrichment...');
     const { data: existingEnrichment, error: existingError } = await supabase
       .from('career_enrichment')
-      .select('id')
+      .select('id, created_at')
       .eq('resume_version_id', versionId)
       .maybeSingle();
 
     if (existingError) {
       console.error('Error checking existing enrichment:', existingError);
+      // Don't fail here, continue with the process
     }
 
     if (existingEnrichment) {
@@ -110,13 +132,14 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         success: true, 
         message: 'Enrichment already exists',
-        enrichment_id: existingEnrichment.id
+        enrichment_id: existingEnrichment.id,
+        created_at: existingEnrichment.created_at
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Get existing parsed entities for this version
+    // Get existing parsed entities for this version with better error handling
     console.log('Fetching parsed entities...');
     const { data: entities, error: entitiesError } = await supabase
       .from('parsed_resume_entities')
@@ -127,7 +150,8 @@ serve(async (req) => {
       console.error('Error fetching entities:', entitiesError);
       return new Response(JSON.stringify({ 
         success: false,
-        error: 'Failed to fetch parsed entities' 
+        error: 'Failed to fetch parsed entities',
+        details: entitiesError.message
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -135,13 +159,14 @@ serve(async (req) => {
     }
 
     if (!entities || entities.length === 0) {
-      console.log('No entities found for enrichment');
+      console.log('No entities found for enrichment - resume may not be fully parsed yet');
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'No entities to enrich - resume may not be fully parsed yet',
-        enrichment_count: 0
+        error: 'No entities available for enrichment',
+        message: 'Resume parsing may still be in progress. Please wait and try again.',
+        entities_count: 0
       }), {
-        status: 400,
+        status: 422, // Unprocessable Entity - indicates client should retry later
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -166,7 +191,7 @@ serve(async (req) => {
       console.error('OpenAI API key not configured');
       return new Response(JSON.stringify({ 
         success: false,
-        error: 'AI service not configured' 
+        error: 'AI service not configured - missing OpenAI API key'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -174,14 +199,27 @@ serve(async (req) => {
     }
 
     console.log('Calling OpenAI for career enrichment...');
-    const enrichmentResult = await generateCareerEnrichment(careerData, openaiApiKey);
-    console.log('AI enrichment generated successfully:', {
-      roleArchetype: enrichmentResult.role_archetype,
-      personaType: enrichmentResult.persona_type,
-      narrativesCount: enrichmentResult.narratives?.length || 0
-    });
+    let enrichmentResult;
+    try {
+      enrichmentResult = await generateCareerEnrichment(careerData, openaiApiKey);
+      console.log('AI enrichment generated successfully:', {
+        roleArchetype: enrichmentResult.role_archetype,
+        personaType: enrichmentResult.persona_type,
+        narrativesCount: enrichmentResult.narratives?.length || 0
+      });
+    } catch (aiError) {
+      console.error('OpenAI API error:', aiError);
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'AI analysis failed',
+        details: aiError.message
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    // Store enrichment data
+    // Store enrichment data with better error handling
     console.log('Storing enrichment data...');
     const { data: enrichmentData, error: enrichmentError } = await supabase
       .from('career_enrichment')
@@ -215,7 +253,8 @@ serve(async (req) => {
       console.error('Error storing enrichment:', enrichmentError);
       return new Response(JSON.stringify({ 
         success: false,
-        error: 'Failed to store enrichment data' 
+        error: 'Failed to store enrichment data',
+        details: enrichmentError.message
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -224,7 +263,7 @@ serve(async (req) => {
 
     console.log('Enrichment data stored successfully with ID:', enrichmentData.id);
 
-    // Store career narratives
+    // Store career narratives with enhanced error handling
     console.log('Storing career narratives...');
     const narrativePromises = enrichmentResult.narratives.map(narrative => {
       console.log('Storing narrative:', narrative.type);
@@ -288,17 +327,20 @@ serve(async (req) => {
       success: true,
       message: 'Career enrichment completed successfully',
       enrichment_id: enrichmentData.id,
-      narratives_count: successfulNarratives
+      narratives_count: successfulNarratives,
+      entities_processed: entities.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in enrich-resume:', error);
+    console.error('Unexpected error in enrich-resume:', error);
+    console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({
       success: false,
       error: 'Internal server error',
-      message: error.message
+      message: error.message,
+      type: error.constructor.name
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
