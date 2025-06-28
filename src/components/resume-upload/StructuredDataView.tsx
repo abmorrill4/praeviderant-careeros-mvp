@@ -72,8 +72,6 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
   const [customCategories, setCustomCategories] = useState<Record<string, string>>({});
-  const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [newCategoryName, setNewCategoryName] = useState('');
 
   // Enhanced section configurations
   const sectionConfigs: Record<string, CategoryConfig> = {
@@ -386,8 +384,6 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
   );
 
   const renderSectionContent = (sectionKey: string, sectionEntities: GroupedEntity[]) => {
-    const config = sectionConfigs[sectionKey] || sectionConfigs.general;
-    
     const renderEntity = (entity: GroupedEntity) => {
       switch (sectionKey) {
         case 'personal_info':
@@ -460,7 +456,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
                   <SelectItem value="all">All Confidence</SelectItem>
                   <SelectItem value="high">High (80%+)</SelectItem>
                   <SelectItem value="medium">Medium (60-80%)</SelectItem>
-                  <SelectItem value="low">Low (<60%)</SelectItem>
+                  <SelectItem value="low">Low (&lt;60%)</SelectItem>
                 </SelectContent>
               </Select>
 
