@@ -35,7 +35,8 @@ import {
   Users,
   Heart,
   Star,
-  Zap
+  Zap,
+  CheckSquare
 } from 'lucide-react';
 import { useParsedResumeEntities } from '@/hooks/useResumeStreams';
 import { parseResumeFieldValue, getFieldDisplayName, getSectionFromFieldName } from '@/utils/resumeDataParser';
@@ -43,6 +44,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DataStatistics } from './DataStatistics';
 import { DataFieldEditor } from './DataFieldEditor';
 import { BulkOperations } from './BulkOperations';
+import { DetailedViewModal } from './DetailedViewModal';
 
 interface StructuredDataViewProps {
   versionId: string;
@@ -66,77 +68,75 @@ interface CategoryConfig {
   color: string;
 }
 
-// Helper function to extract meaningful content from parsed data
-const extractMeaningfulContent = (parsedData: any, fieldName: string): { title: string; subtitle?: string } => {
+// Enhanced helper function to extract resume entry headers
+const extractResumeEntryHeader = (parsedData: any, fieldName: string): { title: string; subtitle?: string; timeframe?: string; location?: string } => {
   if (!parsedData || !parsedData.value) {
     return { title: 'No data available' };
   }
 
-  // Handle different data types
   if (parsedData.type === 'object' && parsedData.value) {
     const obj = parsedData.value;
     
     // Work experience patterns
     if (fieldName.toLowerCase().includes('work') || fieldName.toLowerCase().includes('experience')) {
-      if (obj.title && obj.company) {
-        return { title: obj.title, subtitle: obj.company };
-      }
-      if (obj.position && obj.employer) {
-        return { title: obj.position, subtitle: obj.employer };
-      }
-      if (obj.role && obj.organization) {
-        return { title: obj.role, subtitle: obj.organization };
-      }
+      const title = obj.title || obj.position || obj.role || obj.job_title || 'Position';
+      const subtitle = obj.company || obj.employer || obj.organization || 'Company';
+      const timeframe = obj.start_date && obj.end_date ? 
+        `${obj.start_date} - ${obj.end_date}` : 
+        obj.start_date ? `${obj.start_date} - Present` : 
+        obj.duration || undefined;
+      const location = obj.location;
+      
+      return { title, subtitle, timeframe, location };
     }
     
     // Education patterns
     if (fieldName.toLowerCase().includes('education')) {
-      if (obj.degree && obj.institution) {
-        return { title: obj.degree, subtitle: obj.institution };
-      }
-      if (obj.program && obj.school) {
-        return { title: obj.program, subtitle: obj.school };
-      }
-    }
-    
-    // Skills patterns
-    if (fieldName.toLowerCase().includes('skill')) {
-      if (obj.name) {
-        return { title: obj.name, subtitle: obj.category || obj.level };
-      }
-      if (obj.skill) {
-        return { title: obj.skill, subtitle: obj.proficiency };
-      }
+      const title = obj.degree || obj.program || obj.field_of_study || 'Degree';
+      const subtitle = obj.institution || obj.school || obj.university || 'Institution';
+      const timeframe = obj.graduation_date || obj.end_date || 
+        (obj.start_date && obj.end_date ? `${obj.start_date} - ${obj.end_date}` : undefined);
+      const location = obj.location;
+      
+      return { title, subtitle, timeframe, location };
     }
     
     // Projects patterns
     if (fieldName.toLowerCase().includes('project')) {
-      if (obj.name) {
-        return { title: obj.name, subtitle: obj.description ? obj.description.substring(0, 50) + '...' : undefined };
-      }
-      if (obj.title) {
-        return { title: obj.title, subtitle: obj.summary ? obj.summary.substring(0, 50) + '...' : undefined };
-      }
+      const title = obj.name || obj.title || obj.project_name || 'Project';
+      const subtitle = obj.description ? obj.description.substring(0, 60) + '...' : 
+        obj.company || obj.organization || undefined;
+      const timeframe = obj.date || obj.duration || 
+        (obj.start_date && obj.end_date ? `${obj.start_date} - ${obj.end_date}` : undefined);
+      
+      return { title, subtitle, timeframe };
     }
     
     // Certifications patterns
     if (fieldName.toLowerCase().includes('cert')) {
-      if (obj.name && obj.issuer) {
-        return { title: obj.name, subtitle: obj.issuer };
-      }
-      if (obj.certification && obj.organization) {
-        return { title: obj.certification, subtitle: obj.organization };
-      }
+      const title = obj.name || obj.certification || obj.title || 'Certification';
+      const subtitle = obj.issuer || obj.organization || obj.provider || 'Issuer';
+      const timeframe = obj.issue_date || obj.date || 
+        (obj.expiry_date ? `Expires: ${obj.expiry_date}` : undefined);
+      
+      return { title, subtitle, timeframe };
     }
     
-    // Generic object handling - try to find the most meaningful fields
+    // Skills patterns
+    if (fieldName.toLowerCase().includes('skill')) {
+      const title = obj.name || obj.skill || obj.category || 'Skill';
+      const subtitle = obj.level || obj.proficiency || obj.years_experience || undefined;
+      
+      return { title, subtitle };
+    }
+    
+    // Generic object handling
     const meaningfulFields = ['name', 'title', 'position', 'degree', 'certification', 'skill', 'project'];
     const subtitleFields = ['company', 'institution', 'organization', 'issuer', 'employer', 'school'];
     
     let title = '';
     let subtitle = '';
     
-    // Find title
     for (const field of meaningfulFields) {
       if (obj[field] && typeof obj[field] === 'string') {
         title = obj[field];
@@ -144,7 +144,6 @@ const extractMeaningfulContent = (parsedData: any, fieldName: string): { title: 
       }
     }
     
-    // Find subtitle
     for (const field of subtitleFields) {
       if (obj[field] && typeof obj[field] === 'string') {
         subtitle = obj[field];
@@ -153,13 +152,8 @@ const extractMeaningfulContent = (parsedData: any, fieldName: string): { title: 
     }
     
     if (title) {
-      return { title, subtitle: subtitle || undefined };
-    }
-    
-    // Fallback: use the first non-empty string value
-    const firstValue = Object.values(obj).find(v => typeof v === 'string' && v.trim());
-    if (firstValue) {
-      return { title: String(firstValue) };
+      const timeframe = obj.start_date || obj.date || obj.duration || undefined;
+      return { title, subtitle: subtitle || undefined, timeframe };
     }
   }
   
@@ -171,13 +165,13 @@ const extractMeaningfulContent = (parsedData: any, fieldName: string): { title: 
       if (typeof firstItem === 'string') {
         return { 
           title: firstItem, 
-          subtitle: items.length > 1 ? `+${items.length - 1} more` : undefined 
+          subtitle: items.length > 1 ? `+${items.length - 1} more items` : undefined 
         };
       }
       if (typeof firstItem === 'object' && firstItem.name) {
         return { 
           title: firstItem.name,
-          subtitle: items.length > 1 ? `+${items.length - 1} more` : undefined 
+          subtitle: items.length > 1 ? `+${items.length - 1} more items` : undefined 
         };
       }
     }
@@ -192,7 +186,6 @@ const extractMeaningfulContent = (parsedData: any, fieldName: string): { title: 
     }
   }
   
-  // Fallback
   return { title: parsedData.displayValue || 'Unknown data' };
 };
 
@@ -210,6 +203,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
   const [customCategories, setCustomCategories] = useState<Record<string, string>>({});
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [detailedViewEntity, setDetailedViewEntity] = useState<GroupedEntity | null>(null);
 
   // Enhanced section configurations with all resume sections
   const sectionConfigs: Record<string, CategoryConfig> = {
@@ -336,8 +330,10 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
         // Search filter
         if (searchQuery) {
           const searchLower = searchQuery.toLowerCase();
+          const entryHeader = extractResumeEntryHeader(entity.parsedData, entity.field_name);
           return (
-            entity.displayName.toLowerCase().includes(searchLower) ||
+            entryHeader.title.toLowerCase().includes(searchLower) ||
+            entryHeader.subtitle?.toLowerCase().includes(searchLower) ||
             entity.field_name.toLowerCase().includes(searchLower) ||
             JSON.stringify(entity.parsedData).toLowerCase().includes(searchLower)
           );
@@ -407,6 +403,24 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
     setSelectedEntities(new Set(allIds));
   };
 
+  const handleSelectAllSection = (sectionKey: string) => {
+    const sectionIds = organizedData[sectionKey]?.map(e => e.id) || [];
+    const newSelected = new Set(selectedEntities);
+    
+    // Check if all items in this section are already selected
+    const allSectionSelected = sectionIds.every(id => newSelected.has(id));
+    
+    if (allSectionSelected) {
+      // Unselect all items in this section
+      sectionIds.forEach(id => newSelected.delete(id));
+    } else {
+      // Select all items in this section
+      sectionIds.forEach(id => newSelected.add(id));
+    }
+    
+    setSelectedEntities(newSelected);
+  };
+
   const handleClearSelection = () => {
     setSelectedEntities(new Set());
   };
@@ -438,7 +452,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
     return <Badge className="bg-red-100 text-red-800 text-xs">Low</Badge>;
   };
 
-  const renderGenericCard = (entity: GroupedEntity) => {
+  const renderResumeEntryCard = (entity: GroupedEntity) => {
     if (editingField === entity.id) {
       return (
         <DataFieldEditor
@@ -450,38 +464,65 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
       );
     }
 
-    // Extract meaningful content for display
-    const content = extractMeaningfulContent(entity.parsedData, entity.field_name);
+    const entryHeader = extractResumeEntryHeader(entity.parsedData, entity.field_name);
 
     return (
-      <div key={entity.id} className="p-3 border rounded-lg bg-white hover:shadow-sm transition-shadow">
+      <div 
+        key={entity.id} 
+        className="p-4 border rounded-lg bg-white hover:shadow-md transition-all cursor-pointer group"
+        onClick={() => setDetailedViewEntity(entity)}
+      >
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
             <Checkbox
               checked={selectedEntities.has(entity.id)}
-              onCheckedChange={() => handleEntityToggle(entity.id)}
+              onCheckedChange={(e) => {
+                e?.stopPropagation?.();
+                handleEntityToggle(entity.id);
+              }}
+              onClick={(e) => e.stopPropagation()}
               className="mt-1"
             />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-semibold text-sm text-gray-900">{content.title}</span>
-              </div>
-              {content.subtitle && (
-                <div className="text-sm text-gray-600 mb-1">
-                  {content.subtitle}
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                    {entryHeader.title}
+                  </h4>
+                  {entryHeader.subtitle && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {entryHeader.subtitle}
+                    </p>
+                  )}
                 </div>
-              )}
-              <div className="text-xs text-muted-foreground">
-                {entity.displayName}
+              </div>
+              
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                {entryHeader.timeframe && (
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    <span>{entryHeader.timeframe}</span>
+                  </div>
+                )}
+                {entryHeader.location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    <span>{entryHeader.location}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+          
           <div className="flex items-center gap-2 ml-2">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setEditingField(entity.id)}
-              className="h-6 w-6 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingField(entity.id);
+              }}
+              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Edit className="w-3 h-3" />
             </Button>
@@ -497,7 +538,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
       <div className="space-y-3">
         {sectionEntities
           .sort((a, b) => b.confidence_score - a.confidence_score)
-          .map(entity => renderGenericCard(entity))}
+          .map(entity => renderResumeEntryCard(entity))}
       </div>
     );
   };
@@ -531,7 +572,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
             Resume Data Fields
           </CardTitle>
           <CardDescription>
-            Review and organize your extracted resume data by category
+            Review and organize your extracted resume data by category. Click any entry to view details.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -540,7 +581,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
             <div className="flex items-center gap-2">
               <Search className="w-4 h-4 text-gray-500" />
               <Input
-                placeholder="Search fields..."
+                placeholder="Search entries..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-64"
@@ -575,19 +616,39 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
           <div className="space-y-6">
             {sortedSections.map(([sectionKey, sectionEntities]) => {
               const config = sectionConfigs[sectionKey] || sectionConfigs.general;
+              const sectionIds = sectionEntities.map(e => e.id);
+              const selectedInSection = sectionIds.filter(id => selectedEntities.has(id)).length;
+              const allSectionSelected = selectedInSection === sectionIds.length && sectionIds.length > 0;
               
               return (
                 <div key={sectionKey} className="border rounded-lg overflow-hidden">
                   <div className={`p-4 ${config.color} border-b`}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {config.icon}
-                        <span className="font-medium">{config.title}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          {config.icon}
+                          <span className="font-medium">{config.title}</span>
+                        </div>
                         <Badge variant="outline" className="text-xs">
-                          {sectionEntities.length} field{sectionEntities.length !== 1 ? 's' : ''}
+                          {sectionEntities.length} entr{sectionEntities.length !== 1 ? 'ies' : 'y'}
                         </Badge>
+                        {selectedInSection > 0 && (
+                          <Badge className="text-xs bg-blue-100 text-blue-800">
+                            {selectedInSection} selected
+                          </Badge>
+                        )}
                       </div>
+                      
                       <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSelectAllSection(sectionKey)}
+                          className="flex items-center gap-2"
+                        >
+                          <CheckSquare className="w-4 h-4" />
+                          {allSectionSelected ? 'Unselect All' : 'Select All'}
+                        </Button>
                         <Badge className="text-xs">
                           {sectionEntities.filter(e => e.confidence_score >= 0.8).length} high confidence
                         </Badge>
@@ -604,6 +665,17 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Detailed View Modal */}
+      {detailedViewEntity && (
+        <DetailedViewModal
+          isOpen={true}
+          onClose={() => setDetailedViewEntity(null)}
+          entity={detailedViewEntity}
+          title={extractResumeEntryHeader(detailedViewEntity.parsedData, detailedViewEntity.field_name).title}
+          subtitle={extractResumeEntryHeader(detailedViewEntity.parsedData, detailedViewEntity.field_name).subtitle}
+        />
+      )}
     </div>
   );
 };
