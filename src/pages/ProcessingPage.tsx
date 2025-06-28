@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { useEnrichmentStatus } from '@/hooks/useEnrichmentStatus';
 import { EnrichmentProgress } from '@/components/resume-upload/EnrichmentProgress';
+import { SmartEnrichmentTrigger } from '@/components/resume-upload/SmartEnrichmentTrigger';
 
 export default function ProcessingPage() {
   const { enrichmentId } = useParams<{ enrichmentId: string }>();
@@ -169,6 +170,9 @@ export default function ProcessingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Include the SmartEnrichmentTrigger to handle AI processing */}
+      <SmartEnrichmentTrigger versionId={enrichmentId} />
+      
       <div className="max-w-4xl mx-auto p-4 py-8">
         {/* Header */}
         <div className="mb-8">

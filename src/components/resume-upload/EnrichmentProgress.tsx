@@ -20,9 +20,12 @@ interface EnrichmentProgressProps {
 
 export const EnrichmentProgress: React.FC<EnrichmentProgressProps> = ({ status }) => {
   const getProgressValue = () => {
-    if (status.processingStage === 'complete') return 100;
-    if (status.processingStage === 'enriching') return 70;
-    if (status.processingStage === 'parsing') return 30;
+    // More accurate progress calculation
+    if (status.isComplete && status.hasNarratives) return 100;
+    if (status.hasEnrichment && status.hasNarratives) return 90;
+    if (status.hasEnrichment) return 70;
+    if (status.hasEntities) return 40;
+    if (status.processingStage === 'parsing') return 20;
     return 10;
   };
 
@@ -44,7 +47,7 @@ export const EnrichmentProgress: React.FC<EnrichmentProgressProps> = ({ status }
       label: 'Extracting Data',
       description: 'Parsing resume content and structure',
       icon: FileText,
-      isActive: status.processingStage === 'parsing',
+      isActive: status.processingStage === 'parsing' || (!status.hasEntities && status.processingStage !== 'failed'),
       isComplete: status.hasEntities
     },
     {
@@ -52,7 +55,7 @@ export const EnrichmentProgress: React.FC<EnrichmentProgressProps> = ({ status }
       label: 'AI Analysis',
       description: 'Analyzing career patterns and strengths',
       icon: Brain,
-      isActive: status.processingStage === 'enriching',
+      isActive: status.hasEntities && !status.hasEnrichment && status.processingStage !== 'failed',
       isComplete: status.hasEnrichment
     },
     {
@@ -60,10 +63,14 @@ export const EnrichmentProgress: React.FC<EnrichmentProgressProps> = ({ status }
       label: 'Generating Insights',
       description: 'Creating personalized career narratives',
       icon: Sparkles,
-      isActive: status.processingStage === 'enriching' && status.hasEnrichment,
+      isActive: status.hasEnrichment && !status.hasNarratives && status.processingStage !== 'failed',
       isComplete: status.hasNarratives
     }
   ];
+
+  const progressValue = getProgressValue();
+  const overallStatus = status.isComplete ? 'Complete' : 
+                       status.processingStage === 'failed' ? 'Failed' : 'Processing';
 
   return (
     <Card className="border-blue-200 bg-blue-50/50">
@@ -75,7 +82,7 @@ export const EnrichmentProgress: React.FC<EnrichmentProgressProps> = ({ status }
         <CardDescription className="flex items-center justify-between">
           <span>Processing your resume through our AI pipeline</span>
           <Badge variant="outline" className="text-xs">
-            {status.processingStage === 'complete' ? 'Complete' : 'Processing'}
+            {overallStatus}
           </Badge>
         </CardDescription>
       </CardHeader>
@@ -84,9 +91,9 @@ export const EnrichmentProgress: React.FC<EnrichmentProgressProps> = ({ status }
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="font-medium">Overall Progress</span>
-            <span className="text-muted-foreground">{getProgressValue()}%</span>
+            <span className="text-muted-foreground">{progressValue}%</span>
           </div>
-          <Progress value={getProgressValue()} className="h-2" />
+          <Progress value={progressValue} className="h-2" />
         </div>
 
         {/* Stage Details */}
@@ -113,6 +120,18 @@ export const EnrichmentProgress: React.FC<EnrichmentProgressProps> = ({ status }
             </div>
           ))}
         </div>
+
+        {/* Debug Information */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
+            <strong>Debug Info:</strong>
+            <div>Processing Stage: {status.processingStage}</div>
+            <div>Has Entities: {status.hasEntities ? 'Yes' : 'No'}</div>
+            <div>Has Enrichment: {status.hasEnrichment ? 'Yes' : 'No'}</div>
+            <div>Has Narratives: {status.hasNarratives ? 'Yes' : 'No'}</div>
+            <div>Is Complete: {status.isComplete ? 'Yes' : 'No'}</div>
+          </div>
+        )}
 
         {/* Status Footer */}
         <div className="pt-4 border-t border-blue-200">
