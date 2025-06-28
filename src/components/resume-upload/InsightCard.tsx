@@ -130,7 +130,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
     );
   }
 
-  // Show progress while processing
+  // Show progress while processing - this is the main state during AI enrichment
   if (!status?.isComplete) {
     console.log('InsightCard: Showing progress - not complete yet');
     return (
@@ -141,7 +141,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
     );
   }
 
-  // Show insights when complete
+  // Show insights when complete - this should only render when everything is done
   if (status.isComplete && enrichment && narratives) {
     console.log('InsightCard: Showing completed insights');
     
@@ -309,7 +309,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ versionId }) => {
     );
   }
 
-  // Loading state
+  // Loading state - should rarely be shown now that we have better state management
   console.log('InsightCard: Showing loading state');
   return (
     <>

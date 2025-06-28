@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { ResumeDropzone } from './ResumeDropzone';
 import { UploadProgress } from './UploadProgress';
 import { ParsedResumeEntities } from '../ParsedResumeEntities';
 import { InsightCard } from './InsightCard';
+import { useEnrichmentStatus } from '@/hooks/useEnrichmentStatus';
 
 interface UploadState {
   file: File | null;
@@ -32,6 +34,9 @@ export const ResumeUpload: React.FC = () => {
     error: null,
     completedVersionId: null
   });
+
+  // Get enrichment status for the completed version
+  const { data: enrichmentStatus } = useEnrichmentStatus(uploadState.completedVersionId || undefined);
 
   const handleFileSelect = (file: File) => {
     setUploadState(prev => ({ 
@@ -102,8 +107,8 @@ export const ResumeUpload: React.FC = () => {
         toast({
           title: "Upload Successful",
           description: data.isDuplicate 
-            ? "File already exists in your collection" 
-            : "Resume uploaded and processing started",
+            ? "File already exists in your collection. AI analysis in progress..." 
+            : "Resume uploaded successfully. AI analysis in progress...",
         });
       } else {
         throw new Error(data.message || 'Upload failed');
@@ -136,6 +141,10 @@ export const ResumeUpload: React.FC = () => {
       completedVersionId: null
     });
   };
+
+  // Determine if we should show the processing state or the results
+  const showProcessing = uploadState.completedVersionId && (!enrichmentStatus || !enrichmentStatus.isComplete);
+  const showResults = uploadState.completedVersionId && enrichmentStatus?.isComplete;
 
   return (
     <div className="space-y-6">
@@ -204,10 +213,11 @@ export const ResumeUpload: React.FC = () => {
         </CardContent>
       </Card>
 
-      {uploadState.completedVersionId && (
+      {/* Show AI Processing Progress - This appears immediately after upload */}
+      {showProcessing && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Resume Analysis Results</h3>
+            <h3 className="text-lg font-semibold">Processing Your Resume</h3>
             <Button variant="outline" onClick={resetUpload}>
               Upload Another Resume
             </Button>
@@ -215,8 +225,23 @@ export const ResumeUpload: React.FC = () => {
           
           {/* AI Career Insights - Shows progress until complete */}
           <InsightCard versionId={uploadState.completedVersionId} />
+        </div>
+      )}
+
+      {/* Show Complete Results - Only appears when AI enrichment is fully complete */}
+      {showResults && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Resume Analysis Complete</h3>
+            <Button variant="outline" onClick={resetUpload}>
+              Upload Another Resume
+            </Button>
+          </div>
           
-          {/* Resume Data Analysis */}
+          {/* AI Career Insights - Now shows completed insights */}
+          <InsightCard versionId={uploadState.completedVersionId} />
+          
+          {/* Resume Data Analysis - Only shown when everything is complete */}
           <ParsedResumeEntities
             versionId={uploadState.completedVersionId}
             processingStatus="completed"
