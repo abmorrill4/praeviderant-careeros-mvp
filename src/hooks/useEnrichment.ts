@@ -72,7 +72,10 @@ export function useCareerNarratives(versionId?: string) {
       }));
     },
     enabled: !!versionId && !!user,
-    refetchInterval: (data) => data && data.length > 0 ? false : 5000, // Poll every 5 seconds if no data
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      return data && data.length > 0 ? false : 5000; // Poll every 5 seconds if no data
+    },
     staleTime: 1000 * 60 * 5, // Consider data stale after 5 minutes
   });
 }
