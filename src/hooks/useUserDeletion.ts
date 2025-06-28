@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DeletionPreview {
   table_name: string;
@@ -19,6 +20,7 @@ export const useUserDeletion = () => {
   const [deletionPreview, setDeletionPreview] = useState<DeletionPreview[]>([]);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const queryClient = useQueryClient();
 
   const previewDataDeletion = async () => {
     if (!user) {
@@ -111,6 +113,16 @@ export const useUserDeletion = () => {
       }
 
       const totalDeleted = (data || []).reduce((sum: number, item: any) => sum + Number(item.rows_deleted), 0);
+
+      // Clear all React Query caches to ensure UI reflects the deletion
+      console.log('Clearing all React Query caches...');
+      queryClient.clear();
+      
+      // Also specifically invalidate entity queries
+      queryClient.invalidateQueries({ queryKey: ['entities'] });
+      queryClient.invalidateQueries({ queryKey: ['latest-entities'] });
+      queryClient.invalidateQueries({ queryKey: ['resume-streams'] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
 
       toast({
         title: "Data Deletion Complete",

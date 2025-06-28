@@ -25,11 +25,17 @@ export function useLatestEntities<T extends VersionedEntity>(tableName: EntityTy
       console.log(`Fetching latest entities for ${tableName}, user: ${user.id}`);
       const result = await getLatestEntities<T>(tableName, user.id);
       console.log(`Fetched ${result.length} entities of type ${tableName}:`, result);
+      
+      // Add additional debugging for empty results
+      if (result.length === 0) {
+        console.log(`No ${tableName} entities found for user ${user.id} - this could indicate successful deletion or empty profile`);
+      }
+      
       return result;
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
+    staleTime: 0, // Make queries more aggressive about refetching
+    gcTime: 0, // Don't cache results
   });
 }
 
