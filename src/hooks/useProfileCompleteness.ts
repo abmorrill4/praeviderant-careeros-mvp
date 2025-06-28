@@ -56,9 +56,9 @@ export function useProfileCompleteness(): ProfileCompleteness {
 
       const hasEducation = (education?.length || 0) > 0;
 
-      // Check for skills
+      // Check for skills - using correct table name "skill" (singular)
       const { data: skills } = await supabase
-        .from('skills')
+        .from('skill')
         .select('id')
         .eq('user_id', user.id)
         .limit(1);
