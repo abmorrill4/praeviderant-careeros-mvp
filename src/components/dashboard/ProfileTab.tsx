@@ -6,7 +6,13 @@ import {
   GraduationCap,
   Award,
   Code,
-  Trophy
+  Trophy,
+  BookOpen,
+  Heart,
+  Globe,
+  Users,
+  Star,
+  Zap
 } from 'lucide-react';
 import { ProfileDataSection } from '@/components/profile/ProfileDataSection';
 import { 
@@ -68,7 +74,7 @@ export const ProfileTab: React.FC = () => {
           Profile Data
         </h2>
         <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-          Review and manage your career information
+          Review and manage your comprehensive career information
         </p>
       </div>
       
@@ -94,8 +100,8 @@ export const ProfileTab: React.FC = () => {
         />
         
         <ProfileDataSection
-          title="Skills"
-          icon={<Award className="w-5 h-5" />}
+          title="Skills & Technologies"
+          icon={<Code className="w-5 h-5" />}
           items={skills}
           editFields={skillFields}
           onAccept={skillActions.handleAccept}
@@ -104,8 +110,8 @@ export const ProfileTab: React.FC = () => {
         />
         
         <ProfileDataSection
-          title="Projects"
-          icon={<Code className="w-5 h-5" />}
+          title="Projects & Portfolio"
+          icon={<Zap className="w-5 h-5" />}
           items={projects}
           editFields={projectFields}
           onAccept={projectActions.handleAccept}
@@ -114,14 +120,30 @@ export const ProfileTab: React.FC = () => {
         />
         
         <ProfileDataSection
-          title="Certifications"
-          icon={<Trophy className="w-5 h-5" />}
+          title="Certifications & Licenses"
+          icon={<Award className="w-5 h-5" />}
           items={certifications}
           editFields={certificationFields}
           onAccept={certificationActions.handleAccept}
           onEdit={certificationActions.handleEdit}
           renderItem={(item) => <CertificationRenderer item={item as Certification} />}
         />
+      </div>
+
+      {/* Note about additional sections */}
+      <div className={`mt-8 p-4 border rounded-lg ${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'}`}>
+        <div className="flex items-start gap-3">
+          <Star className="w-5 h-5 text-career-accent mt-0.5" />
+          <div>
+            <h3 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+              Additional Resume Sections
+            </h3>
+            <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              Your resume data includes additional sections like Awards, Publications, Volunteer Work, Languages, 
+              Professional Associations, and References. These are captured and organized in the resume upload analysis.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

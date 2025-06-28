@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +29,14 @@ import {
   Award,
   Settings,
   Plus,
-  Trash2
+  Trash2,
+  Trophy,
+  BookOpen,
+  Globe,
+  Users,
+  Heart,
+  Star,
+  Zap
 } from 'lucide-react';
 import { useParsedResumeEntities } from '@/hooks/useResumeStreams';
 import { parseResumeFieldValue, getFieldDisplayName, getSectionFromFieldName } from '@/utils/resumeDataParser';
@@ -74,7 +82,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
   const [customCategories, setCustomCategories] = useState<Record<string, string>>({});
   const [editingField, setEditingField] = useState<string | null>(null);
 
-  // Enhanced section configurations
+  // Enhanced section configurations with all resume sections
   const sectionConfigs: Record<string, CategoryConfig> = {
     personal_info: { 
       title: 'Personal Information', 
@@ -106,16 +114,58 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
       priority: 5,
       color: 'bg-indigo-100 text-indigo-800'
     },
+    projects: { 
+      title: 'Projects', 
+      icon: <Zap className="w-4 h-4" />, 
+      priority: 6,
+      color: 'bg-cyan-100 text-cyan-800'
+    },
     certifications: { 
       title: 'Certifications', 
       icon: <Award className="w-4 h-4" />, 
-      priority: 6,
+      priority: 7,
       color: 'bg-yellow-100 text-yellow-800'
+    },
+    awards: { 
+      title: 'Awards & Honors', 
+      icon: <Trophy className="w-4 h-4" />, 
+      priority: 8,
+      color: 'bg-amber-100 text-amber-800'
+    },
+    publications: { 
+      title: 'Publications', 
+      icon: <BookOpen className="w-4 h-4" />, 
+      priority: 9,
+      color: 'bg-emerald-100 text-emerald-800'
+    },
+    volunteer_work: { 
+      title: 'Volunteer Experience', 
+      icon: <Heart className="w-4 h-4" />, 
+      priority: 10,
+      color: 'bg-rose-100 text-rose-800'
+    },
+    languages: { 
+      title: 'Languages', 
+      icon: <Globe className="w-4 h-4" />, 
+      priority: 11,
+      color: 'bg-teal-100 text-teal-800'
+    },
+    professional_associations: { 
+      title: 'Professional Associations', 
+      icon: <Users className="w-4 h-4" />, 
+      priority: 12,
+      color: 'bg-violet-100 text-violet-800'
+    },
+    references: { 
+      title: 'References', 
+      icon: <Star className="w-4 h-4" />, 
+      priority: 13,
+      color: 'bg-pink-100 text-pink-800'
     },
     general: { 
       title: 'Other Information', 
       icon: <FileText className="w-4 h-4" />, 
-      priority: 7,
+      priority: 14,
       color: 'bg-gray-100 text-gray-800'
     }
   };
@@ -257,103 +307,6 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
     if (score >= 0.8) return <Badge className="bg-green-100 text-green-800 text-xs">High</Badge>;
     if (score >= 0.6) return <Badge className="bg-yellow-100 text-yellow-800 text-xs">Medium</Badge>;
     return <Badge className="bg-red-100 text-red-800 text-xs">Low</Badge>;
-  };
-
-  const renderPersonalInfoCard = (entity: GroupedEntity) => (
-    <div key={entity.id} className="p-4 border rounded-lg bg-white hover:shadow-sm transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2">
-            <Checkbox
-              checked={selectedEntities.has(entity.id)}
-              onCheckedChange={() => handleEntityToggle(entity.id)}
-            />
-            <div className="flex items-center gap-2">
-              {entity.field_name.includes('email') && <Mail className="w-4 h-4 text-gray-500" />}
-              {entity.field_name.includes('phone') && <Phone className="w-4 h-4 text-gray-500" />}
-              {entity.field_name.includes('address') && <MapPin className="w-4 h-4 text-gray-500" />}
-              <span className="font-medium text-sm">{entity.displayName}</span>
-            </div>
-          </div>
-          <p className="text-lg font-semibold text-gray-900 ml-7">
-            {typeof entity.parsedData === 'object' ? entity.parsedData.displayValue || entity.parsedData.value : entity.parsedData}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {getConfidenceBadge(entity.confidence_score)}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderWorkExperienceCard = (entity: GroupedEntity) => {
-    const data = typeof entity.parsedData === 'object' ? entity.parsedData : { value: entity.parsedData };
-    
-    return (
-      <div key={entity.id} className="p-4 border rounded-lg bg-white hover:shadow-sm transition-shadow">
-        <div className="flex items-start gap-3">
-          <Checkbox
-            checked={selectedEntities.has(entity.id)}
-            onCheckedChange={() => handleEntityToggle(entity.id)}
-            className="mt-1"
-          />
-          <div className="flex-1">
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <h4 className="font-semibold text-lg">{data.title || data.position || 'Position'}</h4>
-                <div className="flex items-center gap-2 text-gray-600 mt-1">
-                  <Building className="w-4 h-4" />
-                  <span>{data.company || 'Company'}</span>
-                </div>
-              </div>
-              {getConfidenceBadge(entity.confidence_score)}
-            </div>
-            
-            {(data.start_date || data.end_date) && (
-              <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                <Calendar className="w-4 h-4" />
-                <span>{data.start_date || 'Start'} - {data.end_date || 'Present'}</span>
-              </div>
-            )}
-            
-            {data.description && (
-              <p className="text-sm text-gray-700 leading-relaxed line-clamp-3">
-                {data.description}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderSkillCard = (entity: GroupedEntity) => {
-    const data = typeof entity.parsedData === 'object' ? entity.parsedData : { name: entity.parsedData };
-    
-    return (
-      <div key={entity.id} className="p-3 border rounded-lg bg-white hover:shadow-sm transition-shadow">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Checkbox
-              checked={selectedEntities.has(entity.id)}
-              onCheckedChange={() => handleEntityToggle(entity.id)}
-            />
-            <div>
-              <h4 className="font-medium">{data.name || data.skill || entity.displayName}</h4>
-              <div className="flex gap-2 mt-1">
-                {data.category && (
-                  <Badge variant="secondary" className="text-xs">{data.category}</Badge>
-                )}
-                {data.proficiency_level && (
-                  <Badge variant="outline" className="text-xs">{data.proficiency_level}</Badge>
-                )}
-              </div>
-            </div>
-          </div>
-          {getConfidenceBadge(entity.confidence_score)}
-        </div>
-      </div>
-    );
   };
 
   const renderGenericCard = (entity: GroupedEntity) => {

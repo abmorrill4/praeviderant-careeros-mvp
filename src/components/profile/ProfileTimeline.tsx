@@ -78,6 +78,18 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
             <SkillsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
           </TabsContent>
         </Tabs>
+
+        {/* Additional Sections Notice */}
+        <div className={`mt-6 p-4 border rounded-lg ${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'}`}>
+          <h3 className={`font-medium mb-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            Complete Resume Analysis
+          </h3>
+          <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            Your uploaded resumes are analyzed for all sections including Projects, Certifications, Awards, 
+            Publications, Volunteer Work, Languages, Professional Associations, and References. 
+            Use the resume upload feature to extract and organize all your career data.
+          </p>
+        </div>
       </div>
     </div>
   );

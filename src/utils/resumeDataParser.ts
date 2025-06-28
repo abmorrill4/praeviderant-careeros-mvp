@@ -102,5 +102,67 @@ export function getFieldDisplayName(fieldName: string): string {
 
 export function getSectionFromFieldName(fieldName: string): string {
   const parts = fieldName.split('.');
-  return parts.length > 1 ? parts[0] : 'general';
+  const section = parts.length > 1 ? parts[0] : 'general';
+  
+  // Enhanced section mapping to handle more resume sections
+  const sectionMappings: Record<string, string> = {
+    'personal': 'personal_info',
+    'contact_info': 'contact',
+    'contact': 'contact',
+    'work': 'work_experience',
+    'experience': 'work_experience',
+    'employment': 'work_experience',
+    'jobs': 'work_experience',
+    'education': 'education',
+    'academic': 'education',
+    'skills': 'skills',
+    'technical_skills': 'skills',
+    'technologies': 'skills',
+    'tools': 'skills',
+    'projects': 'projects',
+    'portfolio': 'projects',
+    'certifications': 'certifications',
+    'certificates': 'certifications',
+    'awards': 'awards',
+    'honors': 'awards',
+    'achievements': 'awards',
+    'publications': 'publications',
+    'papers': 'publications',
+    'articles': 'publications',
+    'volunteer': 'volunteer_work',
+    'volunteering': 'volunteer_work',
+    'community': 'volunteer_work',
+    'languages': 'languages',
+    'linguistic': 'languages',
+    'associations': 'professional_associations',
+    'memberships': 'professional_associations',
+    'organizations': 'professional_associations',
+    'references': 'references',
+    'recommendations': 'references'
+  };
+
+  // Check if section matches any known mappings
+  const mappedSection = sectionMappings[section.toLowerCase()];
+  if (mappedSection) {
+    return mappedSection;
+  }
+
+  // Check if any part of the field name contains keywords for specific sections
+  const fieldLower = fieldName.toLowerCase();
+  
+  if (fieldLower.includes('project') || fieldLower.includes('portfolio')) return 'projects';
+  if (fieldLower.includes('cert') || fieldLower.includes('license')) return 'certifications';
+  if (fieldLower.includes('award') || fieldLower.includes('honor') || fieldLower.includes('achievement')) return 'awards';
+  if (fieldLower.includes('publication') || fieldLower.includes('paper') || fieldLower.includes('article')) return 'publications';
+  if (fieldLower.includes('volunteer') || fieldLower.includes('community')) return 'volunteer_work';
+  if (fieldLower.includes('language') || fieldLower.includes('linguistic')) return 'languages';
+  if (fieldLower.includes('association') || fieldLower.includes('membership') || fieldLower.includes('organization')) return 'professional_associations';
+  if (fieldLower.includes('reference') || fieldLower.includes('recommendation')) return 'references';
+  if (fieldLower.includes('skill') || fieldLower.includes('technology') || fieldLower.includes('tool')) return 'skills';
+  if (fieldLower.includes('work') || fieldLower.includes('job') || fieldLower.includes('employment') || fieldLower.includes('experience')) return 'work_experience';
+  if (fieldLower.includes('education') || fieldLower.includes('degree') || fieldLower.includes('school') || fieldLower.includes('university')) return 'education';
+  if (fieldLower.includes('contact') || fieldLower.includes('phone') || fieldLower.includes('email') || fieldLower.includes('address')) return 'contact';
+  if (fieldLower.includes('name') || fieldLower.includes('personal')) return 'personal_info';
+
+  return section || 'general';
 }
