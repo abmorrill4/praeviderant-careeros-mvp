@@ -110,13 +110,13 @@ export function useEnrichmentStatus(versionId?: string) {
     refetchInterval: (query) => {
       const data = query.state.data;
       
-      // Don't poll if we have no data or if processing failed
-      if (!data || data.processingStage === 'failed') {
+      // Don't poll if we have no data
+      if (!data) {
         return false;
       }
       
-      // Don't poll if complete
-      if (data.isComplete && data.processingStage === 'complete') {
+      // Don't poll if processing failed or is complete
+      if (data.processingStage === 'failed' || (data.isComplete && data.processingStage === 'complete')) {
         return false;
       }
       
