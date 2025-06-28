@@ -142,9 +142,22 @@ export const ResumeUpload: React.FC = () => {
     });
   };
 
-  // Determine if we should show the processing state or the results
-  const showProcessing = uploadState.completedVersionId && (!enrichmentStatus || !enrichmentStatus.isComplete);
-  const showResults = uploadState.completedVersionId && enrichmentStatus?.isComplete;
+  // Only show results when AI enrichment is 100% complete (has all: entities, enrichment, AND narratives)
+  const isAIEnrichmentFullyComplete = enrichmentStatus?.isComplete && enrichmentStatus?.hasEntities && enrichmentStatus?.hasEnrichment && enrichmentStatus?.hasNarratives;
+  
+  // Show processing screen until AI enrichment is completely done
+  const showProcessingScreen = uploadState.completedVersionId && !isAIEnrichmentFullyComplete;
+  
+  // Only show complete results when everything is truly finished
+  const showCompleteResults = uploadState.completedVersionId && isAIEnrichmentFullyComplete;
+
+  console.log('ResumeUpload: State check', {
+    hasCompletedVersionId: !!uploadState.completedVersionId,
+    enrichmentStatus,
+    isAIEnrichmentFullyComplete,
+    showProcessingScreen,
+    showCompleteResults
+  });
 
   return (
     <div className="space-y-6">
@@ -213,8 +226,8 @@ export const ResumeUpload: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Show AI Processing Progress - This appears immediately after upload */}
-      {showProcessing && (
+      {/* Show AI Processing Screen - This appears after upload until AI enrichment is 100% complete */}
+      {showProcessingScreen && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Processing Your Resume</h3>
@@ -223,13 +236,13 @@ export const ResumeUpload: React.FC = () => {
             </Button>
           </div>
           
-          {/* AI Career Insights - Shows progress until complete */}
+          {/* Only show the InsightCard during processing - no parsed data yet */}
           <InsightCard versionId={uploadState.completedVersionId} />
         </div>
       )}
 
-      {/* Show Complete Results - Only appears when AI enrichment is fully complete */}
-      {showResults && (
+      {/* Show Complete Results - Only appears when AI enrichment is 100% finished */}
+      {showCompleteResults && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Resume Analysis Complete</h3>
@@ -241,7 +254,7 @@ export const ResumeUpload: React.FC = () => {
           {/* AI Career Insights - Now shows completed insights */}
           <InsightCard versionId={uploadState.completedVersionId} />
           
-          {/* Resume Data Analysis - Only shown when everything is complete */}
+          {/* Resume Data Analysis - Only shown when everything is 100% complete */}
           <ParsedResumeEntities
             versionId={uploadState.completedVersionId}
             processingStatus="completed"
