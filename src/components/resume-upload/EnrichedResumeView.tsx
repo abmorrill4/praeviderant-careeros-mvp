@@ -15,71 +15,22 @@ import {
   Users,
   Target,
   Brain,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useCareerEnrichment, useCareerNarratives, useEnrichResume } from '@/hooks/useEnrichment';
 
 interface EnrichedResumeViewProps {
   versionId: string;
 }
 
-interface CareerEnrichment {
-  role_archetype: string;
-  role_archetype_explanation: string;
-  persona_type: string;
-  persona_explanation: string;
-  leadership_score: number;
-  leadership_explanation: string;
-  scope_score: number;
-  scope_explanation: string;
-  technical_depth_score: number;
-  technical_depth_explanation: string;
-}
-
-interface CareerNarrative {
-  narrative_type: string;
-  narrative_text: string;
-}
-
 export const EnrichedResumeView: React.FC<EnrichedResumeViewProps> = ({ versionId }) => {
-  const { data: enrichment, isLoading: enrichmentLoading } = useQuery({
-    queryKey: ['career-enrichment', versionId],
-    queryFn: async (): Promise<CareerEnrichment | null> => {
-      const { data, error } = await supabase
-        .from('career_enrichment')
-        .select('*')
-        .eq('resume_version_id', versionId)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!versionId,
-  });
+  const { data: enrichment, isLoading: enrichmentLoading } = useCareerEnrichment(versionId);
+  const { data: narratives, isLoading: narrativesLoading } = useCareerNarratives(versionId);
+  const enrichResumeMutation = useEnrichResume();
 
-  const { data: narratives, isLoading: narrativesLoading } = useQuery({
-    queryKey: ['career-narratives', versionId],
-    queryFn: async (): Promise<CareerNarrative[]> => {
-      const { data, error } = await supabase
-        .from('career_narratives')
-        .select('narrative_type, narrative_text')
-        .eq('resume_version_id', versionId);
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!versionId,
-  });
-
-  const handleTriggerEnrichment = async () => {
-    try {
-      await supabase.functions.invoke('enrich-resume', {
-        body: { versionId }
-      });
-    } catch (error) {
-      console.error('Error triggering enrichment:', error);
-    }
+  const handleTriggerEnrichment = () => {
+    enrichResumeMutation.mutate(versionId);
   };
 
   const getScoreColor = (score: number) => {
@@ -106,6 +57,11 @@ export const EnrichedResumeView: React.FC<EnrichedResumeViewProps> = ({ versionI
             Loading AI-powered career insights...
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+        </CardContent>
       </Card>
     );
   }
@@ -128,9 +84,22 @@ export const EnrichedResumeView: React.FC<EnrichedResumeViewProps> = ({ versionI
             <p className="text-muted-foreground mb-4">
               Ready to unlock deeper insights about your career profile?
             </p>
-            <Button onClick={handleTriggerEnrichment} className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              Generate Career Analysis
+            <Button 
+              onClick={handleTriggerEnrichment} 
+              className="flex items-center gap-2"
+              disabled={enrichResumeMutation.isPending}
+            >
+              {enrichResumeMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating Analysis...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Generate Career Analysis
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
