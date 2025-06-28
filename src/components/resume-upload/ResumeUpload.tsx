@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Upload, Loader2 } from 'lucide-react';
+import { FileText, Upload, Loader2, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +11,7 @@ import { ResumeDropzone } from './ResumeDropzone';
 import { UploadProgress } from './UploadProgress';
 import { ParsedResumeEntities } from '../ParsedResumeEntities';
 import { InsightCard } from './InsightCard';
+import { useEnrichmentStatus } from '@/hooks/useEnrichmentStatus';
 
 interface UploadState {
   file: File | null;
@@ -33,6 +34,9 @@ export const ResumeUpload: React.FC = () => {
     error: null,
     completedVersionId: null
   });
+
+  // Get enrichment status for the completed version
+  const { data: enrichmentStatus } = useEnrichmentStatus(uploadState.completedVersionId || undefined);
 
   const handleFileSelect = (file: File) => {
     setUploadState(prev => ({ 
@@ -138,6 +142,19 @@ export const ResumeUpload: React.FC = () => {
     });
   };
 
+  // Determine what to show based on upload and processing state
+  const showUploadingState = uploadState.isUploading || uploadState.error;
+  const showWaitingForProcessing = uploadState.completedVersionId && (!enrichmentStatus || enrichmentStatus.processingStage === 'pending');
+  const showProcessingResults = uploadState.completedVersionId && enrichmentStatus && (enrichmentStatus.hasEntities || enrichmentStatus.processingStage !== 'pending');
+
+  console.log('ResumeUpload: Display logic', {
+    hasCompletedVersionId: !!uploadState.completedVersionId,
+    enrichmentStatus,
+    showUploadingState,
+    showWaitingForProcessing,
+    showProcessingResults
+  });
+
   return (
     <div className="space-y-6">
       <Card>
@@ -193,7 +210,7 @@ export const ResumeUpload: React.FC = () => {
             </>
           )}
 
-          {(uploadState.isUploading || uploadState.error) && (
+          {showUploadingState && (
             <UploadProgress
               isUploading={uploadState.isUploading}
               currentStage={uploadState.currentStage}
@@ -205,8 +222,38 @@ export const ResumeUpload: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Show results when we have a completed version - InsightCard handles its own state transitions */}
-      {uploadState.completedVersionId && (
+      {/* Show waiting state - Upload complete but AI processing hasn't started yet */}
+      {showWaitingForProcessing && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-600" />
+              Preparing AI Analysis
+            </CardTitle>
+            <CardDescription>
+              Your resume has been uploaded successfully. AI processing will begin shortly.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-4">
+              <div className="text-center space-y-2">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" />
+                <p className="text-sm text-muted-foreground">
+                  Initializing AI analysis pipeline...
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" onClick={resetUpload}>
+                Upload Another Resume
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Show results when AI processing has actually begun */}
+      {showProcessingResults && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Resume Analysis</h3>
@@ -218,7 +265,7 @@ export const ResumeUpload: React.FC = () => {
           {/* AI Career Insights - InsightCard manages its own loading/progress/complete states */}
           <InsightCard versionId={uploadState.completedVersionId} />
           
-          {/* Resume Data Analysis - Always show when we have a version */}
+          {/* Resume Data Analysis - Show when we have entities or processing has started */}
           <ParsedResumeEntities
             versionId={uploadState.completedVersionId}
             processingStatus="completed"
