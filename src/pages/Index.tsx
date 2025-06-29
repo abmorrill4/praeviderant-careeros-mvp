@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Navigation } from "@/components/Navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import { 
   Brain, 
   FileText, 
@@ -14,7 +15,11 @@ import {
 } from "lucide-react";
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    console.log('Index: user state changed', { user: user?.email, loading });
+  }, [user, loading]);
 
   const features = [
     {
@@ -38,6 +43,21 @@ const Index = () => {
       description: "Understand your role archetype, leadership potential, and technical depth with AI-driven assessments."
     }
   ];
+
+  // Show loading state while auth is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <Navigation />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-slate-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
