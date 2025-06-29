@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -5,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Calendar, Building, MapPin, Globe, Award, Code, Users, Heart, BookOpen, Star, Sparkles, Brain, TrendingUp, RefreshCw, Loader2 } from 'lucide-react';
-import { useEnrichSingleEntry } from '@/hooks/useEntryEnrichment';
+import { useEnrichSingleEntry, useEntityEnrichment } from '@/hooks/useEntryEnrichment';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface ParsedResumeEntity {
   id: string;
@@ -14,16 +16,6 @@ interface ParsedResumeEntity {
   raw_value: string;
   confidence_score: number;
   source_type: string;
-  // AI enrichment data
-  enrichment_data?: {
-    insights?: string[];
-    skills_identified?: string[];
-    experience_level?: string;
-    career_progression?: string;
-    market_relevance?: string;
-    recommendations?: string[];
-    parsed_structure?: any;
-  };
 }
 
 interface DetailedViewModalProps {
@@ -42,6 +34,13 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
   subtitle
 }) => {
   const enrichSingleMutation = useEnrichSingleEntry();
+  
+  // Fetch enrichment data using the hook
+  const { 
+    data: enrichmentData, 
+    isLoading: enrichmentLoading, 
+    error: enrichmentError 
+  } = useEntityEnrichment(entity.entity_id);
 
   // Parse the raw data
   const parseRawData = () => {
@@ -54,7 +53,6 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
   };
 
   const rawData = parseRawData();
-  const enrichmentData = entity.enrichment_data;
 
   const handleEnrichEntry = async () => {
     try {
@@ -110,6 +108,44 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
   };
 
   const renderEnrichmentData = () => {
+    // Show loading state while fetching enrichment data
+    if (enrichmentLoading) {
+      return (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-4">
+            <LoadingSpinner message="Loading AI enrichment data..." />
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Show error state if there was an error fetching enrichment data
+    if (enrichmentError) {
+      return (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-4">
+            <div className="text-center">
+              <Brain className="w-8 h-8 mx-auto mb-2 text-red-500" />
+              <p className="text-muted-foreground mb-4">Error loading enrichment data</p>
+              <Button
+                onClick={handleEnrichEntry}
+                disabled={enrichSingleMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                {enrichSingleMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Retry Enrichment
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Show enrichment not available state
     if (!enrichmentData) {
       return (
         <Card className="border-amber-200 bg-amber-50">
@@ -302,7 +338,7 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
               <Badge variant="outline" className="text-xs">
                 {Math.round(entity.confidence_score * 100)}% confidence
               </Badge>
-              {entity.enrichment_data && (
+              {enrichmentData && (
                 <Badge className="text-xs bg-purple-100 text-purple-800">
                   AI Enhanced
                 </Badge>
