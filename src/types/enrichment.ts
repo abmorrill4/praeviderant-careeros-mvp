@@ -46,7 +46,11 @@ export interface EnrichmentJob {
 }
 
 export interface EnrichmentResult {
-  job: EnrichmentJob;
+  job?: EnrichmentJob;
   enrichment?: CareerEnrichment;
-  narratives: CareerNarrative[];
+  narratives?: CareerNarrative[];
+  success?: boolean;
+  message?: string;
+  enrichment_id?: string;
+  created_at?: string;
 }
