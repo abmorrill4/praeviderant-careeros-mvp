@@ -147,15 +147,36 @@ export function useEnrichSingleEntry() {
 
   return useMutation({
     mutationFn: async ({ entityId, forceRefresh = false }: { entityId: string; forceRefresh?: boolean }) => {
+      console.log('=== Frontend: Enriching Single Entry ===');
+      console.log('Entity ID:', entityId);
+      console.log('Force refresh:', forceRefresh);
+      
+      // Validate entityId
+      if (!entityId || typeof entityId !== 'string' || entityId.trim() === '') {
+        throw new Error('Invalid entity ID provided');
+      }
+
+      const requestBody = { 
+        parsed_entity_id: entityId,
+        force_refresh: forceRefresh
+      };
+
+      console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
       const { data, error } = await supabase.functions.invoke('enrich-single-entry', {
-        body: { 
-          parsed_entity_id: entityId,
-          force_refresh: forceRefresh
-        }
+        body: requestBody
       });
 
+      console.log('Edge function response:', { data, error });
+
       if (error) {
+        console.error('Edge function error:', error);
         throw new Error(error.message || 'Failed to enrich entry');
+      }
+
+      if (!data || !data.success) {
+        console.error('Enrichment failed:', data);
+        throw new Error(data?.error || 'Enrichment failed');
       }
 
       return data;
@@ -165,17 +186,24 @@ export function useEnrichSingleEntry() {
         ? "Enrichment already available"
         : "Entry enriched successfully";
         
+      console.log('Enrichment success:', message);
+      
       toast({
         title: "Enrichment Complete",
         description: message,
       });
       
-      // Invalidate related queries
+      // Invalidate related queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ['entity-enrichment', variables.entityId] });
       queryClient.invalidateQueries({ queryKey: ['entry-enrichments'] });
+      queryClient.invalidateQueries({ queryKey: ['parsed-resume-entities'] });
+      queryClient.invalidateQueries({ queryKey: ['enrichment-stats'] });
     },
     onError: (error) => {
-      console.error('Error enriching entry:', error);
+      console.error('=== Frontend: Enrichment Error ===');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      
       toast({
         title: "Enrichment Failed",
         description: error instanceof Error ? error.message : 'Failed to enrich entry',

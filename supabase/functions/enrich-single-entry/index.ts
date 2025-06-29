@@ -18,25 +18,96 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { parsed_entity_id, force_refresh = false } = await req.json();
+    console.log('=== Enrich Single Entry Request ===');
+    console.log('Method:', req.method);
+    console.log('URL:', req.url);
+    
+    // Log headers for debugging
+    const authHeader = req.headers.get('authorization');
+    console.log('Auth header present:', !!authHeader);
+    console.log('Content-Type:', req.headers.get('content-type'));
 
-    if (!parsed_entity_id) {
-      throw new Error('parsed_entity_id is required');
+    // Parse request body with better error handling
+    let requestBody;
+    try {
+      const rawBody = await req.text();
+      console.log('Raw request body:', rawBody);
+      
+      if (!rawBody || rawBody.trim() === '') {
+        throw new Error('Request body is empty');
+      }
+      
+      requestBody = JSON.parse(rawBody);
+      console.log('Parsed request body:', JSON.stringify(requestBody, null, 2));
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid JSON in request body',
+        details: parseError.message,
+        success: false 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    console.log('Enriching single entity:', parsed_entity_id);
+    // Extract and validate parameters
+    const { parsed_entity_id, entityId, force_refresh = false } = requestBody;
+    
+    // Handle both possible parameter names for backward compatibility
+    const finalEntityId = parsed_entity_id || entityId;
+    
+    console.log('Entity ID from parsed_entity_id:', parsed_entity_id);
+    console.log('Entity ID from entityId:', entityId);
+    console.log('Final entity ID:', finalEntityId);
+    console.log('Force refresh:', force_refresh);
+
+    if (!finalEntityId) {
+      console.error('No entity ID provided in request');
+      return new Response(JSON.stringify({ 
+        error: 'Entity ID is required. Please provide either "parsed_entity_id" or "entityId" in the request body.',
+        received_body: requestBody,
+        success: false 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log('Processing enrichment for entity:', finalEntityId);
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get the user from auth header
-    const authHeader = req.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      throw new Error('Authentication required');
+    if (!token) {
+      console.error('No auth token provided');
+      return new Response(JSON.stringify({ 
+        error: 'Authentication token is required',
+        success: false 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    // Get the parsed entity
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    console.log('User authentication result:', { userId: user?.id, error: authError?.message });
+
+    if (authError || !user) {
+      console.error('Authentication failed:', authError);
+      return new Response(JSON.stringify({ 
+        error: 'Authentication failed',
+        details: authError?.message,
+        success: false 
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Get the parsed entity with detailed logging
+    console.log('Fetching entity from database...');
     const { data: entity, error: entityError } = await supabase
       .from('parsed_resume_entities')
       .select(`
@@ -48,30 +119,84 @@ serve(async (req) => {
           )
         )
       `)
-      .eq('id', parsed_entity_id)
+      .eq('id', finalEntityId)
       .single();
 
-    if (entityError || !entity) {
-      throw new Error('Entity not found or access denied');
+    console.log('Database query result:', { 
+      entityFound: !!entity, 
+      error: entityError?.message,
+      entityId: entity?.id,
+      userId: entity?.resume_versions?.resume_streams?.user_id
+    });
+
+    if (entityError) {
+      console.error('Database error fetching entity:', entityError);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to fetch entity from database',
+        details: entityError.message,
+        entity_id: finalEntityId,
+        success: false 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!entity) {
+      console.error('Entity not found:', finalEntityId);
+      return new Response(JSON.stringify({ 
+        error: 'Entity not found',
+        entity_id: finalEntityId,
+        success: false 
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Verify user owns this entity
-    if (entity.resume_versions.resume_streams.user_id !== user.id) {
-      throw new Error('Access denied');
+    const entityUserId = entity.resume_versions.resume_streams.user_id;
+    console.log('Access check:', { requestUserId: user.id, entityUserId });
+    
+    if (entityUserId !== user.id) {
+      console.error('Access denied - user mismatch');
+      return new Response(JSON.stringify({ 
+        error: 'Access denied - you do not own this entity',
+        success: false 
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Check if enrichment already exists
+    console.log('Checking for existing enrichment...');
     const { data: existingEnrichment, error: enrichmentError } = await supabase
       .from('entry_enrichment')
       .select('*')
-      .eq('parsed_entity_id', parsed_entity_id)
+      .eq('parsed_entity_id', finalEntityId)
       .maybeSingle();
 
+    console.log('Existing enrichment check:', { 
+      found: !!existingEnrichment, 
+      error: enrichmentError?.message,
+      forceRefresh: force_refresh
+    });
+
     if (enrichmentError) {
-      throw new Error(`Failed to check existing enrichment: ${enrichmentError.message}`);
+      console.error('Error checking existing enrichment:', enrichmentError);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to check existing enrichment',
+        details: enrichmentError.message,
+        success: false 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     if (existingEnrichment && !force_refresh) {
+      console.log('Returning cached enrichment');
       return new Response(JSON.stringify({
         success: true,
         message: 'Enrichment already exists',
@@ -83,11 +208,14 @@ serve(async (req) => {
     }
 
     // Enrich the entity
+    console.log('Starting AI enrichment process...');
     const enrichmentData = await enrichSingleEntity(entity);
+    console.log('AI enrichment completed successfully');
 
     // Store or update enrichment
     let result;
     if (existingEnrichment) {
+      console.log('Updating existing enrichment...');
       const { data, error } = await supabase
         .from('entry_enrichment')
         .update(enrichmentData)
@@ -96,28 +224,31 @@ serve(async (req) => {
         .single();
       
       if (error) {
+        console.error('Failed to update enrichment:', error);
         throw new Error(`Failed to update enrichment: ${error.message}`);
       }
       result = data;
     } else {
+      console.log('Creating new enrichment...');
       const { data, error } = await supabase
         .from('entry_enrichment')
         .insert({
           user_id: user.id,
           resume_version_id: entity.resume_version_id,
-          parsed_entity_id: parsed_entity_id,
+          parsed_entity_id: finalEntityId,
           ...enrichmentData
         })
         .select()
         .single();
       
       if (error) {
+        console.error('Failed to insert enrichment:', error);
         throw new Error(`Failed to insert enrichment: ${error.message}`);
       }
       result = data;
     }
 
-    console.log('Successfully enriched entity:', parsed_entity_id);
+    console.log('Successfully enriched entity:', finalEntityId);
 
     return new Response(JSON.stringify({
       success: true,
@@ -129,10 +260,15 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in enrich-single-entry:', error);
+    console.error('=== Error in enrich-single-entry ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
     return new Response(JSON.stringify({ 
-      error: error.message,
-      success: false 
+      error: error.message || 'Internal server error',
+      success: false,
+      timestamp: new Date().toISOString()
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -145,6 +281,8 @@ async function enrichSingleEntity(entity: any) {
     throw new Error('OpenAI API key not configured');
   }
 
+  console.log('Starting OpenAI enrichment for field:', entity.field_name);
+
   // Parse the raw value to understand the data structure
   let parsedData;
   try {
@@ -155,6 +293,7 @@ async function enrichSingleEntity(entity: any) {
 
   // Create enrichment prompt based on field type and data
   const enrichmentPrompt = createEnrichmentPrompt(entity.field_name, parsedData);
+  console.log('Generated enrichment prompt length:', enrichmentPrompt.length);
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -182,14 +321,19 @@ async function enrichSingleEntity(entity: any) {
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error('OpenAI API error:', response.status, errorText);
     throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();
   const enrichmentContent = data.choices[0].message.content;
+  console.log('Received OpenAI response length:', enrichmentContent.length);
 
   try {
     const enrichmentData = JSON.parse(enrichmentContent);
+    console.log('Successfully parsed AI enrichment data');
+    
     return {
       insights: enrichmentData.insights || [],
       skills_identified: enrichmentData.skills_identified || [],
@@ -208,6 +352,7 @@ async function enrichSingleEntity(entity: any) {
     };
   } catch (error) {
     console.error('Failed to parse enrichment response:', error);
+    console.error('Raw AI response:', enrichmentContent);
     throw new Error('Invalid enrichment response from AI');
   }
 }
