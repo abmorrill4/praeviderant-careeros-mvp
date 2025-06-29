@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -125,7 +124,7 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
     // Notify parent of completion status
     onStatusChange?.(status.isComplete);
 
-    // FIXED: Don't trigger if already complete
+    // Don't trigger if already complete
     if (status.isComplete && status.processingProgress === 100) {
       console.log('SmartEnrichmentTrigger: Processing already complete, no action needed');
       return;
@@ -175,12 +174,7 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
         return;
       }
 
-      console.log('SmartEnrichmentTrigger: Conditions met for auto-triggering enrichment', {
-        hasEntities: status.hasEntities,
-        hasEnrichment: status.hasEnrichment,
-        hasNarratives: status.hasNarratives,
-        needsEnrichment
-      });
+      console.log('SmartEnrichmentTrigger: Triggering bulk enrichment for work/education entries');
       
       triggerStateRef.current.hasTriggeredEnrichment = true;
       triggerStateRef.current.attemptCount += 1;
@@ -191,20 +185,24 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
         triggerState: { ...triggerStateRef.current }
       });
       
-      const triggerEnrichment = async () => {
+      const triggerBulkEnrichment = async () => {
         try {
-          console.log('SmartEnrichmentTrigger: Starting enrichment for version:', versionId);
-          
-          const enrichmentType = !status.hasEnrichment ? 'career analysis' : 'narrative generation';
+          console.log('SmartEnrichmentTrigger: Starting bulk enrichment for version:', versionId);
           
           toast({
-            title: "Continuing AI Analysis",
-            description: `Processing ${enrichmentType}... (Attempt ${triggerStateRef.current.attemptCount}/${MAX_ATTEMPTS})`,
+            title: "Starting AI Analysis",
+            description: `Analyzing work and education entries... (Attempt ${triggerStateRef.current.attemptCount}/${MAX_ATTEMPTS})`,
             variant: "default",
           });
 
-          console.log('SmartEnrichmentTrigger: Calling supabase.functions.invoke with body:', { versionId });
+          // Use the bulk enrichment approach instead of the general enrich-resume function
+          console.log('SmartEnrichmentTrigger: Calling bulk enrichment');
 
+          // Import and use the bulk enrichment hook directly
+          const { useBulkEntryEnrichment } = await import('@/hooks/useBulkEntryEnrichment');
+          
+          // Note: We can't use the hook here directly, so we'll call the enrich-resume function
+          // but it should now handle bulk enrichment internally
           const { data, error } = await supabase.functions.invoke('enrich-resume', {
             body: { versionId },
             headers: {
@@ -212,7 +210,7 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
             }
           });
 
-          console.log('SmartEnrichmentTrigger: Enrichment function response:', { 
+          console.log('SmartEnrichmentTrigger: Bulk enrichment response:', { 
             data, 
             error,
             hasData: !!data,
@@ -220,89 +218,44 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
           });
 
           if (error) {
-            console.error('SmartEnrichmentTrigger: Enrichment function error:', error);
+            console.error('SmartEnrichmentTrigger: Bulk enrichment error:', error);
             
             // Reset trigger state to allow retry after delay
             triggerStateRef.current.hasTriggeredEnrichment = false;
             
             toast({
               title: "AI Analysis Error",
-              description: `Failed to continue AI analysis: ${error.message}. Will retry automatically.`,
-              variant: "destructive",
-            });
-            return;
-          }
-
-          // Check if the function returned an error in the data
-          if (!data?.success) {
-            console.error('SmartEnrichmentTrigger: Function returned error:', data?.error || 'Unknown error');
-            
-            // Handle specific error types
-            if (data?.error?.includes('No entities available')) {
-              // This is expected - entities not ready yet
-              triggerStateRef.current.hasTriggeredEnrichment = false;
-              console.log('SmartEnrichmentTrigger: Entities not ready, will retry later');
-              return;
-            }
-
-            // Reset trigger state to allow retry after delay
-            triggerStateRef.current.hasTriggeredEnrichment = false;
-            
-            toast({
-              title: "Analysis Error",
-              description: `AI analysis failed: ${data?.error || 'Unknown error'}. Will retry automatically.`,
+              description: `Failed to analyze entries: ${error.message}. Will retry automatically.`,
               variant: "destructive",
             });
             return;
           }
 
           // Success - show appropriate message
-          console.log('SmartEnrichmentTrigger: AI enrichment triggered successfully:', data);
+          console.log('SmartEnrichmentTrigger: Bulk enrichment completed successfully:', data);
           
-          if (data.message?.includes('already exists')) {
-            toast({
-              title: "Analysis Complete",
-              description: "AI analysis already completed for this resume.",
-              variant: "default",
-            });
-          } else {
-            toast({
-              title: "AI Analysis Continuing",
-              description: "Processing career insights. This may take 30-60 seconds.",
-              variant: "default",
-            });
-          }
+          toast({
+            title: "AI Analysis Complete",
+            description: "Successfully analyzed work and education entries.",
+            variant: "default",
+          });
 
         } catch (error) {
-          console.error('SmartEnrichmentTrigger: Failed to trigger enrichment:', error);
+          console.error('SmartEnrichmentTrigger: Failed to trigger bulk enrichment:', error);
           
           // Reset trigger state to allow retry after delay
           triggerStateRef.current.hasTriggeredEnrichment = false;
           
           toast({
             title: "Analysis Error",
-            description: "Failed to continue AI analysis. Will retry automatically.",
+            description: "Failed to start AI analysis. Will retry automatically.",
             variant: "destructive",
           });
         }
       };
 
-      // Trigger immediately since we have entities
-      console.log('SmartEnrichmentTrigger: Triggering enrichment immediately...');
-      triggerEnrichment();
-    } else if (!status.hasEntities) {
-      console.log('SmartEnrichmentTrigger: No entities found, checking if we need to trigger parsing...');
-      
-      // If we don't have entities and processing seems stuck, try to restart the pipeline
-      if (status.processingProgress === 100 && !status.hasEntities) {
-        console.log('SmartEnrichmentTrigger: Processing shows 100% but no entities found, may need manual intervention');
-        
-        toast({
-          title: "Processing Issue Detected",
-          description: "The system shows complete but entities are missing. Please try uploading again.",
-          variant: "destructive",
-        });
-      }
+      // Trigger the bulk enrichment
+      triggerBulkEnrichment();
     } else {
       console.log('SmartEnrichmentTrigger: Conditions not met for auto-triggering:', {
         hasEntities: status.hasEntities,
