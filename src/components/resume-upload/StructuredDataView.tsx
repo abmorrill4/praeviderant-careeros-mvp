@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +36,10 @@ import {
   Heart,
   Star,
   Zap,
-  CheckSquare
+  CheckSquare,
+  Sparkles,
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { useParsedResumeEntities } from '@/hooks/useResumeStreams';
 import { parseResumeFieldValue, getFieldDisplayName, getSectionFromFieldName } from '@/utils/resumeDataParser';
@@ -46,6 +48,7 @@ import { DataStatistics } from './DataStatistics';
 import { DataFieldEditor } from './DataFieldEditor';
 import { BulkOperations } from './BulkOperations';
 import { DetailedViewModal } from './DetailedViewModal';
+import { useResumeEnrichments, useEnrichAllEntries, useEnrichSingleEntry, useEnrichmentStats } from '@/hooks/useEntryEnrichment';
 
 interface StructuredDataViewProps {
   versionId: string;
@@ -205,7 +208,13 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
   onProfileUpdated 
 }) => {
   const { data: entities, isLoading, error } = useParsedResumeEntities(versionId);
+  const { data: enrichments } = useResumeEnrichments(versionId);
+  const { data: enrichmentStats } = useEnrichmentStats(versionId);
   const { toast } = useToast();
+  
+  // Enrichment mutations
+  const enrichAllMutation = useEnrichAllEntries();
+  const enrichSingleMutation = useEnrichSingleEntry();
   
   // State management
   const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set());
@@ -304,7 +313,16 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
     }
   };
 
-  // Process and organize entities
+  // Create a map of enrichments by entity ID
+  const enrichmentMap = useMemo(() => {
+    const map = new Map();
+    enrichments?.forEach(enrichment => {
+      map.set(enrichment.parsed_entity_id, enrichment);
+    });
+    return map;
+  }, [enrichments]);
+
+  // Process and organize entities with enrichment data
   const organizedData = useMemo(() => {
     if (!entities) return {};
 
@@ -319,15 +337,16 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
         grouped[finalSection] = [];
       }
       
-      // Safely access enrichment data - check if it exists on the entity
-      const enrichmentData = (entity as any).enrichment_data ? {
-        insights: (entity as any).enrichment_data.insights || [],
-        skills_identified: (entity as any).enrichment_data.skills_identified || [],
-        experience_level: (entity as any).enrichment_data.experience_level,
-        career_progression: (entity as any).enrichment_data.career_progression,
-        market_relevance: (entity as any).enrichment_data.market_relevance,
-        recommendations: (entity as any).enrichment_data.recommendations || [],
-        parsed_structure: (entity as any).enrichment_data.parsed_structure
+      // Get enrichment data for this entity
+      const enrichment = enrichmentMap.get(entity.id);
+      const enrichmentData = enrichment ? {
+        insights: enrichment.insights || [],
+        skills_identified: enrichment.skills_identified || [],
+        experience_level: enrichment.experience_level,
+        career_progression: enrichment.career_progression,
+        market_relevance: enrichment.market_relevance,
+        recommendations: enrichment.recommendations || [],
+        parsed_structure: enrichment.parsed_structure
       } : undefined;
       
       grouped[finalSection].push({
@@ -367,7 +386,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
     });
 
     return grouped;
-  }, [entities, confidenceFilter, searchQuery, customCategories]);
+  }, [entities, enrichmentMap, confidenceFilter, searchQuery, customCategories]);
 
   // Calculate statistics
   const statistics = useMemo(() => {
@@ -488,6 +507,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
     }
 
     const entryHeader = extractResumeEntryHeader(entity.parsedData, entity.field_name);
+    const hasEnrichment = !!entity.enrichment_data;
 
     return (
       <div 
@@ -531,16 +551,52 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
                     <span>{entryHeader.location}</span>
                   </div>
                 )}
-                {entity.enrichment_data && (
+                {hasEnrichment && (
                   <Badge variant="outline" className="text-xs bg-purple-50 text-purple-600">
                     AI Enhanced
                   </Badge>
                 )}
               </div>
+
+              {/* Show enrichment preview */}
+              {entity.enrichment_data && (
+                <div className="mt-2 pt-2 border-t">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="w-3 h-3 text-purple-500" />
+                    <span className="text-xs font-medium text-purple-700">AI Insights</span>
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    {entity.enrichment_data.insights?.slice(0, 2).map((insight, i) => (
+                      <div key={i} className="mb-1">• {insight}</div>
+                    ))}
+                    {entity.enrichment_data.insights && entity.enrichment_data.insights.length > 2 && (
+                      <div className="text-purple-600">+{entity.enrichment_data.insights.length - 2} more insights</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
           <div className="flex items-center gap-2 ml-2">
+            {!hasEnrichment && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEnrichSingle(entity.id.split('-')[0]); // Get original entity ID
+                }}
+                disabled={enrichSingleMutation.isPending}
+                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                {enrichSingleMutation.isPending ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3 h-3" />
+                )}
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -579,17 +635,72 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Statistics Overview */}
-      <DataStatistics {...statistics} />
+      {/* Statistics Overview with Enrichment Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <DataStatistics {...statistics} />
+        {enrichmentStats && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-500" />
+                AI Enrichment
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-2xl font-bold text-purple-600">
+                    {enrichmentStats.enriched_entities}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    of {enrichmentStats.total_entities}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {enrichmentStats.enrichment_percentage}% enriched
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${enrichmentStats.enrichment_percentage}%` }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
-      {/* Bulk Operations */}
-      <BulkOperations
-        selectedItems={selectedEntities}
-        totalItems={statistics.totalFields}
-        onSelectAll={handleSelectAll}
-        onClearSelection={handleClearSelection}
-        onBulkMerge={handleBulkMerge}
-      />
+      {/* Bulk Operations with Enrichment */}
+      <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+        <BulkOperations
+          selectedItems={selectedEntities}
+          totalItems={statistics.totalFields}
+          onSelectAll={handleSelectAll}
+          onClearSelection={handleClearSelection}
+          onBulkMerge={handleBulkMerge}
+        />
+        <div className="flex items-center gap-2 ml-auto">
+          <Button
+            onClick={handleEnrichAll}
+            disabled={enrichAllMutation.isPending}
+            className="flex items-center gap-2"
+            variant="outline"
+          >
+            {enrichAllMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+            Enrich All Entries
+          </Button>
+          {enrichmentStats && enrichmentStats.enriched_entities > 0 && (
+            <span className="text-sm text-muted-foreground">
+              {enrichmentStats.enriched_entities} enriched
+            </span>
+          )}
+        </div>
+      </div>
 
       <Card>
         <CardHeader>

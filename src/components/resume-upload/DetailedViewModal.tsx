@@ -1,10 +1,11 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Building, MapPin, Globe, Award, Code, Users, Heart, BookOpen, Star, Sparkles, Brain, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Building, MapPin, Globe, Award, Code, Users, Heart, BookOpen, Star, Sparkles, Brain, TrendingUp, RefreshCw, Loader2 } from 'lucide-react';
+import { useEnrichSingleEntry } from '@/hooks/useEntryEnrichment';
 
 interface ParsedResumeEntity {
   id: string;
@@ -39,6 +40,8 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
   title,
   subtitle
 }) => {
+  const enrichSingleMutation = useEnrichSingleEntry();
+
   // Parse the raw data
   const parseRawData = () => {
     try {
@@ -51,6 +54,15 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
 
   const rawData = parseRawData();
   const enrichmentData = entity.enrichment_data;
+
+  const handleEnrichEntry = async () => {
+    try {
+      const entityId = entity.id.split('-')[0]; // Get original entity ID
+      await enrichSingleMutation.mutateAsync({ entityId, forceRefresh: true });
+    } catch (error) {
+      console.error('Failed to enrich entry:', error);
+    }
+  };
 
   const renderParsedData = () => {
     if (typeof rawData === 'object' && rawData !== null) {
@@ -100,9 +112,21 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
       return (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="pt-4">
-            <div className="text-center text-muted-foreground">
+            <div className="text-center">
               <Brain className="w-8 h-8 mx-auto mb-2 text-amber-500" />
-              <p>AI enrichment data not available for this entry</p>
+              <p className="text-muted-foreground mb-4">AI enrichment data not available for this entry</p>
+              <Button
+                onClick={handleEnrichEntry}
+                disabled={enrichSingleMutation.isPending}
+                className="flex items-center gap-2"
+              >
+                {enrichSingleMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                Enrich This Entry
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -111,6 +135,24 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
 
     return (
       <div className="space-y-4">
+        {/* Refresh Button */}
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleEnrichEntry}
+            disabled={enrichSingleMutation.isPending}
+            className="flex items-center gap-2"
+          >
+            {enrichSingleMutation.isPending ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3 h-3" />
+            )}
+            Refresh Analysis
+          </Button>
+        </div>
+
         {/* AI Insights */}
         {enrichmentData.insights && enrichmentData.insights.length > 0 && (
           <Card className="border-l-4 border-l-purple-500">
@@ -167,19 +209,25 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
               {enrichmentData.experience_level && (
                 <div>
                   <div className="font-medium text-sm">Experience Level</div>
-                  <div className="text-sm text-muted-foreground">{enrichmentData.experience_level}</div>
+                  <div className="text-sm text-muted-foreground capitalize">
+                    {enrichmentData.experience_level}
+                  </div>
                 </div>
               )}
               {enrichmentData.career_progression && (
                 <div>
                   <div className="font-medium text-sm">Career Progression</div>
-                  <div className="text-sm text-muted-foreground">{enrichmentData.career_progression}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {enrichmentData.career_progression}
+                  </div>
                 </div>
               )}
               {enrichmentData.market_relevance && (
                 <div>
                   <div className="font-medium text-sm">Market Relevance</div>
-                  <div className="text-sm text-muted-foreground">{enrichmentData.market_relevance}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {enrichmentData.market_relevance}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -214,11 +262,11 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
                 <Brain className="w-4 h-4 text-gray-500" />
-                AI Structured Data
+                AI Enhanced Structure
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-gray-50 p-3 rounded">
+              <pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-gray-50 p-3 rounded max-h-40 overflow-y-auto">
                 {JSON.stringify(enrichmentData.parsed_structure, null, 2)}
               </pre>
             </CardContent>
@@ -248,9 +296,16 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
               <span>Field: <strong>{entity.field_name}</strong></span>
               <span>Source: <strong>{entity.source_type}</strong></span>
             </div>
-            <Badge variant="outline" className="text-xs">
-              {Math.round(entity.confidence_score * 100)}% confidence
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs">
+                {Math.round(entity.confidence_score * 100)}% confidence
+              </Badge>
+              {entity.enrichment_data && (
+                <Badge className="text-xs bg-purple-100 text-purple-800">
+                  AI Enhanced
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Parsed Data Section */}
