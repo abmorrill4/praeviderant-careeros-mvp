@@ -145,37 +145,37 @@ function mapCurrentStageToProcessingStage(
   hasEntities: boolean,
   hasEnrichment: boolean,
   hasNarratives: boolean
-): 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed' {
+) {
   // Check for explicit failed status first
   if (processingStatus === 'failed') {
-    return 'failed';
+    return 'failed' as const;
   }
   
   // Check for complete status
   if (processingStatus === 'completed' && hasNarratives && hasEnrichment) {
-    return 'complete';
+    return 'complete' as const;
   }
   
   // Determine stage based on data availability and current stage
   if (hasNarratives && hasEnrichment && hasEntities) {
-    return 'complete';
+    return 'complete' as const;
   } else if (hasEnrichment && hasEntities) {
-    return 'enriching';
+    return 'enriching' as const;
   } else if (hasEntities) {
-    return 'parsing';
+    return 'parsing' as const;
   } else {
     // Map stage names to processing stages
     switch (currentStage) {
       case 'upload':
-        return 'pending';
+        return 'pending' as const;
       case 'parse':
-        return 'parsing';
+        return 'parsing' as const;
       case 'enrich':
-        return 'enriching';
+        return 'enriching' as const;
       case 'complete':
-        return 'complete';
+        return 'complete' as const;
       default:
-        return 'pending';
+        return 'pending' as const;
     }
   }
 }
