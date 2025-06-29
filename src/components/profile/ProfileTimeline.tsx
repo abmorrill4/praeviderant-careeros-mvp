@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileOverview } from './ProfileOverview';
 import { ExperienceSection } from './ExperienceSection';
@@ -20,7 +19,6 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
   activeSection,
   onSectionChange,
 }) => {
-  const { theme } = useTheme();
   const [focusedCard, setFocusedCard] = useState<string | null>(null);
   const profileCompleteness = useProfileCompleteness();
 
@@ -33,16 +31,16 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      <div className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'} border-b p-6`}>
+      <div className="bg-white border-b border-slate-200 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <h1 className="text-2xl font-bold text-slate-900">
             Career Timeline
           </h1>
           <ResumeUploadModal />
         </div>
         
         <Tabs value={activeSection} onValueChange={(value) => onSectionChange(value as TimelineSection)}>
-          <TabsList className={`grid w-full grid-cols-4 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}>
+          <TabsList className="grid w-full grid-cols-4 bg-slate-100">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="experience">Experience</TabsTrigger>
             <TabsTrigger value="education">Education</TabsTrigger>
@@ -80,11 +78,11 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
         </Tabs>
 
         {/* Additional Sections Notice */}
-        <div className={`mt-6 p-4 border rounded-lg ${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'}`}>
-          <h3 className={`font-medium mb-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+        <div className="mt-6 p-4 border rounded-lg bg-white border-slate-200">
+          <h3 className="font-medium mb-2 text-slate-900">
             Complete Resume Analysis
           </h3>
-          <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+          <p className="text-sm text-slate-600">
             Your uploaded resumes are analyzed for all sections including Projects, Certifications, Awards, 
             Publications, Volunteer Work, Languages, Professional Associations, and References. 
             Use the resume upload feature to extract and organize all your career data.
