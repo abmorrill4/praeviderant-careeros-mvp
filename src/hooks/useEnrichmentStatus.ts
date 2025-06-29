@@ -50,7 +50,7 @@ export function useEnrichmentStatus(versionId?: string) {
             hasNarratives: false,
             isComplete: false,
             lastUpdated: new Date().toISOString(),
-            processingStage: 'failed' as const
+            processingStage: 'failed'
           };
         }
 
@@ -63,7 +63,7 @@ export function useEnrichmentStatus(versionId?: string) {
         console.log('useEnrichmentStatus: Raw status from database:', status);
 
         // Enhanced stage mapping with better error handling
-        const processingStage: 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed' = mapCurrentStageToProcessingStage(
+        const processingStage = mapCurrentStageToProcessingStage(
           status.current_stage, 
           status.processing_status,
           status.has_entities,
@@ -82,7 +82,7 @@ export function useEnrichmentStatus(versionId?: string) {
           hasNarratives: Boolean(status.has_narratives),
           isComplete: Boolean(status.is_complete),
           lastUpdated: status.last_updated || new Date().toISOString(),
-          processingStage
+          processingStage: processingStage as EnrichmentStatus['processingStage']
         };
 
         console.log('useEnrichmentStatus: Mapped result:', result);
@@ -102,7 +102,7 @@ export function useEnrichmentStatus(versionId?: string) {
           hasNarratives: false,
           isComplete: false,
           lastUpdated: new Date().toISOString(),
-          processingStage: 'failed' as const
+          processingStage: 'failed'
         };
       }
     },
@@ -148,34 +148,34 @@ function mapCurrentStageToProcessingStage(
 ): 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed' {
   // Check for explicit failed status first
   if (processingStatus === 'failed') {
-    return 'failed' as const;
+    return 'failed';
   }
   
   // Check for complete status
   if (processingStatus === 'completed' && hasNarratives && hasEnrichment) {
-    return 'complete' as const;
+    return 'complete';
   }
   
   // Determine stage based on data availability and current stage
   if (hasNarratives && hasEnrichment && hasEntities) {
-    return 'complete' as const;
+    return 'complete';
   } else if (hasEnrichment && hasEntities) {
-    return 'enriching' as const;
+    return 'enriching';
   } else if (hasEntities) {
-    return 'parsing' as const;
+    return 'parsing';
   } else {
     // Map stage names to processing stages
     switch (currentStage) {
       case 'upload':
-        return 'pending' as const;
+        return 'pending';
       case 'parse':
-        return 'parsing' as const;
+        return 'parsing';
       case 'enrich':
-        return 'enriching' as const;
+        return 'enriching';
       case 'complete':
-        return 'complete' as const;
+        return 'complete';
       default:
-        return 'pending' as const;
+        return 'pending';
     }
   }
 }
