@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -134,15 +135,33 @@ export function useEnrichResume() {
       return data as EnrichmentResult;
     },
     onSuccess: (data, versionId) => {
+      // Handle different response structures gracefully
+      const jobId = data?.job?.id;
+      const enrichmentId = data?.enrichment_id;
+      
+      let description = 'Processing career insights for resume.';
+      
+      if (jobId) {
+        description += ` Job ID: ${jobId}`;
+      } else if (enrichmentId) {
+        description += ` Enrichment ID: ${enrichmentId}`;
+      }
+      
+      // Show appropriate message based on response type
+      const title = data?.message === 'Enrichment already exists' 
+        ? "Enrichment Available" 
+        : "Enrichment Started";
+      
       toast({
-        title: "Enrichment Started",
-        description: `Processing career insights for resume. Job ID: ${data.job.id}`,
+        title,
+        description,
       });
       
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['enrichment-jobs', versionId] });
       queryClient.invalidateQueries({ queryKey: ['career-enrichment', versionId] });
       queryClient.invalidateQueries({ queryKey: ['career-narratives', versionId] });
+      queryClient.invalidateQueries({ queryKey: ['enrichment-status', versionId] });
     },
     onError: (error) => {
       toast({
