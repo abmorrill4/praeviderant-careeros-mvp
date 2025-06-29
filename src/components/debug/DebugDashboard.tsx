@@ -13,13 +13,15 @@ import {
   Database,
   Zap,
   Settings,
-  BarChart3
+  BarChart3,
+  Play
 } from 'lucide-react';
 import { SystemStatusMonitor } from './SystemStatusMonitor';
 import { ProcessingAnalytics } from './ProcessingAnalytics';
 import { ErrorAnalysisPanel } from './ErrorAnalysisPanel';
 import { PerformanceMetrics } from './PerformanceMetrics';
 import { useEnrichmentStatus } from '@/hooks/useEnrichmentStatus';
+import { useEnrichResume } from '@/hooks/useEnrichment';
 
 interface DebugDashboardProps {
   versionId?: string;
@@ -29,10 +31,17 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { data: status, isLoading, error, refetch } = useEnrichmentStatus(versionId);
+  const enrichResume = useEnrichResume();
 
   const handleRefresh = () => {
     setRefreshTrigger(prev => prev + 1);
     refetch();
+  };
+
+  const handleTriggerAnalysis = () => {
+    if (versionId) {
+      enrichResume.mutate(versionId);
+    }
   };
 
   const getSystemHealth = () => {
@@ -69,6 +78,17 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
             <Activity className="w-3 h-3" />
             System {systemHealth.status}
           </Badge>
+          {versionId && (
+            <Button 
+              onClick={handleTriggerAnalysis} 
+              variant="outline" 
+              size="sm"
+              disabled={enrichResume.isPending || status?.isComplete}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              {enrichResume.isPending ? 'Analyzing...' : 'Trigger Analysis'}
+            </Button>
+          )}
           <Button onClick={handleRefresh} variant="outline" size="sm">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
