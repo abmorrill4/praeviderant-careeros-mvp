@@ -64,11 +64,8 @@ function mapCurrentStageToProcessingStage(
     return 'failed';
   }
   
-  if (processingStatus === 'completed' && hasNarratives && hasEnrichment) {
-    return 'complete';
-  }
-  
-  if (hasNarratives && hasEnrichment && hasEntities) {
+  // FIXED: If we have all three components (entities, enrichment, narratives), we're complete
+  if (hasEntities && hasEnrichment && hasNarratives) {
     return 'complete';
   }
   
@@ -102,7 +99,6 @@ export function useEnrichmentStatus(versionId?: string) {
     queryFn: async (): Promise<EnrichmentStatus> => {
       if (!user) {
         console.log('useEnrichmentStatus: No user authenticated');
-        // Return fallback instead of throwing to prevent auth error propagation
         if (versionId && isValidVersionId(versionId)) {
           return createFallbackStatus(versionId);
         }
@@ -128,11 +124,9 @@ export function useEnrichmentStatus(versionId?: string) {
 
         if (error) {
           console.error('useEnrichmentStatus: Database error getting processing status:', error);
-          // Check if it's an auth-related error
           if (error.message?.includes('JWT') || error.message?.includes('auth')) {
             throw new Error('Authentication expired. Please sign in again.');
           }
-          // Return fallback for other database errors to prevent UI crashes
           console.warn('useEnrichmentStatus: Falling back to default status due to database error');
           return createFallbackStatus(versionId);
         }
@@ -153,16 +147,27 @@ export function useEnrichmentStatus(versionId?: string) {
           status.has_narratives
         );
         
+        // FIXED: Improved completion logic
+        const isComplete = Boolean(
+          status.has_entities && 
+          status.has_enrichment && 
+          status.has_narratives &&
+          (processingStage === 'complete' || (status.has_entities && status.has_enrichment && status.has_narratives))
+        );
+        
+        // FIXED: Set progress to 100% when complete
+        const processingProgress = isComplete ? 100 : Math.max(0, Math.min(100, status.processing_progress || 0));
+        
         const result: EnrichmentStatus = {
           versionId: status.version_id,
           currentStage: status.current_stage || 'upload',
-          processingProgress: Math.max(0, Math.min(100, status.processing_progress || 0)),
-          processingStatus: status.processing_status || 'pending',
+          processingProgress: processingProgress,
+          processingStatus: isComplete ? 'completed' : (status.processing_status || 'pending'),
           stages: status.stages || {},
           hasEntities: Boolean(status.has_entities),
           hasEnrichment: Boolean(status.has_enrichment),
           hasNarratives: Boolean(status.has_narratives),
-          isComplete: Boolean(status.is_complete),
+          isComplete: isComplete,
           lastUpdated: status.last_updated || new Date().toISOString(),
           processingStage: processingStage
         };
@@ -172,14 +177,12 @@ export function useEnrichmentStatus(versionId?: string) {
       } catch (error) {
         console.error('useEnrichmentStatus: Query failed:', error);
         
-        // Distinguish between different error types
         if (error instanceof Error) {
           if (error.message.includes('Authentication') || error.message.includes('JWT')) {
-            throw error; // Re-throw auth errors
+            throw error;
           }
         }
         
-        // For other errors, return fallback to prevent UI crashes
         console.warn('useEnrichmentStatus: Returning fallback status due to error');
         return createFallbackStatus(versionId);
       }
@@ -189,17 +192,21 @@ export function useEnrichmentStatus(versionId?: string) {
       const data = query.state.data;
       if (!data) return false;
       
+      // FIXED: Stop polling when complete
+      if (data.isComplete && data.processingProgress === 100) {
+        console.log('useEnrichmentStatus: Processing complete, stopping polling');
+        return false;
+      }
+      
       // Continue polling if not complete and not failed
       return (!data.isComplete && data.processingStage !== 'failed') ? 3000 : false;
     },
     staleTime: 1000 * 10,
     retry: (failureCount, error) => {
-      // Don't retry auth errors
       if (error instanceof Error && 
           (error.message.includes('Authentication') || error.message.includes('JWT'))) {
         return false;
       }
-      // Retry other errors up to 2 times
       return failureCount < 2;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),

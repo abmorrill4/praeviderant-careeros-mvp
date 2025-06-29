@@ -65,6 +65,24 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
     });
   }, [versionId]);
 
+  // FIXED: Reset trigger state when processing completes
+  useEffect(() => {
+    if (status?.isComplete && status?.processingProgress === 100) {
+      console.log('SmartEnrichmentTrigger: Processing complete, resetting trigger state');
+      triggerStateRef.current = {
+        hasTriggeredEnrichment: false,
+        attemptCount: 0,
+        lastAttemptTime: 0,
+        isBlocked: false,
+        blockUntil: 0
+      };
+      setDebugInfo({
+        lastUpdate: new Date().toISOString(),
+        triggerState: triggerStateRef.current
+      });
+    }
+  }, [status?.isComplete, status?.processingProgress]);
+
   // Check if we're currently blocked
   const isCurrentlyBlocked = () => {
     const now = Date.now();
@@ -107,6 +125,12 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
     // Notify parent of completion status
     onStatusChange?.(status.isComplete);
 
+    // FIXED: Don't trigger if already complete
+    if (status.isComplete && status.processingProgress === 100) {
+      console.log('SmartEnrichmentTrigger: Processing already complete, no action needed');
+      return;
+    }
+
     // Check if blocked
     if (isCurrentlyBlocked()) {
       const remainingTime = Math.ceil((triggerStateRef.current.blockUntil - Date.now()) / 1000);
@@ -126,7 +150,7 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
       return;
     }
 
-    // UPDATED LOGIC: Auto-trigger enrichment when we need either enrichment OR narratives
+    // Auto-trigger enrichment when we need either enrichment OR narratives
     const needsEnrichment = status.hasEntities && (!status.hasEnrichment || !status.hasNarratives);
     
     if (needsEnrichment && !triggerStateRef.current.hasTriggeredEnrichment) {
@@ -301,6 +325,8 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
         <div>Blocked: {debugInfo.triggerState.isBlocked ? 'Yes' : 'No'}</div>
         <div>Has Enrichment: {status?.hasEnrichment ? 'Yes' : 'No'}</div>
         <div>Has Narratives: {status?.hasNarratives ? 'Yes' : 'No'}</div>
+        <div>Is Complete: {status?.isComplete ? 'Yes' : 'No'}</div>
+        <div>Progress: {status?.processingProgress || 0}%</div>
         <div>Last Update: {debugInfo.lastUpdate.split('T')[1].slice(0, 8)}</div>
       </div>
     );

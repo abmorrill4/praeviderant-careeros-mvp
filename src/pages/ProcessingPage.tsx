@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,17 @@ export default function ProcessingPage() {
   const navigate = useNavigate();
   
   const { data: status, isLoading, error } = useEnrichmentStatus(enrichmentId);
+
+  // FIXED: Add auto-redirect when processing is complete
+  useEffect(() => {
+    if (status?.isComplete && status?.processingProgress === 100) {
+      console.log('ProcessingPage: Analysis complete, redirecting to profile management...');
+      // Small delay to let user see completion state
+      setTimeout(() => {
+        navigate(`/profile-management?tab=resumes&version=${status.versionId}`);
+      }, 2000);
+    }
+  }, [status?.isComplete, status?.processingProgress, status?.versionId, navigate]);
 
   // Handle missing enrichmentId
   if (!enrichmentId) {
@@ -191,7 +202,7 @@ export default function ProcessingPage() {
             </h1>
             <p className="text-muted-foreground">
               {isComplete 
-                ? 'Your resume has been successfully analyzed and enriched with AI insights.'
+                ? 'Your resume has been successfully analyzed and enriched with AI insights. Redirecting to results...'
                 : 'Please wait while we analyze your resume and generate personalized career insights.'
               }
             </p>
@@ -211,7 +222,7 @@ export default function ProcessingPage() {
                   Analysis Complete!
                 </h3>
                 <p className="text-green-700 mb-6">
-                  Your resume has been successfully processed and enriched with AI-powered career insights.
+                  Your resume has been successfully processed and enriched with AI-powered career insights. You will be redirected automatically in a moment.
                 </p>
                 
                 <div className="flex gap-3 justify-center">
@@ -220,7 +231,7 @@ export default function ProcessingPage() {
                     size="lg"
                     className="bg-green-600 hover:bg-green-700"
                   >
-                    View Your Results
+                    View Your Results Now
                   </Button>
                   <Button 
                     variant="outline"
