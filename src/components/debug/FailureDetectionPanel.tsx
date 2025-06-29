@@ -61,7 +61,7 @@ export const FailureDetectionPanel: React.FC<FailureDetectionPanelProps> = ({
         console.error('Error fetching failed jobs:', jobsError);
       }
 
-      // Check for schema consistency issues
+      // Check for schema consistency issues using actual table queries
       const consistencyCheck = await performSchemaConsistencyCheck();
       
       // Analyze error patterns
@@ -98,24 +98,25 @@ export const FailureDetectionPanel: React.FC<FailureDetectionPanelProps> = ({
 
   const performSchemaConsistencyCheck = async () => {
     try {
-      // Check if critical tables exist
-      const { data: tables, error: tablesError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public')
-        .in('table_name', ['career_enrichment', 'career_narratives', 'enrichment_jobs']);
+      // Check if critical tables exist by attempting to query them
+      const tableChecks = await Promise.allSettled([
+        supabase.from('career_enrichment').select('id').limit(1),
+        supabase.from('career_narratives').select('id').limit(1),
+        supabase.from('enrichment_jobs').select('id').limit(1)
+      ]);
 
-      const tablesExist = !tablesError && tables && tables.length >= 3;
+      const tablesExist = tableChecks.every(result => 
+        result.status === 'fulfilled' || 
+        (result.status === 'rejected' && !result.reason?.message?.includes('does not exist'))
+      );
 
-      // Check if enrichment_metadata column exists
-      const { data: columns, error: columnsError } = await supabase
-        .from('information_schema.columns')
-        .select('column_name, table_name')
-        .eq('table_schema', 'public')
-        .eq('table_name', 'career_enrichment')
-        .eq('column_name', 'enrichment_metadata');
+      // Check if enrichment_metadata exists by trying to select it
+      const { error: columnsError } = await supabase
+        .from('career_enrichment')
+        .select('enrichment_metadata')
+        .limit(1);
 
-      const columnsMatch = !columnsError && columns && columns.length > 0;
+      const columnsMatch = !columnsError || !columnsError.message?.includes('column');
 
       // Basic foreign key validation would go here in a real implementation
       const foreignKeysValid = true; // Simplified for now

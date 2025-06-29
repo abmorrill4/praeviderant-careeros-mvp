@@ -50,9 +50,12 @@ export function useEnhancedErrorLogging(versionId?: string) {
 
         return {
           ...log,
+          level: log.level as 'error' | 'warn' | 'info' | 'debug', // Type assertion for compatibility
           error_category: errorCategory,
           resolution_status: resolutionStatus,
-          version_id: log.metadata?.version_id
+          version_id: typeof log.metadata === 'object' && log.metadata && 'version_id' in log.metadata 
+            ? String(log.metadata.version_id) 
+            : undefined
         };
       });
 

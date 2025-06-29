@@ -67,22 +67,51 @@ export const SchemaValidationPanel: React.FC = () => {
 
       for (const tableInfo of criticalTables) {
         try {
-          // Check if table exists by trying to query its structure
+          // Check if table exists and columns are accessible by trying to query them
           const { data: tableExists, error: tableError } = await supabase
-            .from(tableInfo.table)
+            .from(tableInfo.table as any)
             .select('*')
             .limit(1);
 
           const exists = !tableError || tableError.code !== '42P01'; // 42P01 = relation does not exist
 
-          // If table exists, check columns (simplified check)
-          const columnResults = tableInfo.columns.map(columnName => ({
-            name: columnName,
-            exists: exists, // Simplified - assume columns exist if table exists
-            type: 'unknown'
-          }));
+          // For each column, try to select it specifically to check if it exists
+          const columnResults = await Promise.allSettled(
+            tableInfo.columns.map(async (columnName) => {
+              try {
+                const { error } = await supabase
+                  .from(tableInfo.table as any)
+                  .select(columnName)
+                  .limit(1);
+                
+                return {
+                  name: columnName,
+                  exists: !error || !error.message?.includes('column'),
+                  type: 'unknown'
+                };
+              } catch {
+                return {
+                  name: columnName,
+                  exists: false,
+                  type: 'unknown'
+                };
+              }
+            })
+          );
 
-          const missingColumns = columnResults.filter(col => !col.exists).length;
+          const finalColumnResults = columnResults.map((result, index) => {
+            if (result.status === 'fulfilled') {
+              return result.value;
+            } else {
+              return {
+                name: tableInfo.columns[index],
+                exists: false,
+                type: 'unknown'
+              };
+            }
+          });
+
+          const missingColumns = finalColumnResults.filter(col => !col.exists).length;
           const status: SchemaValidationResult['status'] = 
             !exists ? 'error' : 
             missingColumns > 0 ? 'warning' : 'healthy';
@@ -90,7 +119,7 @@ export const SchemaValidationPanel: React.FC = () => {
           results.push({
             tableName: tableInfo.table,
             exists,
-            requiredColumns: columnResults,
+            requiredColumns: finalColumnResults,
             status
           });
 
