@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Building, GraduationCap, Code, Award, Briefcase, Eye, Search, Filter, Sparkles, Brain } from 'lucide-react';
 import { DetailedViewModal } from './DetailedViewModal';
-import { EnrichAllButton } from './EnrichAllButton';
 import { BulkEnrichmentButton } from './BulkEnrichmentButton';
 import { EnrichmentStats } from './EnrichmentStats';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,12 +14,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ParsedResumeEntity {
   id: string;
-  entity_id: string;
   field_name: string;
   raw_value: string;
   confidence_score: number;
   source_type: string;
   resume_version_id: string;
+  model_version: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface EnrichedResumeViewProps {
@@ -105,7 +107,6 @@ export const EnrichedResumeView: React.FC<EnrichedResumeViewProps> = ({
               queryClient.invalidateQueries({ queryKey: ['entry-enrichments', versionId] });
             }}
           />
-          <EnrichAllButton versionId={versionId} />
         </div>
       </div>
 
