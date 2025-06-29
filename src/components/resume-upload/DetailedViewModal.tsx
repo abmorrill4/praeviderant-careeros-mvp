@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +10,14 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface ParsedResumeEntity {
   id: string;
-  entity_id: string; // Add actual database entity ID
   field_name: string;
   raw_value: string;
   confidence_score: number;
   source_type: string;
+  resume_version_id: string;
+  model_version: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface DetailedViewModalProps {
@@ -35,12 +37,12 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
 }) => {
   const enrichSingleMutation = useEnrichSingleEntry();
   
-  // Fetch enrichment data using the hook
+  // Fetch enrichment data using the entity ID
   const { 
     data: enrichmentData, 
     isLoading: enrichmentLoading, 
     error: enrichmentError 
-  } = useEntityEnrichment(entity.entity_id);
+  } = useEntityEnrichment(entity.id);
 
   // Parse the raw data
   const parseRawData = () => {
@@ -56,9 +58,8 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
 
   const handleEnrichEntry = async () => {
     try {
-      // Use the actual database entity ID
-      console.log('Enriching entity with ID:', entity.entity_id);
-      await enrichSingleMutation.mutateAsync({ entityId: entity.entity_id, forceRefresh: true });
+      console.log('Enriching entity with ID:', entity.id);
+      await enrichSingleMutation.mutateAsync({ entityId: entity.id, forceRefresh: true });
     } catch (error) {
       console.error('Failed to enrich entry:', error);
     }

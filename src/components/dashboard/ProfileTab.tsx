@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { 
   Building,
@@ -12,18 +12,23 @@ import {
   Globe,
   Users,
   Star,
-  Zap
+  Zap,
+  Brain
 } from 'lucide-react';
 import { ProfileDataSection } from '@/components/profile/ProfileDataSection';
+import { EnrichmentSummaryCards } from '@/components/profile/EnrichmentSummaryCards';
 import { 
-  WorkExperienceRenderer,
-  EducationRenderer,
-  SkillRenderer,
-  ProjectRenderer,
-  CertificationRenderer
-} from '@/components/profile/EntityRenderers';
+  EnhancedWorkExperienceRenderer,
+  EnhancedEducationRenderer,
+  EnhancedSkillRenderer,
+  EnhancedProjectRenderer,
+  EnhancedCertificationRenderer
+} from '@/components/profile/EnhancedEntityRenderers';
 import { useLatestEntities } from '@/hooks/useVersionedEntities';
 import { useEntityActions } from '@/hooks/useEntityActions';
+import { useAuth } from '@/contexts/AuthContext';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import type { WorkExperience, Education, Skill, Project, Certification } from '@/types/versioned-entities';
 import {
   workExperienceFields,
@@ -35,6 +40,8 @@ import {
 
 export const ProfileTab: React.FC = () => {
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const [showEnhancedView, setShowEnhancedView] = useState(true);
 
   // Fetch all entity data
   const { data: workExperience = [], isLoading: loadingWork } = useLatestEntities<WorkExperience>('work_experience');
@@ -73,10 +80,32 @@ export const ProfileTab: React.FC = () => {
         <h2 className={`text-3xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
           Profile Data
         </h2>
-        <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-          Review and manage your comprehensive career information
-        </p>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="enhanced-view"
+            checked={showEnhancedView}
+            onCheckedChange={setShowEnhancedView}
+          />
+          <Label htmlFor="enhanced-view" className="flex items-center gap-2">
+            <Brain className="w-4 h-4" />
+            AI Enhanced View
+          </Label>
+        </div>
       </div>
+
+      <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+        Review and manage your comprehensive career information with AI-powered insights
+      </p>
+
+      {/* Enrichment Summary */}
+      {showEnhancedView && user && (
+        <div>
+          <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            AI Analysis Summary
+          </h3>
+          <EnrichmentSummaryCards userId={user.id} />
+        </div>
+      )}
       
       <div className="grid gap-6">
         <ProfileDataSection
@@ -86,7 +115,34 @@ export const ProfileTab: React.FC = () => {
           editFields={workExperienceFields}
           onAccept={workActions.handleAccept}
           onEdit={workActions.handleEdit}
-          renderItem={(item) => <WorkExperienceRenderer item={item as WorkExperience} />}
+          renderItem={(item) => 
+            showEnhancedView ? (
+              <EnhancedWorkExperienceRenderer 
+                item={item as WorkExperience} 
+                entityId={item.logical_entity_id} 
+              />
+            ) : (
+              <div>
+                <h4 className="font-medium text-sm">{item.title}</h4>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                  <Building className="w-3 h-3" />
+                  <span>{item.company}</span>
+                  {item.start_date && (
+                    <>
+                      <span className="ml-2">
+                        {item.start_date} - {item.end_date || 'Present'}
+                      </span>
+                    </>
+                  )}
+                </div>
+                {item.description && (
+                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                    {item.description}
+                  </p>
+                )}
+              </div>
+            )
+          }
         />
         
         <ProfileDataSection
@@ -96,7 +152,32 @@ export const ProfileTab: React.FC = () => {
           editFields={educationFields}
           onAccept={educationActions.handleAccept}
           onEdit={educationActions.handleEdit}
-          renderItem={(item) => <EducationRenderer item={item as Education} />}
+          renderItem={(item) => 
+            showEnhancedView ? (
+              <EnhancedEducationRenderer 
+                item={item as Education} 
+                entityId={item.logical_entity_id} 
+              />
+            ) : (
+              <div>
+                <h4 className="font-medium text-sm">{item.degree}</h4>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                  <Building className="w-3 h-3" />
+                  <span>{item.institution}</span>
+                  {item.start_date && (
+                    <span className="ml-2">
+                      {item.start_date} - {item.end_date || 'Present'}
+                    </span>
+                  )}
+                </div>
+                {item.field_of_study && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Field: {item.field_of_study}
+                  </p>
+                )}
+              </div>
+            )
+          }
         />
         
         <ProfileDataSection
@@ -106,7 +187,29 @@ export const ProfileTab: React.FC = () => {
           editFields={skillFields}
           onAccept={skillActions.handleAccept}
           onEdit={skillActions.handleEdit}
-          renderItem={(item) => <SkillRenderer item={item as Skill} />}
+          renderItem={(item) => 
+            showEnhancedView ? (
+              <EnhancedSkillRenderer 
+                item={item as Skill} 
+                entityId={item.logical_entity_id} 
+              />
+            ) : (
+              <div>
+                <h4 className="font-medium text-sm">{item.name}</h4>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                  {item.category && (
+                    <span className="bg-muted px-2 py-1 rounded">{item.category}</span>
+                  )}
+                  {item.proficiency_level && (
+                    <div className="flex items-center gap-1">
+                      <Star className="w-3 h-3" />
+                      <span>{item.proficiency_level}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          }
         />
         
         <ProfileDataSection
@@ -116,7 +219,30 @@ export const ProfileTab: React.FC = () => {
           editFields={projectFields}
           onAccept={projectActions.handleAccept}
           onEdit={projectActions.handleEdit}
-          renderItem={(item) => <ProjectRenderer item={item as Project} />}
+          renderItem={(item) => 
+            showEnhancedView ? (
+              <EnhancedProjectRenderer 
+                item={item as Project} 
+                entityId={item.logical_entity_id} 
+              />
+            ) : (
+              <div>
+                <h4 className="font-medium text-sm">{item.name}</h4>
+                {item.start_date && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                    <span>
+                      {item.start_date} - {item.end_date || 'Ongoing'}
+                    </span>
+                  </div>
+                )}
+                {item.description && (
+                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                    {item.description}
+                  </p>
+                )}
+              </div>
+            )
+          }
         />
         
         <ProfileDataSection
@@ -126,7 +252,27 @@ export const ProfileTab: React.FC = () => {
           editFields={certificationFields}
           onAccept={certificationActions.handleAccept}
           onEdit={certificationActions.handleEdit}
-          renderItem={(item) => <CertificationRenderer item={item as Certification} />}
+          renderItem={(item) => 
+            showEnhancedView ? (
+              <EnhancedCertificationRenderer 
+                item={item as Certification} 
+                entityId={item.logical_entity_id} 
+              />
+            ) : (
+              <div>
+                <h4 className="font-medium text-sm">{item.name}</h4>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                  <Building className="w-3 h-3" />
+                  <span>{item.issuing_organization}</span>
+                  {item.issue_date && (
+                    <span className="ml-2">
+                      Issued: {item.issue_date}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          }
         />
       </div>
 
@@ -136,11 +282,12 @@ export const ProfileTab: React.FC = () => {
           <Star className="w-5 h-5 text-career-accent mt-0.5" />
           <div>
             <h3 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
-              Additional Resume Sections
+              AI-Enhanced Profile Analysis
             </h3>
             <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
-              Your resume data includes additional sections like Awards, Publications, Volunteer Work, Languages, 
-              Professional Associations, and References. These are captured and organized in the resume upload analysis.
+              Your profile includes AI-powered insights that analyze your experience, identify key skills, 
+              assess market relevance, and provide personalized recommendations for career advancement. 
+              Toggle the AI Enhanced View to see or hide these insights.
             </p>
           </div>
         </div>
