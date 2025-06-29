@@ -71,6 +71,11 @@ interface GroupedEntity {
   displayName: string;
   id: string;
   entity_id: string; // Add actual database entity ID
+  // Add required properties from ParsedResumeEntity to fix TypeScript error
+  resume_version_id: string;
+  model_version: string;
+  created_at: string;
+  updated_at: string;
   // Add enrichment data
   enrichment_data?: {
     insights?: string[];
@@ -356,6 +361,10 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
         displayName: getFieldDisplayName(entity.field_name),
         id: `${entity.field_name}-${index}`, // Keep compound ID for internal use
         entity_id: entity.id, // Store actual database entity ID
+        resume_version_id: entity.resume_version_id,
+        model_version: entity.model_version,
+        created_at: entity.created_at,
+        updated_at: entity.updated_at,
         enrichment_data: enrichmentData
       });
     });
