@@ -59,6 +59,16 @@ interface GroupedEntity {
   parsedData: any;
   displayName: string;
   id: string;
+  // Add enrichment data
+  enrichment_data?: {
+    insights?: string[];
+    skills_identified?: string[];
+    experience_level?: string;
+    career_progression?: string;
+    market_relevance?: string;
+    recommendations?: string[];
+    parsed_structure?: any;
+  };
 }
 
 interface CategoryConfig {
@@ -308,11 +318,23 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
         grouped[finalSection] = [];
       }
       
+      // Include enrichment data if available
+      const enrichmentData = entity.enrichment_data ? {
+        insights: entity.enrichment_data.insights || [],
+        skills_identified: entity.enrichment_data.skills_identified || [],
+        experience_level: entity.enrichment_data.experience_level,
+        career_progression: entity.enrichment_data.career_progression,
+        market_relevance: entity.enrichment_data.market_relevance,
+        recommendations: entity.enrichment_data.recommendations || [],
+        parsed_structure: entity.enrichment_data.parsed_structure
+      } : undefined;
+      
       grouped[finalSection].push({
         ...entity,
         parsedData,
         displayName: getFieldDisplayName(entity.field_name),
-        id: `${entity.field_name}-${index}`
+        id: `${entity.field_name}-${index}`,
+        enrichment_data: enrichmentData
       });
     });
 
@@ -508,6 +530,11 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
                     <span>{entryHeader.location}</span>
                   </div>
                 )}
+                {entity.enrichment_data && (
+                  <Badge variant="outline" className="text-xs bg-purple-50 text-purple-600">
+                    AI Enhanced
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -570,7 +597,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
             Resume Data Fields
           </CardTitle>
           <CardDescription>
-            Review and organize your extracted resume data by category. Click any entry to view details.
+            Review and organize your extracted resume data by category. Click any entry to view details and AI insights.
           </CardDescription>
         </CardHeader>
         <CardContent>

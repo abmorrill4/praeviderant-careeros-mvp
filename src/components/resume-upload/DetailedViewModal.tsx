@@ -4,12 +4,30 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, Building, MapPin, Globe, Award, Code, Users, Heart, BookOpen, Star } from 'lucide-react';
+import { Calendar, Building, MapPin, Globe, Award, Code, Users, Heart, BookOpen, Star, Sparkles, Brain, TrendingUp } from 'lucide-react';
+
+interface ParsedResumeEntity {
+  id: string;
+  field_name: string;
+  raw_value: string;
+  confidence_score: number;
+  source_type: string;
+  // AI enrichment data
+  enrichment_data?: {
+    insights?: string[];
+    skills_identified?: string[];
+    experience_level?: string;
+    career_progression?: string;
+    market_relevance?: string;
+    recommendations?: string[];
+    parsed_structure?: any;
+  };
+}
 
 interface DetailedViewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  entity: any;
+  entity: ParsedResumeEntity;
   title: string;
   subtitle?: string;
 }
@@ -21,170 +39,236 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
   title,
   subtitle
 }) => {
-  const renderDetailedContent = () => {
-    if (!entity.parsedData || !entity.parsedData.value) {
-      return <p className="text-muted-foreground">No detailed data available</p>;
+  // Parse the raw data
+  const parseRawData = () => {
+    try {
+      const parsed = JSON.parse(entity.raw_value);
+      return parsed;
+    } catch (error) {
+      return entity.raw_value;
+    }
+  };
+
+  const rawData = parseRawData();
+  const enrichmentData = entity.enrichment_data;
+
+  const renderParsedData = () => {
+    if (typeof rawData === 'object' && rawData !== null) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Code className="w-4 h-4 text-blue-500" />
+              Extracted Data Structure
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {Object.entries(rawData).map(([key, value]) => (
+              <div key={key} className="border-l-2 border-l-blue-200 pl-3">
+                <div className="font-medium text-sm capitalize">{key.replace(/_/g, ' ')}</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {Array.isArray(value) ? (
+                    <ul className="list-disc list-inside space-y-1">
+                      {value.map((item, index) => (
+                        <li key={index}>{String(item)}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    String(value)
+                  )}
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      );
+    } else {
+      return (
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-sm text-muted-foreground">
+              {String(rawData)}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+  };
+
+  const renderEnrichmentData = () => {
+    if (!enrichmentData) {
+      return (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="pt-4">
+            <div className="text-center text-muted-foreground">
+              <Brain className="w-8 h-8 mx-auto mb-2 text-amber-500" />
+              <p>AI enrichment data not available for this entry</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
     }
 
-    const data = entity.parsedData.value;
-
-    // Handle different data types
-    if (entity.parsedData.type === 'object') {
-      return (
-        <div className="space-y-4">
-          {/* Main Info Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="w-4 h-4" />
-                {title}
-              </CardTitle>
-              {subtitle && (
-                <CardDescription>{subtitle}</CardDescription>
-              )}
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Key Details */}
-              {data.start_date && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span>
-                    {data.start_date} - {data.end_date || 'Present'}
-                  </span>
-                </div>
-              )}
-              
-              {data.location && (
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                  <span>{data.location}</span>
-                </div>
-              )}
-
-              {data.description && (
-                <div className="mt-3">
-                  <h4 className="font-medium mb-2">Description</h4>
-                  <p className="text-sm text-muted-foreground">{data.description}</p>
-                </div>
-              )}
-
-              {/* Responsibilities/Bullets */}
-              {data.responsibilities && Array.isArray(data.responsibilities) && (
-                <div className="mt-3">
-                  <h4 className="font-medium mb-2">Key Responsibilities</h4>
-                  <ul className="space-y-1">
-                    {data.responsibilities.map((item: string, index: number) => (
-                      <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
-                        <span className="w-1 h-1 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Skills/Technologies */}
-              {data.skills && Array.isArray(data.skills) && (
-                <div className="mt-3">
-                  <h4 className="font-medium mb-2">Skills & Technologies</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {data.skills.map((skill: string, index: number) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Achievements */}
-              {data.achievements && Array.isArray(data.achievements) && (
-                <div className="mt-3">
-                  <h4 className="font-medium mb-2">Key Achievements</h4>
-                  <ul className="space-y-1">
-                    {data.achievements.map((item: string, index: number) => (
-                      <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
-                        <Award className="w-3 h-3 text-yellow-500 mt-1 flex-shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* AI-Generated Insights */}
-          <Card className="border-l-4 border-l-blue-500">
+    return (
+      <div className="space-y-4">
+        {/* AI Insights */}
+        {enrichmentData.insights && enrichmentData.insights.length > 0 && (
+          <Card className="border-l-4 border-l-purple-500">
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
-                <Star className="w-4 h-4 text-blue-500" />
+                <Sparkles className="w-4 h-4 text-purple-500" />
                 AI Insights
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>• This experience demonstrates strong {entity.field_name.includes('work') ? 'professional' : 'domain'} expertise</p>
-                <p>• Relevant skills identified for modern job markets</p>
-                <p>• {Math.round(entity.confidence_score * 100)}% confidence in data extraction accuracy</p>
+              <ul className="space-y-2">
+                {enrichmentData.insights.map((insight, index) => (
+                  <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                    <Star className="w-3 h-3 text-purple-500 mt-1 flex-shrink-0" />
+                    {insight}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Skills Identified */}
+        {enrichmentData.skills_identified && enrichmentData.skills_identified.length > 0 && (
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Code className="w-4 h-4 text-green-500" />
+                Skills Identified
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-1">
+                {enrichmentData.skills_identified.map((skill, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs bg-green-100 text-green-800">
+                    {skill}
+                  </Badge>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </div>
-      );
-    }
+        )}
 
-    // Handle arrays
-    if (entity.parsedData.type === 'array' && Array.isArray(data)) {
-      return (
-        <div className="space-y-3">
-          {data.map((item, index) => (
-            <Card key={index}>
-              <CardContent className="pt-4">
-                <div className="text-sm">
-                  {typeof item === 'string' ? item : JSON.stringify(item, null, 2)}
+        {/* Experience Level & Career Progression */}
+        {(enrichmentData.experience_level || enrichmentData.career_progression) && (
+          <Card className="border-l-4 border-l-blue-500">
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-blue-500" />
+                Career Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {enrichmentData.experience_level && (
+                <div>
+                  <div className="font-medium text-sm">Experience Level</div>
+                  <div className="text-sm text-muted-foreground">{enrichmentData.experience_level}</div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      );
-    }
+              )}
+              {enrichmentData.career_progression && (
+                <div>
+                  <div className="font-medium text-sm">Career Progression</div>
+                  <div className="text-sm text-muted-foreground">{enrichmentData.career_progression}</div>
+                </div>
+              )}
+              {enrichmentData.market_relevance && (
+                <div>
+                  <div className="font-medium text-sm">Market Relevance</div>
+                  <div className="text-sm text-muted-foreground">{enrichmentData.market_relevance}</div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-    // Fallback for other types
-    return (
-      <Card>
-        <CardContent className="pt-4">
-          <pre className="text-sm text-muted-foreground whitespace-pre-wrap">
-            {JSON.stringify(data, null, 2)}
-          </pre>
-        </CardContent>
-      </Card>
+        {/* Recommendations */}
+        {enrichmentData.recommendations && enrichmentData.recommendations.length > 0 && (
+          <Card className="border-l-4 border-l-orange-500">
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Award className="w-4 h-4 text-orange-500" />
+                AI Recommendations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {enrichmentData.recommendations.map((rec, index) => (
+                  <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                    <Award className="w-3 h-3 text-orange-500 mt-1 flex-shrink-0" />
+                    {rec}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Parsed Structure (if different from raw data) */}
+        {enrichmentData.parsed_structure && (
+          <Card className="border-l-4 border-l-gray-500">
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Brain className="w-4 h-4 text-gray-500" />
+                AI Structured Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="text-xs text-muted-foreground whitespace-pre-wrap bg-gray-50 p-3 rounded">
+                {JSON.stringify(enrichmentData.parsed_structure, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     );
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Building className="w-5 h-5 text-blue-500" />
+            {title}
+          </DialogTitle>
           {subtitle && <DialogDescription>{subtitle}</DialogDescription>}
         </DialogHeader>
         
         <Separator />
         
-        <div className="py-4">
-          {renderDetailedContent()}
-        </div>
-
-        {/* Metadata Footer */}
-        <div className="pt-4 border-t">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Source: {entity.source_type}</span>
-            <span>Field: {entity.field_name}</span>
+        <div className="space-y-6 py-4">
+          {/* Metadata */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground bg-gray-50 p-3 rounded">
+            <div className="flex items-center gap-4">
+              <span>Field: <strong>{entity.field_name}</strong></span>
+              <span>Source: <strong>{entity.source_type}</strong></span>
+            </div>
             <Badge variant="outline" className="text-xs">
               {Math.round(entity.confidence_score * 100)}% confidence
             </Badge>
+          </div>
+
+          {/* Parsed Data Section */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Code className="w-5 h-5 text-blue-500" />
+              Extracted Resume Data
+            </h3>
+            {renderParsedData()}
+          </div>
+
+          {/* AI Enrichment Section */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-purple-500" />
+              AI Analysis & Enrichment
+            </h3>
+            {renderEnrichmentData()}
           </div>
         </div>
       </DialogContent>
