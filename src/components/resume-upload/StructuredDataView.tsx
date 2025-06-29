@@ -51,6 +51,24 @@ interface StructuredDataViewProps {
   onProfileUpdated?: () => void;
 }
 
+interface ParsedResumeEntity {
+  id: string;
+  field_name: string;
+  raw_value: string;
+  confidence_score: number;
+  source_type: string;
+  // Add enrichment data to match what the code expects
+  enrichment_data?: {
+    insights?: string[];
+    skills_identified?: string[];
+    experience_level?: string;
+    career_progression?: string;
+    market_relevance?: string;
+    recommendations?: string[];
+    parsed_structure?: any;
+  };
+}
+
 interface GroupedEntity {
   field_name: string;
   raw_value: string;
@@ -69,13 +87,6 @@ interface GroupedEntity {
     recommendations?: string[];
     parsed_structure?: any;
   };
-}
-
-interface CategoryConfig {
-  title: string;
-  icon: React.ReactNode;
-  priority: number;
-  color: string;
 }
 
 // Enhanced helper function to extract resume entry headers
