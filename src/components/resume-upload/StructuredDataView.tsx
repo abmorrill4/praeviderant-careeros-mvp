@@ -70,6 +70,7 @@ interface GroupedEntity {
   parsedData: any;
   displayName: string;
   id: string;
+  entity_id: string; // Add actual database entity ID
   // Add enrichment data
   enrichment_data?: {
     insights?: string[];
@@ -353,7 +354,8 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
         ...entity,
         parsedData,
         displayName: getFieldDisplayName(entity.field_name),
-        id: `${entity.field_name}-${index}`,
+        id: `${entity.field_name}-${index}`, // Keep compound ID for internal use
+        entity_id: entity.id, // Store actual database entity ID
         enrichment_data: enrichmentData
       });
     });
@@ -499,6 +501,7 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
   };
 
   const handleEnrichSingle = (entityId: string) => {
+    console.log('Enriching single entity with ID:', entityId);
     enrichSingleMutation.mutate({ entityId });
   };
 
@@ -593,11 +596,8 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  // Extract the actual parsed entity ID from the compound ID
-                  const actualEntityId = entities?.find(e => `${e.field_name}-${entities.indexOf(e)}` === entity.id)?.id;
-                  if (actualEntityId) {
-                    handleEnrichSingle(actualEntityId);
-                  }
+                  // Use the actual database entity ID
+                  handleEnrichSingle(entity.entity_id);
                 }}
                 disabled={enrichSingleMutation.isPending}
                 className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"

@@ -9,6 +9,7 @@ import { useEnrichSingleEntry } from '@/hooks/useEntryEnrichment';
 
 interface ParsedResumeEntity {
   id: string;
+  entity_id: string; // Add actual database entity ID
   field_name: string;
   raw_value: string;
   confidence_score: number;
@@ -57,8 +58,9 @@ export const DetailedViewModal: React.FC<DetailedViewModalProps> = ({
 
   const handleEnrichEntry = async () => {
     try {
-      const entityId = entity.id.split('-')[0]; // Get original entity ID
-      await enrichSingleMutation.mutateAsync({ entityId, forceRefresh: true });
+      // Use the actual database entity ID
+      console.log('Enriching entity with ID:', entity.entity_id);
+      await enrichSingleMutation.mutateAsync({ entityId: entity.entity_id, forceRefresh: true });
     } catch (error) {
       console.error('Failed to enrich entry:', error);
     }
