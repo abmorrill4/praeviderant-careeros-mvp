@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,6 +65,19 @@ export function useEnrichmentStatus(versionId?: string) {
         console.log('useEnrichmentStatus: Missing versionId or user', { versionId, userId: user?.id });
         return null;
       }
+
+      // Enhanced parameter validation
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(versionId)) {
+        console.error('useEnrichmentStatus: Invalid versionId format:', versionId);
+        throw new Error(`Invalid version ID format: ${versionId}`);
+      }
+
+      // Additional check for parameter placeholder
+      if (versionId.startsWith(':') || versionId === 'undefined' || versionId === 'null') {
+        console.error('useEnrichmentStatus: Version ID appears to be a parameter placeholder:', versionId);
+        throw new Error(`Version ID appears to be a parameter placeholder: ${versionId}`);
+      }
       
       console.log('useEnrichmentStatus: Checking comprehensive processing status for version:', versionId);
       
@@ -75,7 +89,13 @@ export function useEnrichmentStatus(versionId?: string) {
 
         if (error) {
           console.error('useEnrichmentStatus: Error getting processing status:', error);
-          // Don't throw - return a safe fallback state
+          
+          // Check if the error is due to invalid UUID format
+          if (error.message?.includes('invalid input syntax for type uuid')) {
+            throw new Error(`Invalid UUID format provided: ${versionId}`);
+          }
+          
+          // Don't throw - return a safe fallback state for other errors
           return {
             versionId,
             currentStage: 'upload',
@@ -127,7 +147,15 @@ export function useEnrichmentStatus(versionId?: string) {
       } catch (error) {
         console.error('useEnrichmentStatus: Query failed:', error);
         
-        // Return a safe fallback state instead of throwing
+        // Re-throw validation errors so they bubble up to the UI
+        if (error instanceof Error && (
+          error.message.includes('Invalid version ID') || 
+          error.message.includes('parameter placeholder')
+        )) {
+          throw error;
+        }
+        
+        // Return a safe fallback state for other errors
         return {
           versionId,
           currentStage: 'upload',
@@ -156,7 +184,16 @@ export function useEnrichmentStatus(versionId?: string) {
     staleTime: 1000 * 10, // Consider data stale after 10 seconds
     retry: (failureCount, error) => {
       console.log('useEnrichmentStatus: Retry decision:', { failureCount, error });
-      return failureCount < 2; // Retry up to 2 times
+      
+      // Don't retry validation errors
+      if (error instanceof Error && (
+        error.message.includes('Invalid version ID') || 
+        error.message.includes('parameter placeholder')
+      )) {
+        return false;
+      }
+      
+      return failureCount < 2; // Retry up to 2 times for other errors
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff, max 10s
   });

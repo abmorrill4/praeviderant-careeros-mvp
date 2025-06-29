@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Activity, 
   AlertTriangle, 
@@ -16,7 +17,8 @@ import {
   BarChart3,
   Play,
   Shield,
-  Search
+  Search,
+  Info
 } from 'lucide-react';
 import { SystemStatusMonitor } from './SystemStatusMonitor';
 import { ProcessingAnalytics } from './ProcessingAnalytics';
@@ -34,17 +36,46 @@ interface DebugDashboardProps {
 export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+  // Enhanced parameter logging
+  useEffect(() => {
+    console.log('DebugDashboard - Props received:', {
+      versionId,
+      versionIdType: typeof versionId,
+      versionIdLength: versionId?.length,
+      isValidUUID: versionId ? /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(versionId) : false,
+      timestamp: new Date().toISOString()
+    });
+  }, [versionId]);
+
   const { data: status, isLoading, error, refetch } = useEnrichmentStatus(versionId);
   const enrichResume = useEnrichResume();
 
+  // Enhanced status logging
+  useEffect(() => {
+    console.log('DebugDashboard - Status data:', {
+      hasStatus: !!status,
+      statusData: status,
+      isLoading,
+      hasError: !!error,
+      errorMessage: error?.message,
+      versionId,
+      timestamp: new Date().toISOString()
+    });
+  }, [status, isLoading, error, versionId]);
+
   const handleRefresh = () => {
+    console.log('DebugDashboard - Manual refresh triggered');
     setRefreshTrigger(prev => prev + 1);
     refetch();
   };
 
   const handleTriggerAnalysis = () => {
     if (versionId) {
+      console.log('DebugDashboard - Triggering analysis for:', versionId);
       enrichResume.mutate(versionId);
+    } else {
+      console.warn('DebugDashboard - Cannot trigger analysis: no valid versionId');
     }
   };
 
@@ -73,6 +104,11 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
           <p className="text-muted-foreground">
             Comprehensive monitoring, failure detection, and system health analysis
           </p>
+          {versionId && (
+            <p className="text-xs font-mono text-gray-500 mt-1">
+              Version ID: {versionId.slice(0, 8)}...{versionId.slice(-8)}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Badge 
@@ -99,6 +135,39 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
           </Button>
         </div>
       </div>
+
+      {/* Version ID Status Alert */}
+      {!versionId && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            No specific resume version selected. Showing system-wide monitoring and general status.
+            To debug a specific resume, navigate with a valid version ID.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Status Loading/Error States */}
+      {versionId && isLoading && (
+        <Alert>
+          <Clock className="h-4 w-4 animate-spin" />
+          <AlertDescription>
+            Loading status for version {versionId.slice(-12)}...
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {versionId && error && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load status: {error.message}
+            <Button onClick={handleRefresh} variant="outline" size="sm" className="ml-2">
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Quick Status Overview */}
       {versionId && status && (
@@ -235,8 +304,19 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
                   <div>
                     <span className="font-medium">Version ID:</span>
                     <span className="ml-2 font-mono text-xs">
-                      {versionId?.slice(-12) || 'None'}
+                      {versionId ? `${versionId.slice(0, 8)}...${versionId.slice(-4)}` : 'None'}
                     </span>
+                  </div>
+                </div>
+
+                {/* Parameter Debug Info */}
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium mb-3">Parameter Debug Information</h4>
+                  <div className="space-y-2 text-sm font-mono">
+                    <div>Raw versionId: <code>{versionId || 'undefined'}</code></div>
+                    <div>Type: <code>{typeof versionId}</code></div>
+                    <div>Valid UUID: <code>{versionId ? /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(versionId).toString() : 'false'}</code></div>
+                    <div>Current URL: <code>{window.location.pathname}</code></div>
                   </div>
                 </div>
 
@@ -257,8 +337,8 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
                       <span className="text-sm">Edge Functions</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                      <span className="text-sm">Processing Queue</span>
+                      <div className={`w-2 h-2 rounded-full ${versionId ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                      <span className="text-sm">Version Context</span>
                     </div>
                   </div>
                 </div>
@@ -278,6 +358,12 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
                     <div className="flex justify-between">
                       <span>Debug Mode:</span>
                       <Badge variant="outline">Active</Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Status Query:</span>
+                      <Badge variant={status ? 'default' : 'secondary'}>
+                        {status ? 'Success' : 'Pending'}
+                      </Badge>
                     </div>
                   </div>
                 </div>
