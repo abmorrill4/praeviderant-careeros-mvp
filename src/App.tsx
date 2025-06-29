@@ -5,53 +5,35 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
+import Profile from "./pages/Profile";
+import Auth from "./pages/Auth";
+import ResumeUpload from "./pages/ResumeUpload";
 import Dashboard from "./pages/Dashboard";
-import InterviewPage from "./pages/InterviewPage";
-import ProfileManagementPage from "./pages/ProfileManagementPage";
-import ApplicationToolkitPage from "./pages/ApplicationToolkitPage";
-import ProfileOptimizationPage from "./pages/ProfileOptimizationPage";
-import NotFound from "./pages/NotFound";
-import ResumeUploadV2 from "./pages/ResumeUploadV2";
-import ProfileTimelinePage from "./pages/ProfileTimelinePage";
-import EntityGraphAdmin from "./pages/EntityGraphAdmin";
-import ResumeTimelinePage from "./pages/ResumeTimelinePage";
-import ProcessingPage from "./pages/ProcessingPage";
-import DebugAnalysisPage from "./pages/DebugAnalysisPage";
 
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/interview" element={<InterviewPage />} />
-                <Route path="/profile-management" element={<ProfileManagementPage />} />
-                <Route path="/application-toolkit" element={<ApplicationToolkitPage />} />
-                <Route path="/profile-optimization" element={<ProfileOptimizationPage />} />
-                <Route path="/resume-upload" element={<ResumeUploadV2 />} />
-                <Route path="/profile-timeline" element={<ProfileTimelinePage />} />
-                <Route path="/admin/entity-graph" element={<EntityGraphAdmin />} />
-                <Route path="/admin/resume-timeline" element={<ResumeTimelinePage />} />
-                <Route path="/processing/:enrichmentId" element={<ProcessingPage />} />
-                <Route path="/debug/:versionId?" element={<DebugAnalysisPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/upload" element={<ResumeUpload />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
+    </ThemeProvider>
+  </QueryClientProvider>
+);
 
 export default App;
