@@ -126,8 +126,10 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
       return;
     }
 
-    // Auto-trigger enrichment when entities are ready but enrichment hasn't started
-    if (status.hasEntities && !status.hasEnrichment && !triggerStateRef.current.hasTriggeredEnrichment) {
+    // UPDATED LOGIC: Auto-trigger enrichment when we need either enrichment OR narratives
+    const needsEnrichment = status.hasEntities && (!status.hasEnrichment || !status.hasNarratives);
+    
+    if (needsEnrichment && !triggerStateRef.current.hasTriggeredEnrichment) {
       // Check attempt limits
       if (triggerStateRef.current.attemptCount >= MAX_ATTEMPTS) {
         console.log('SmartEnrichmentTrigger: Max attempts reached, blocking future attempts');
@@ -149,7 +151,12 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
         return;
       }
 
-      console.log('SmartEnrichmentTrigger: Conditions met for auto-triggering enrichment');
+      console.log('SmartEnrichmentTrigger: Conditions met for auto-triggering enrichment', {
+        hasEntities: status.hasEntities,
+        hasEnrichment: status.hasEnrichment,
+        hasNarratives: status.hasNarratives,
+        needsEnrichment
+      });
       
       triggerStateRef.current.hasTriggeredEnrichment = true;
       triggerStateRef.current.attemptCount += 1;
@@ -164,9 +171,11 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
         try {
           console.log('SmartEnrichmentTrigger: Starting enrichment for version:', versionId);
           
+          const enrichmentType = !status.hasEnrichment ? 'career analysis' : 'narrative generation';
+          
           toast({
-            title: "Starting AI Analysis",
-            description: `Beginning career analysis and insight generation... (Attempt ${triggerStateRef.current.attemptCount}/${MAX_ATTEMPTS})`,
+            title: "Continuing AI Analysis",
+            description: `Processing ${enrichmentType}... (Attempt ${triggerStateRef.current.attemptCount}/${MAX_ATTEMPTS})`,
             variant: "default",
           });
 
@@ -194,7 +203,7 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
             
             toast({
               title: "AI Analysis Error",
-              description: `Failed to start AI analysis: ${error.message}. Will retry automatically.`,
+              description: `Failed to continue AI analysis: ${error.message}. Will retry automatically.`,
               variant: "destructive",
             });
             return;
@@ -234,8 +243,8 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
             });
           } else {
             toast({
-              title: "AI Analysis Started",
-              description: "Your resume is being analyzed. This may take 30-60 seconds.",
+              title: "AI Analysis Continuing",
+              description: "Processing career insights. This may take 30-60 seconds.",
               variant: "default",
             });
           }
@@ -248,7 +257,7 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
           
           toast({
             title: "Analysis Error",
-            description: "Failed to start AI analysis. Will retry automatically.",
+            description: "Failed to continue AI analysis. Will retry automatically.",
             variant: "destructive",
           });
         }
@@ -274,8 +283,10 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
       console.log('SmartEnrichmentTrigger: Conditions not met for auto-triggering:', {
         hasEntities: status.hasEntities,
         hasEnrichment: status.hasEnrichment,
+        hasNarratives: status.hasNarratives,
         hasTriggeredEnrichment: triggerStateRef.current.hasTriggeredEnrichment,
-        processingStage: status.processingStage
+        processingStage: status.processingStage,
+        needsEnrichment
       });
     }
   }, [status, isLoading, versionId, onStatusChange, toast]);
@@ -288,6 +299,8 @@ export const SmartEnrichmentTrigger: React.FC<SmartEnrichmentTriggerProps> = ({
         <div>Version: {versionId.slice(-8)}</div>
         <div>Attempts: {debugInfo.triggerState.attemptCount}/{MAX_ATTEMPTS}</div>
         <div>Blocked: {debugInfo.triggerState.isBlocked ? 'Yes' : 'No'}</div>
+        <div>Has Enrichment: {status?.hasEnrichment ? 'Yes' : 'No'}</div>
+        <div>Has Narratives: {status?.hasNarratives ? 'Yes' : 'No'}</div>
         <div>Last Update: {debugInfo.lastUpdate.split('T')[1].slice(0, 8)}</div>
       </div>
     );
