@@ -17,6 +17,37 @@ export interface EnrichmentStatus {
   processingStage: 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed';
 }
 
+// Type guard to ensure data exists and has the correct shape
+function isValidEnrichmentStatus(data: unknown): data is EnrichmentStatus {
+  return (
+    data !== null &&
+    data !== undefined &&
+    typeof data === 'object' &&
+    'processingStage' in data &&
+    'isComplete' in data &&
+    typeof (data as any).processingStage === 'string' &&
+    typeof (data as any).isComplete === 'boolean'
+  );
+}
+
+// Helper function to determine if we should continue polling
+function shouldContinuePolling(status: EnrichmentStatus): boolean {
+  // Don't poll if processing failed or is complete
+  if (status.processingStage === 'failed' || (status.isComplete && status.processingStage === 'complete')) {
+    return false;
+  }
+  
+  // Poll more frequently during active processing
+  const shouldPoll = !status.isComplete && status.processingStage !== 'failed';
+  console.log('useEnrichmentStatus: Refetch interval decision:', { 
+    isComplete: status.isComplete, 
+    processingStage: status.processingStage,
+    shouldPoll 
+  });
+  
+  return shouldPoll;
+}
+
 export function useEnrichmentStatus(versionId?: string) {
   const { user } = useAuth();
   
@@ -108,27 +139,13 @@ export function useEnrichmentStatus(versionId?: string) {
     },
     enabled: !!versionId && !!user,
     refetchInterval: (query) => {
-      const data = query.state.data;
-      
-      // Don't poll if we have no data
-      if (!data) {
+      // Use type guard to safely access the data
+      if (!isValidEnrichmentStatus(query.state.data)) {
         return false;
       }
       
-      // Don't poll if processing failed or is complete
-      if (data.processingStage === 'failed' || (data.isComplete && data.processingStage === 'complete')) {
-        return false;
-      }
-      
-      // Poll more frequently during active processing
-      const shouldPoll = !data.isComplete && data.processingStage !== 'failed';
-      console.log('useEnrichmentStatus: Refetch interval decision:', { 
-        isComplete: data.isComplete, 
-        processingStage: data.processingStage,
-        shouldPoll 
-      });
-      
-      return shouldPoll ? 3000 : false; // Poll every 3 seconds during processing
+      // Use helper function with proper typing
+      return shouldContinuePolling(query.state.data) ? 3000 : false;
     },
     staleTime: 1000 * 10, // Consider data stale after 10 seconds
     retry: (failureCount, error) => {
