@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +10,15 @@ import {
   Info, 
   RefreshCw,
   Bug,
-  AlertCircle
+  AlertCircle,
+  Download,
+  Copy
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { LogDumpModal } from './LogDumpModal';
+import { useToast } from '@/hooks/use-toast';
 
 interface ErrorAnalysisPanelProps {
   versionId?: string;
@@ -34,6 +39,8 @@ export const ErrorAnalysisPanel: React.FC<ErrorAnalysisPanelProps> = ({
   refreshTrigger
 }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [logDumpOpen, setLogDumpOpen] = useState(false);
 
   const { data: errors, isLoading, refetch } = useQuery({
     queryKey: ['error-analysis', versionId, user?.id, refreshTrigger],
@@ -44,9 +51,9 @@ export const ErrorAnalysisPanel: React.FC<ErrorAnalysisPanelProps> = ({
       const { data: logs, error } = await supabase
         .from('job_logs')
         .select('*')
-        .in('level', ['error', 'warn'])
+        .in('level', ['error', 'warn', 'info', 'debug'])
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) throw error;
 
@@ -111,6 +118,33 @@ export const ErrorAnalysisPanel: React.FC<ErrorAnalysisPanelProps> = ({
     warnings: errors?.filter(e => e.level === 'warn').length || 0
   };
 
+  // Check if there are any failures that should trigger log dump
+  const hasFailures = errors?.some(e => e.level === 'error') || false;
+  const failedStage = errors?.find(e => e.level === 'error')?.stage;
+
+  const handleCopyErrorLogs = async () => {
+    if (!errors || errors.length === 0) return;
+
+    const errorLogs = errors.filter(e => e.level === 'error');
+    const logText = errorLogs.map(log => 
+      `[${new Date(log.timestamp).toISOString()}] [${log.stage}] ${log.message}`
+    ).join('\n');
+
+    try {
+      await navigator.clipboard.writeText(logText);
+      toast({
+        title: "Error logs copied",
+        description: "Error logs have been copied to clipboard.",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy logs to clipboard.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Error Summary */}
@@ -152,6 +186,42 @@ export const ErrorAnalysisPanel: React.FC<ErrorAnalysisPanelProps> = ({
         </Card>
       </div>
 
+      {/* Failure Alert with Log Dump */}
+      {hasFailures && (
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertTitle>Processing Failure Detected</AlertTitle>
+          <AlertDescription className="mt-2">
+            <div className="space-y-3">
+              <p>
+                The resume processing failed at stage: <strong>{failedStage}</strong>. 
+                Complete diagnostic logs are available for troubleshooting.
+              </p>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={() => setLogDumpOpen(true)} 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-background"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  View Full Log Dump
+                </Button>
+                <Button 
+                  onClick={handleCopyErrorLogs} 
+                  variant="outline" 
+                  size="sm"
+                  className="bg-background"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Error Logs
+                </Button>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Error List */}
       <Card>
         <CardHeader>
@@ -179,7 +249,7 @@ export const ErrorAnalysisPanel: React.FC<ErrorAnalysisPanelProps> = ({
             </div>
           ) : errors && errors.length > 0 ? (
             <div className="space-y-4">
-              {errors.map((error) => (
+              {errors.slice(0, 10).map((error) => (
                 <Alert key={error.id} variant={error.level === 'error' ? 'destructive' : 'default'}>
                   <div className="flex items-start gap-3 w-full">
                     {getErrorIcon(error.level)}
@@ -226,6 +296,18 @@ export const ErrorAnalysisPanel: React.FC<ErrorAnalysisPanelProps> = ({
                   </div>
                 </Alert>
               ))}
+
+              {errors.length > 10 && (
+                <div className="text-center py-4 border-t">
+                  <Button 
+                    onClick={() => setLogDumpOpen(true)} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    View All {errors.length} Logs
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -238,6 +320,15 @@ export const ErrorAnalysisPanel: React.FC<ErrorAnalysisPanelProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Log Dump Modal */}
+      <LogDumpModal
+        isOpen={logDumpOpen}
+        onClose={() => setLogDumpOpen(false)}
+        logs={errors || []}
+        failedStage={failedStage}
+        versionId={versionId}
+      />
     </div>
   );
 };
