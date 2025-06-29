@@ -9,12 +9,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Navigation } from '@/components/Navigation';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import { LogIn, UserPlus, Mail, Lock } from 'lucide-react';
+import { LogIn, UserPlus, Mail, Lock, User } from 'lucide-react';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { signIn, signUp, user } = useAuth();
@@ -37,7 +38,7 @@ const Auth = () => {
         const { error } = await signIn(email, password);
         if (error) throw error;
       } else {
-        const { error } = await signUp(email, password);
+        const { error } = await signUp(email, password, name);
         if (error) throw error;
       }
     } catch (err: any) {
@@ -69,6 +70,24 @@ const Auth = () => {
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
+              )}
+              
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="pl-10"
+                      required={!isLogin}
+                    />
+                  </div>
+                </div>
               )}
               
               <div className="space-y-2">
