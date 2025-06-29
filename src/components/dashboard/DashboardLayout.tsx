@@ -2,7 +2,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { 
   Sidebar, 
@@ -55,7 +54,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onTabChange
 }) => {
   const { user, signOut } = useAuth();
-  const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -91,14 +89,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <Sidebar>
           <SidebarHeader className="p-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-career-accent rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">P</span>
               </div>
               <div>
-                <h2 className={`font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                <h2 className="font-bold text-slate-800">
                   Praeviderant
                 </h2>
-                <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <p className="text-xs text-slate-600">
                   Beta
                 </p>
               </div>
@@ -125,7 +123,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <SidebarFooter className="p-4 space-y-2">
             <div className="flex items-center space-x-2 px-2 py-1">
               <User className="w-4 h-4" />
-              <span className={`text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+              <span className="text-sm text-slate-800">
                 {user?.email}
               </span>
             </div>
@@ -134,7 +132,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 onClick={handleSignOut}
                 variant="ghost"
                 size="sm"
-                className={`${theme === 'dark' ? 'text-career-text-muted-dark hover:text-career-text-dark' : 'text-career-text-muted-light hover:text-career-text-light'}`}
+                className="text-slate-600 hover:text-slate-800"
               >
                 <LogOut className="w-4 h-4" />
               </Button>
@@ -147,7 +145,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
               <SidebarTrigger className="-ml-1" />
               <div className="ml-auto flex items-center space-x-4">
-                <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <span className="text-sm text-slate-600">
                   Welcome back, {user?.email?.split('@')[0]}
                 </span>
               </div>
