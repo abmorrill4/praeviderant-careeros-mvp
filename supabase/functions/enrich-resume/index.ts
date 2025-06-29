@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -17,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== Enrich Resume Starting ===');
+    console.log('=== Enhanced Enrich Resume Starting ===');
     console.log('Request method:', req.method);
     console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     
@@ -72,8 +73,40 @@ serve(async (req) => {
     console.log('Supabase configuration verified');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get resume version details with user info
-    console.log('Fetching resume version details...');
+    // Step 1: Schema validation - Check if required tables exist
+    console.log('Step 1: Validating database schema...');
+    try {
+      const { data: schemaCheck, error: schemaError } = await supabase
+        .from('career_enrichment')
+        .select('id')
+        .limit(1);
+      
+      if (schemaError && schemaError.code === '42P01') {
+        console.error('Schema validation failed - career_enrichment table does not exist');
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: 'Database schema is outdated',
+          details: 'Required tables do not exist. Please run pending migrations.',
+          schema_error: true
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } catch (schemaValidationError) {
+      console.error('Schema validation error:', schemaValidationError);
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Schema validation failed',
+        details: schemaValidationError.message
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Step 2: Get resume version details with user info
+    console.log('Step 2: Fetching resume version details...');
     const { data: version, error: versionError } = await supabase
       .from('resume_versions')
       .select(`
@@ -97,8 +130,21 @@ serve(async (req) => {
 
     console.log('Found version:', version.file_name, 'for user:', version.resume_streams.user_id);
 
-    // Check if enrichment already exists (enhanced check)
-    console.log('Checking for existing enrichment...');
+    // Step 3: Update processing stage to 'enrich' 
+    console.log('Step 3: Updating processing stage...');
+    const { error: stageUpdateError } = await supabase.rpc('update_resume_processing_stage', {
+      p_version_id: versionId,
+      p_stage: 'enrich',
+      p_status: 'in_progress',
+      p_progress: 60
+    });
+
+    if (stageUpdateError) {
+      console.error('Failed to update processing stage:', stageUpdateError);
+    }
+
+    // Step 4: Enhanced existing enrichment check with proper error handling
+    console.log('Step 4: Checking for existing enrichment...');
     const { data: existingEnrichment, error: existingError } = await supabase
       .from('career_enrichment')
       .select('id, created_at')
@@ -108,11 +154,20 @@ serve(async (req) => {
 
     if (existingError) {
       console.error('Error checking existing enrichment:', existingError);
-      // Don't fail here, continue with the process
+      // Don't fail here, but log the error
     }
 
     if (existingEnrichment) {
       console.log('Enrichment already exists for this version:', existingEnrichment.id);
+      
+      // Update processing stage to complete
+      await supabase.rpc('update_resume_processing_stage', {
+        p_version_id: versionId,
+        p_stage: 'complete',
+        p_status: 'completed',
+        p_progress: 100
+      });
+
       return new Response(JSON.stringify({ 
         success: true, 
         message: 'Enrichment already exists',
@@ -123,8 +178,8 @@ serve(async (req) => {
       });
     }
 
-    // Get existing parsed entities for this version with better error handling
-    console.log('Fetching parsed entities...');
+    // Step 5: Get existing parsed entities for this version with better error handling
+    console.log('Step 5: Fetching parsed entities...');
     const { data: entities, error: entitiesError } = await supabase
       .from('parsed_resume_entities')
       .select('*')
@@ -132,6 +187,15 @@ serve(async (req) => {
 
     if (entitiesError) {
       console.error('Error fetching entities:', entitiesError);
+      
+      // Update processing stage to failed
+      await supabase.rpc('update_resume_processing_stage', {
+        p_version_id: versionId,
+        p_stage: 'enrich',
+        p_status: 'failed',
+        p_error: `Failed to fetch parsed entities: ${entitiesError.message}`
+      });
+
       return new Response(JSON.stringify({ 
         success: false,
         error: 'Failed to fetch parsed entities',
@@ -144,22 +208,33 @@ serve(async (req) => {
 
     if (!entities || entities.length === 0) {
       console.log('No entities found for enrichment - resume may not be fully parsed yet');
+      
+      // Update processing stage to indicate waiting for entities
+      await supabase.rpc('update_resume_processing_stage', {
+        p_version_id: versionId,
+        p_stage: 'parse',
+        p_status: 'in_progress',
+        p_error: 'Waiting for resume parsing to complete',
+        p_progress: 40
+      });
+
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'No entities available for enrichment',
         message: 'Resume parsing may still be in progress. Please wait and try again.',
-        entities_count: 0
+        entities_count: 0,
+        retry_after: 30
       }), {
         status: 422, // Unprocessable Entity - indicates client should retry later
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`Found ${entities.length} entities to analyze:`, entities.map(e => ({ id: e.id, field: e.field_name })));
+    console.log(`Step 6: Found ${entities.length} entities to analyze:`, entities.map(e => ({ id: e.id, field: e.field_name })));
 
-    // Process entities to create structured career data
+    // Step 7: Process entities to create structured career data
     const careerData = processEntitiesForEnrichment(entities);
-    console.log('Processed career data structure:', {
+    console.log('Step 7: Processed career data structure:', {
       hasPersonalInfo: !!careerData.personal_info,
       workExperienceCount: careerData.work_experience?.length || 0,
       educationCount: careerData.education?.length || 0,
@@ -169,10 +244,19 @@ serve(async (req) => {
       hasSummary: !!careerData.summary
     });
 
-    // Generate AI enrichment using OpenAI
+    // Step 8: Generate AI enrichment using OpenAI
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openaiApiKey) {
       console.error('OpenAI API key not configured');
+      
+      // Update processing stage to failed
+      await supabase.rpc('update_resume_processing_stage', {
+        p_version_id: versionId,
+        p_stage: 'enrich',
+        p_status: 'failed',
+        p_error: 'AI service not configured - missing OpenAI API key'
+      });
+
       return new Response(JSON.stringify({ 
         success: false,
         error: 'AI service not configured - missing OpenAI API key'
@@ -182,7 +266,7 @@ serve(async (req) => {
       });
     }
 
-    console.log('Calling OpenAI for career enrichment...');
+    console.log('Step 8: Calling OpenAI for career enrichment...');
     let enrichmentResult;
     try {
       enrichmentResult = await generateCareerEnrichment(careerData, openaiApiKey);
@@ -193,6 +277,15 @@ serve(async (req) => {
       });
     } catch (aiError) {
       console.error('OpenAI API error:', aiError);
+      
+      // Update processing stage to failed
+      await supabase.rpc('update_resume_processing_stage', {
+        p_version_id: versionId,
+        p_stage: 'enrich',
+        p_status: 'failed',
+        p_error: `AI analysis failed: ${aiError.message}`
+      });
+
       return new Response(JSON.stringify({ 
         success: false,
         error: 'AI analysis failed',
@@ -203,8 +296,8 @@ serve(async (req) => {
       });
     }
 
-    // Store enrichment data with better error handling - use upsert to handle unique constraint
-    console.log('Storing enrichment data...');
+    // Step 9: Store enrichment data with enhanced error handling and metadata
+    console.log('Step 9: Storing enrichment data...');
     const { data: enrichmentData, error: enrichmentError } = await supabase
       .from('career_enrichment')
       .upsert({
@@ -225,7 +318,9 @@ serve(async (req) => {
         enrichment_metadata: {
           processing_time: new Date().toISOString(),
           entities_analyzed: entities.length,
-          career_data: careerData
+          career_data: careerData,
+          processing_version: '2.0',
+          schema_version: 'enrichment_v2'
         }
       }, {
         onConflict: 'user_id,resume_version_id'
@@ -235,6 +330,15 @@ serve(async (req) => {
 
     if (enrichmentError) {
       console.error('Error storing enrichment:', enrichmentError);
+      
+      // Update processing stage to failed
+      await supabase.rpc('update_resume_processing_stage', {
+        p_version_id: versionId,
+        p_stage: 'enrich',
+        p_status: 'failed',
+        p_error: `Failed to store enrichment data: ${enrichmentError.message}`
+      });
+
       return new Response(JSON.stringify({ 
         success: false,
         error: 'Failed to store enrichment data',
@@ -247,8 +351,8 @@ serve(async (req) => {
 
     console.log('Enrichment data stored successfully with ID:', enrichmentData.id);
 
-    // Store career narratives with enhanced error handling
-    console.log('Storing career narratives...');
+    // Step 10: Store career narratives with enhanced error handling
+    console.log('Step 10: Storing career narratives...');
     const narrativePromises = enrichmentResult.narratives.map(narrative => {
       console.log('Storing narrative:', narrative.type);
       return supabase
@@ -276,15 +380,35 @@ serve(async (req) => {
     const successfulNarratives = narrativeResults.filter(result => result.status === 'fulfilled').length;
     console.log('Career narratives stored:', successfulNarratives, 'out of', narrativeResults.length);
 
-    // Log success to job logs (optional, don't fail if this errors)
+    // Step 11: Update processing stage to complete
+    console.log('Step 11: Updating processing stage to complete...');
+    const { error: finalStageError } = await supabase.rpc('update_resume_processing_stage', {
+      p_version_id: versionId,
+      p_stage: 'complete',
+      p_status: 'completed',
+      p_progress: 100
+    });
+
+    if (finalStageError) {
+      console.error('Failed to update final processing stage:', finalStageError);
+    }
+
+    // Step 12: Enhanced logging for monitoring
     try {
+      // Create or find a job for logging
       const { data: jobData } = await supabase
-        .from('jobs')
-        .select('id')
-        .eq('user_id', version.resume_streams.user_id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .from('enrichment_jobs')
+        .upsert({
+          user_id: version.resume_streams.user_id,
+          resume_version_id: versionId,
+          job_type: 'full_enrichment',
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,resume_version_id'
+        })
+        .select()
+        .single();
 
       if (jobData) {
         await supabase
@@ -293,11 +417,18 @@ serve(async (req) => {
             job_id: jobData.id,
             stage: 'enrich',
             level: 'info',
-            message: `AI career enrichment completed successfully. Generated ${successfulNarratives} narratives.`,
+            message: `Enhanced AI career enrichment completed successfully. Generated ${successfulNarratives} narratives.`,
             metadata: {
               version_id: versionId,
               entities_analyzed: entities.length,
-              enrichment_id: enrichmentData.id
+              enrichment_id: enrichmentData.id,
+              processing_version: '2.0',
+              schema_validated: true,
+              career_data_structure: {
+                work_experience: careerData.work_experience?.length || 0,
+                education: careerData.education?.length || 0,
+                skills: careerData.skills?.length || 0
+              }
             }
           });
       }
@@ -305,26 +436,29 @@ serve(async (req) => {
       console.warn('Failed to log to job_logs (non-critical):', logError);
     }
 
-    console.log('=== Enrich Resume Complete ===');
+    console.log('=== Enhanced Enrich Resume Complete ===');
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Career enrichment completed successfully',
+      message: 'Enhanced career enrichment completed successfully',
       enrichment_id: enrichmentData.id,
       narratives_count: successfulNarratives,
-      entities_processed: entities.length
+      entities_processed: entities.length,
+      processing_version: '2.0',
+      schema_version: 'enrichment_v2'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Unexpected error in enrich-resume:', error);
+    console.error('Unexpected error in enhanced enrich-resume:', error);
     console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({
       success: false,
       error: 'Internal server error',
       message: error.message,
-      type: error.constructor.name
+      type: error.constructor.name,
+      processing_version: '2.0'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -387,7 +521,7 @@ function processEntitiesForEnrichment(entities: any[]): any {
   return careerData;
 }
 
-// AI enrichment generation function
+// Enhanced AI enrichment generation function
 async function generateCareerEnrichment(careerData: any, openaiApiKey: string): Promise<any> {
   const prompt = `
 Analyze the following career profile and provide structured insights. Focus on professional patterns, career trajectory, and leadership indicators.
@@ -435,7 +569,7 @@ Scoring Guidelines:
 Provide realistic, evidence-based scores. Be thoughtful and specific in your analysis.
 `;
 
-  console.log('Sending prompt to OpenAI...');
+  console.log('Sending enhanced prompt to OpenAI...');
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -447,7 +581,7 @@ Provide realistic, evidence-based scores. Be thoughtful and specific in your ana
       messages: [
         {
           role: 'system',
-          content: 'You are a career analysis expert. Analyze career profiles and provide structured insights in JSON format. Be precise, realistic, and evidence-based in your assessments.'
+          content: 'You are an expert career analysis specialist. Analyze career profiles and provide structured insights in JSON format. Be precise, realistic, and evidence-based in your assessments. Focus on extracting meaningful patterns from the provided career data.'
         },
         {
           role: 'user',
@@ -466,7 +600,7 @@ Provide realistic, evidence-based scores. Be thoughtful and specific in your ana
   }
 
   const result = await response.json();
-  console.log('OpenAI response received:', result.choices?.[0]?.message?.content ? 'Success' : 'No content');
+  console.log('Enhanced OpenAI response received:', result.choices?.[0]?.message?.content ? 'Success' : 'No content');
   
   const content = result.choices[0]?.message?.content;
   
