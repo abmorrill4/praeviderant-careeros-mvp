@@ -169,7 +169,7 @@ serve(async (req) => {
       });
     }
 
-    // Check if enrichment already exists
+    // Check if enrichment already exists with better error handling
     console.log('Checking for existing enrichment...');
     const { data: existingEnrichment, error: enrichmentError } = await supabase
       .from('entry_enrichment')
@@ -212,40 +212,59 @@ serve(async (req) => {
     const enrichmentData = await enrichSingleEntity(entity);
     console.log('AI enrichment completed successfully');
 
-    // Store or update enrichment
+    // Store or update enrichment with proper upsert logic
     let result;
-    if (existingEnrichment) {
-      console.log('Updating existing enrichment...');
-      const { data, error } = await supabase
-        .from('entry_enrichment')
-        .update(enrichmentData)
-        .eq('id', existingEnrichment.id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Failed to update enrichment:', error);
-        throw new Error(`Failed to update enrichment: ${error.message}`);
+    try {
+      if (existingEnrichment) {
+        console.log('Updating existing enrichment...');
+        const { data, error } = await supabase
+          .from('entry_enrichment')
+          .update({
+            ...enrichmentData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingEnrichment.id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Failed to update enrichment:', error);
+          throw new Error(`Failed to update enrichment: ${error.message}`);
+        }
+        result = data;
+      } else {
+        console.log('Creating new enrichment...');
+        // Use upsert to handle race conditions
+        const { data, error } = await supabase
+          .from('entry_enrichment')
+          .upsert({
+            user_id: user.id,
+            resume_version_id: entity.resume_version_id,
+            parsed_entity_id: finalEntityId,
+            ...enrichmentData
+          }, {
+            onConflict: 'parsed_entity_id',
+            ignoreDuplicates: false
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Failed to insert/upsert enrichment:', error);
+          throw new Error(`Failed to insert enrichment: ${error.message}`);
+        }
+        result = data;
       }
-      result = data;
-    } else {
-      console.log('Creating new enrichment...');
-      const { data, error } = await supabase
-        .from('entry_enrichment')
-        .insert({
-          user_id: user.id,
-          resume_version_id: entity.resume_version_id,
-          parsed_entity_id: finalEntityId,
-          ...enrichmentData
-        })
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Failed to insert enrichment:', error);
-        throw new Error(`Failed to insert enrichment: ${error.message}`);
-      }
-      result = data;
+    } catch (dbError) {
+      console.error('Database operation failed:', dbError);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to save enrichment data',
+        details: dbError.message,
+        success: false 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     console.log('Successfully enriched entity:', finalEntityId);
