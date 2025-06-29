@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,26 +32,43 @@ function isValidEnrichmentStatus(data: unknown): data is EnrichmentStatus {
   );
 }
 
-// Helper function to determine if we should continue polling - using switch to avoid type narrowing issues
+// Helper function to determine if we should continue polling
 function shouldContinuePolling(status: EnrichmentStatus): boolean {
   console.log('useEnrichmentStatus: Refetch interval decision:', { 
     isComplete: status.isComplete, 
     processingStage: status.processingStage,
   });
 
-  // Use switch statement to avoid TypeScript control flow analysis issues
   switch (status.processingStage) {
     case 'failed':
       return false;
     case 'complete':
-      return !status.isComplete; // Only continue if not actually complete
+      return !status.isComplete;
     case 'pending':
     case 'parsing':
     case 'enriching':
-      return !status.isComplete; // Continue polling for active stages
+      return !status.isComplete;
     default:
       return false;
   }
+}
+
+// Enhanced version ID validation
+function isValidVersionId(versionId?: string): boolean {
+  if (!versionId) return false;
+  
+  // Check for common invalid patterns
+  if (versionId === ':versionId' || 
+      versionId.startsWith(':') || 
+      versionId === 'undefined' || 
+      versionId === 'null' ||
+      versionId.length < 10) {
+    return false;
+  }
+  
+  // Check UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(versionId);
 }
 
 export function useEnrichmentStatus(versionId?: string) {
@@ -61,28 +77,28 @@ export function useEnrichmentStatus(versionId?: string) {
   return useQuery({
     queryKey: ['enrichment-status', versionId],
     queryFn: async (): Promise<EnrichmentStatus | null> => {
-      if (!versionId || !user) {
-        console.log('useEnrichmentStatus: Missing versionId or user', { versionId, userId: user?.id });
+      // Early return if no user
+      if (!user) {
+        console.log('useEnrichmentStatus: No user authenticated');
         return null;
       }
 
-      // Enhanced parameter validation
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(versionId)) {
-        console.error('useEnrichmentStatus: Invalid versionId format:', versionId);
-        throw new Error(`Invalid version ID format: ${versionId}`);
+      // Early return if no versionId provided
+      if (!versionId) {
+        console.log('useEnrichmentStatus: No versionId provided');
+        return null;
       }
 
-      // Additional check for parameter placeholder
-      if (versionId.startsWith(':') || versionId === 'undefined' || versionId === 'null') {
-        console.error('useEnrichmentStatus: Version ID appears to be a parameter placeholder:', versionId);
-        throw new Error(`Version ID appears to be a parameter placeholder: ${versionId}`);
+      // Validate version ID format
+      if (!isValidVersionId(versionId)) {
+        console.error('useEnrichmentStatus: Invalid versionId format:', versionId);
+        throw new Error(`Invalid version ID format: ${versionId}`);
       }
       
       console.log('useEnrichmentStatus: Checking comprehensive processing status for version:', versionId);
       
       try {
-        // Use the comprehensive status function with enhanced error handling
+        // Use the comprehensive status function
         const { data, error } = await supabase.rpc('get_resume_processing_status', {
           p_version_id: versionId
         });
@@ -95,7 +111,7 @@ export function useEnrichmentStatus(versionId?: string) {
             throw new Error(`Invalid UUID format provided: ${versionId}`);
           }
           
-          // Don't throw - return a safe fallback state for other errors
+          // Don't throw for other errors - return safe fallback
           return {
             versionId,
             currentStage: 'upload',
@@ -119,7 +135,7 @@ export function useEnrichmentStatus(versionId?: string) {
         const status = data[0];
         console.log('useEnrichmentStatus: Raw status from database:', status);
 
-        // Enhanced stage mapping with better error handling
+        // Enhanced stage mapping
         const processingStage = mapCurrentStageToProcessingStage(
           status.current_stage, 
           status.processing_status,
@@ -147,15 +163,15 @@ export function useEnrichmentStatus(versionId?: string) {
       } catch (error) {
         console.error('useEnrichmentStatus: Query failed:', error);
         
-        // Re-throw validation errors so they bubble up to the UI
+        // Re-throw validation errors
         if (error instanceof Error && (
           error.message.includes('Invalid version ID') || 
-          error.message.includes('parameter placeholder')
+          error.message.includes('Invalid UUID format')
         )) {
           throw error;
         }
         
-        // Return a safe fallback state for other errors
+        // Return safe fallback for other errors
         return {
           versionId,
           currentStage: 'upload',
@@ -171,31 +187,30 @@ export function useEnrichmentStatus(versionId?: string) {
         };
       }
     },
-    enabled: !!versionId && !!user,
+    enabled: !!user && isValidVersionId(versionId),
     refetchInterval: (query) => {
       // Use type guard to safely access the data
       if (!isValidEnrichmentStatus(query.state.data)) {
         return false;
       }
       
-      // Use helper function with proper typing
       return shouldContinuePolling(query.state.data) ? 3000 : false;
     },
-    staleTime: 1000 * 10, // Consider data stale after 10 seconds
+    staleTime: 1000 * 10,
     retry: (failureCount, error) => {
       console.log('useEnrichmentStatus: Retry decision:', { failureCount, error });
       
       // Don't retry validation errors
       if (error instanceof Error && (
         error.message.includes('Invalid version ID') || 
-        error.message.includes('parameter placeholder')
+        error.message.includes('Invalid UUID format')
       )) {
         return false;
       }
       
-      return failureCount < 2; // Retry up to 2 times for other errors
+      return failureCount < 2;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff, max 10s
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 }
 
