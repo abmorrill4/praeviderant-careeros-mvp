@@ -20,20 +20,28 @@ serve(async (req) => {
   try {
     console.log('=== Enhanced Enrich Resume Starting ===');
     console.log('Request method:', req.method);
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+    console.log('Request URL:', req.url);
     
     // Enhanced request body parsing with validation
     let requestData: EnrichRequest;
     
     try {
-      requestData = await req.json();
+      const rawBody = await req.text();
+      console.log('Raw request body:', rawBody);
+      
+      if (!rawBody || rawBody.trim() === '') {
+        throw new Error('Empty request body');
+      }
+      
+      requestData = JSON.parse(rawBody);
       console.log('Parsed request data:', requestData);
     } catch (parseError) {
       console.error('JSON parsing error:', parseError);
       return new Response(JSON.stringify({ 
         success: false,
         error: 'Invalid JSON in request body',
-        details: parseError.message
+        details: parseError.message,
+        received_body: await req.text().catch(() => 'Unable to read body')
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -43,12 +51,42 @@ serve(async (req) => {
     const { versionId } = requestData;
     console.log('Processing enrichment for versionId:', versionId);
 
+    // Enhanced versionId validation
     if (!versionId || typeof versionId !== 'string') {
       console.error('Invalid or missing versionId:', versionId);
       return new Response(JSON.stringify({ 
         success: false,
         error: 'Version ID is required and must be a valid string',
-        received: typeof versionId
+        received: { type: typeof versionId, value: versionId }
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check for parameter placeholder that wasn't replaced
+    if (versionId.startsWith(':') || versionId === 'undefined' || versionId === 'null') {
+      console.error('Version ID appears to be a parameter placeholder:', versionId);
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Invalid version ID - appears to be a parameter placeholder',
+        received: versionId,
+        hint: 'Check that the version ID is being passed correctly from the client'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(versionId)) {
+      console.error('Version ID is not a valid UUID format:', versionId);
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Version ID must be a valid UUID format',
+        received: versionId,
+        expected_format: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -78,21 +116,39 @@ serve(async (req) => {
     try {
       const { data: schemaCheck, error: schemaError } = await supabase
         .from('career_enrichment')
-        .select('id')
+        .select('id, enrichment_metadata')
         .limit(1);
       
-      if (schemaError && schemaError.code === '42P01') {
-        console.error('Schema validation failed - career_enrichment table does not exist');
-        return new Response(JSON.stringify({ 
-          success: false,
-          error: 'Database schema is outdated',
-          details: 'Required tables do not exist. Please run pending migrations.',
-          schema_error: true
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      if (schemaError) {
+        if (schemaError.code === '42P01') {
+          console.error('Schema validation failed - career_enrichment table does not exist');
+          return new Response(JSON.stringify({ 
+            success: false,
+            error: 'Database schema is outdated',
+            details: 'career_enrichment table does not exist. Please run pending migrations.',
+            schema_error: true
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } else if (schemaError.message?.includes('enrichment_metadata')) {
+          console.error('Schema validation failed - enrichment_metadata column missing');
+          return new Response(JSON.stringify({ 
+            success: false,
+            error: 'Database schema is outdated',
+            details: 'enrichment_metadata column is missing. Please run pending migrations.',
+            schema_error: true
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } else {
+          console.error('Schema validation failed with unexpected error:', schemaError);
+          throw schemaError;
+        }
       }
+      
+      console.log('Schema validation passed');
     } catch (schemaValidationError) {
       console.error('Schema validation error:', schemaValidationError);
       return new Response(JSON.stringify({ 
@@ -121,7 +177,8 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         success: false,
         error: 'Resume version not found',
-        details: versionError?.message || 'No version data returned'
+        details: versionError?.message || 'No version data returned',
+        version_id: versionId
       }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -298,9 +355,11 @@ serve(async (req) => {
 
     // Step 9: Store enrichment data with enhanced error handling and metadata
     console.log('Step 9: Storing enrichment data...');
+    
+    // Use INSERT with ON CONFLICT handling instead of UPSERT for better error control
     const { data: enrichmentData, error: enrichmentError } = await supabase
       .from('career_enrichment')
-      .upsert({
+      .insert({
         user_id: version.resume_streams.user_id,
         resume_version_id: versionId,
         role_archetype: enrichmentResult.role_archetype,
@@ -322,14 +381,41 @@ serve(async (req) => {
           processing_version: '2.0',
           schema_version: 'enrichment_v2'
         }
-      }, {
-        onConflict: 'user_id,resume_version_id'
       })
       .select()
       .single();
 
     if (enrichmentError) {
       console.error('Error storing enrichment:', enrichmentError);
+      
+      // Check if it's a duplicate key error and handle gracefully
+      if (enrichmentError.code === '23505') {
+        console.log('Enrichment already exists due to race condition, fetching existing...');
+        const { data: existingData } = await supabase
+          .from('career_enrichment')
+          .select('id, created_at')
+          .eq('user_id', version.resume_streams.user_id)
+          .eq('resume_version_id', versionId)
+          .single();
+
+        if (existingData) {
+          await supabase.rpc('update_resume_processing_stage', {
+            p_version_id: versionId,
+            p_stage: 'complete',
+            p_status: 'completed',
+            p_progress: 100
+          });
+
+          return new Response(JSON.stringify({ 
+            success: true,
+            message: 'Enrichment completed (existing data found)',
+            enrichment_id: existingData.id,
+            created_at: existingData.created_at
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
       
       // Update processing stage to failed
       await supabase.rpc('update_resume_processing_stage', {
@@ -342,7 +428,8 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         success: false,
         error: 'Failed to store enrichment data',
-        details: enrichmentError.message
+        details: enrichmentError.message,
+        code: enrichmentError.code
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -353,20 +440,20 @@ serve(async (req) => {
 
     // Step 10: Store career narratives with enhanced error handling
     console.log('Step 10: Storing career narratives...');
-    const narrativePromises = enrichmentResult.narratives.map(narrative => {
+    const narrativePromises = enrichmentResult.narratives.map(async (narrative) => {
       console.log('Storing narrative:', narrative.type);
-      return supabase
+      return await supabase
         .from('career_narratives')
-        .upsert({
+        .insert({
           user_id: version.resume_streams.user_id,
           resume_version_id: versionId,
           narrative_type: narrative.type,
           narrative_text: narrative.text,
           confidence_score: narrative.confidence || 0.9,
           model_version: 'gpt-4o'
-        }, {
-          onConflict: 'user_id,resume_version_id,narrative_type'
-        });
+        })
+        .select()
+        .single();
     });
 
     const narrativeResults = await Promise.allSettled(narrativePromises);
