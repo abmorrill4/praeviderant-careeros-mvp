@@ -494,6 +494,14 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
     return <Badge className="bg-red-100 text-red-800 text-xs">Low</Badge>;
   };
 
+  const handleEnrichAll = () => {
+    enrichAllMutation.mutate(versionId);
+  };
+
+  const handleEnrichSingle = (entityId: string) => {
+    enrichSingleMutation.mutate({ entityId });
+  };
+
   const renderResumeEntryCard = (entity: GroupedEntity) => {
     if (editingField === entity.id) {
       return (
@@ -585,7 +593,11 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleEnrichSingle(entity.id.split('-')[0]); // Get original entity ID
+                  // Extract the actual parsed entity ID from the compound ID
+                  const actualEntityId = entities?.find(e => `${e.field_name}-${entities.indexOf(e)}` === entity.id)?.id;
+                  if (actualEntityId) {
+                    handleEnrichSingle(actualEntityId);
+                  }
                 }}
                 disabled={enrichSingleMutation.isPending}
                 className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"

@@ -336,6 +336,78 @@ export type Database = {
           },
         ]
       }
+      entry_enrichment: {
+        Row: {
+          career_progression: string | null
+          confidence_score: number | null
+          created_at: string
+          enrichment_metadata: Json | null
+          experience_level: string | null
+          id: string
+          insights: Json | null
+          market_relevance: string | null
+          model_version: string | null
+          parsed_entity_id: string
+          parsed_structure: Json | null
+          recommendations: Json | null
+          resume_version_id: string
+          skills_identified: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          career_progression?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          enrichment_metadata?: Json | null
+          experience_level?: string | null
+          id?: string
+          insights?: Json | null
+          market_relevance?: string | null
+          model_version?: string | null
+          parsed_entity_id: string
+          parsed_structure?: Json | null
+          recommendations?: Json | null
+          resume_version_id: string
+          skills_identified?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          career_progression?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          enrichment_metadata?: Json | null
+          experience_level?: string | null
+          id?: string
+          insights?: Json | null
+          market_relevance?: string | null
+          model_version?: string | null
+          parsed_entity_id?: string
+          parsed_structure?: Json | null
+          recommendations?: Json | null
+          resume_version_id?: string
+          skills_identified?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entry_enrichment_parsed_entity_id_fkey"
+            columns: ["parsed_entity_id"]
+            isOneToOne: true
+            referencedRelation: "parsed_resume_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entry_enrichment_resume_version_id_fkey"
+            columns: ["resume_version_id"]
+            isOneToOne: false
+            referencedRelation: "resume_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interview_sessions: {
         Row: {
           audio_file_url: string | null

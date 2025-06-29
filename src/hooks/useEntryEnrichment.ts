@@ -32,19 +32,30 @@ export function useResumeEnrichments(versionId?: string) {
     queryFn: async (): Promise<EntryEnrichment[]> => {
       if (!versionId || !user) return [];
       
-      const { data, error } = await supabase
-        .from('entry_enrichment')
-        .select('*')
-        .eq('resume_version_id', versionId)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      try {
+        // Use the table name directly as a raw query
+        const { data, error } = await (supabase as any)
+          .from('entry_enrichment')
+          .select('*')
+          .eq('resume_version_id', versionId)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching entry enrichments:', error);
-        throw error;
+        if (error) {
+          console.error('Error fetching entry enrichments:', error);
+          throw error;
+        }
+
+        return (data || []).map((row: any) => ({
+          ...row,
+          insights: Array.isArray(row.insights) ? row.insights : [],
+          skills_identified: Array.isArray(row.skills_identified) ? row.skills_identified : [],
+          recommendations: Array.isArray(row.recommendations) ? row.recommendations : [],
+        }));
+      } catch (error) {
+        console.error('Failed to fetch enrichments:', error);
+        return [];
       }
-
-      return data || [];
     },
     enabled: !!versionId && !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -60,19 +71,31 @@ export function useEntityEnrichment(entityId?: string) {
     queryFn: async (): Promise<EntryEnrichment | null> => {
       if (!entityId || !user) return null;
       
-      const { data, error } = await supabase
-        .from('entry_enrichment')
-        .select('*')
-        .eq('parsed_entity_id', entityId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      try {
+        const { data, error } = await (supabase as any)
+          .from('entry_enrichment')
+          .select('*')
+          .eq('parsed_entity_id', entityId)
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching entity enrichment:', error);
-        throw error;
+        if (error) {
+          console.error('Error fetching entity enrichment:', error);
+          throw error;
+        }
+
+        if (!data) return null;
+
+        return {
+          ...data,
+          insights: Array.isArray(data.insights) ? data.insights : [],
+          skills_identified: Array.isArray(data.skills_identified) ? data.skills_identified : [],
+          recommendations: Array.isArray(data.recommendations) ? data.recommendations : [],
+        };
+      } catch (error) {
+        console.error('Failed to fetch entity enrichment:', error);
+        return null;
       }
-
-      return data;
     },
     enabled: !!entityId && !!user,
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -171,34 +194,52 @@ export function useEnrichmentStats(versionId?: string) {
     queryFn: async () => {
       if (!versionId || !user) return null;
       
-      // Get total entities
-      const { data: entities, error: entitiesError } = await supabase
-        .from('parsed_resume_entities')
-        .select('id')
-        .eq('resume_version_id', versionId);
+      try {
+        // Get total entities
+        const { data: entities, error: entitiesError } = await supabase
+          .from('parsed_resume_entities')
+          .select('id')
+          .eq('resume_version_id', versionId);
 
-      if (entitiesError) {
-        throw entitiesError;
+        if (entitiesError) {
+          throw entitiesError;
+        }
+
+        // Get enriched entities
+        const { data: enrichments, error: enrichmentsError } = await (supabase as any)
+          .from('entry_enrichment')
+          .select('id')
+          .eq('resume_version_id', versionId)
+          .eq('user_id', user.id);
+
+        if (enrichmentsError) {
+          console.error('Error fetching enrichment stats:', enrichmentsError);
+          // Return basic stats if enrichment query fails
+          return {
+            total_entities: entities?.length || 0,
+            enriched_entities: 0,
+            enrichment_percentage: 0
+          };
+        }
+
+        const totalCount = entities?.length || 0;
+        const enrichedCount = enrichments?.length || 0;
+
+        return {
+          total_entities: totalCount,
+          enriched_entities: enrichedCount,
+          enrichment_percentage: totalCount > 0 
+            ? Math.round((enrichedCount / totalCount) * 100)
+            : 0
+        };
+      } catch (error) {
+        console.error('Failed to fetch enrichment stats:', error);
+        return {
+          total_entities: 0,
+          enriched_entities: 0,
+          enrichment_percentage: 0
+        };
       }
-
-      // Get enriched entities
-      const { data: enrichments, error: enrichmentsError } = await supabase
-        .from('entry_enrichment')
-        .select('id')
-        .eq('resume_version_id', versionId)
-        .eq('user_id', user.id);
-
-      if (enrichmentsError) {
-        throw enrichmentsError;
-      }
-
-      return {
-        total_entities: entities?.length || 0,
-        enriched_entities: enrichments?.length || 0,
-        enrichment_percentage: entities?.length 
-          ? Math.round((enrichments?.length || 0) / entities.length * 100)
-          : 0
-      };
     },
     enabled: !!versionId && !!user,
     staleTime: 1000 * 60 * 2, // 2 minutes
