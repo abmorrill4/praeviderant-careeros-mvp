@@ -123,18 +123,83 @@ export function useEnrichResume() {
 
   return useMutation({
     mutationFn: async (versionId: string) => {
-      const { data, error } = await supabase.functions.invoke('enrich-resume', {
-        body: { versionId }
-      });
-
-      if (error) {
-        console.error('Error enriching resume:', error);
-        throw error;
+      console.log('useEnrichResume: Starting enrichment for versionId:', versionId);
+      
+      // Enhanced validation
+      if (!versionId) {
+        console.error('useEnrichResume: No versionId provided');
+        throw new Error('Version ID is required');
       }
 
-      return data as EnrichmentResult;
+      if (typeof versionId !== 'string') {
+        console.error('useEnrichResume: Invalid versionId type:', typeof versionId, versionId);
+        throw new Error('Version ID must be a string');
+      }
+
+      // Check for parameter placeholders
+      if (versionId.startsWith(':') || versionId === 'undefined' || versionId === 'null') {
+        console.error('useEnrichResume: versionId appears to be a parameter placeholder:', versionId);
+        throw new Error('Invalid version ID - parameter not resolved');
+      }
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(versionId)) {
+        console.error('useEnrichResume: versionId is not a valid UUID:', versionId);
+        throw new Error('Version ID must be a valid UUID format');
+      }
+
+      const requestBody = { versionId };
+      console.log('useEnrichResume: Request body to be sent:', requestBody);
+      console.log('useEnrichResume: Request body JSON:', JSON.stringify(requestBody));
+
+      try {
+        console.log('useEnrichResume: Calling supabase.functions.invoke with:', {
+          functionName: 'enrich-resume',
+          body: requestBody
+        });
+
+        const { data, error } = await supabase.functions.invoke('enrich-resume', {
+          body: requestBody
+        });
+
+        console.log('useEnrichResume: Supabase function response:', { data, error });
+
+        if (error) {
+          console.error('useEnrichResume: Supabase function error:', error);
+          
+          // Check for specific error types
+          if (error.message?.includes('Empty request body')) {
+            throw new Error('Request body validation failed - the request appears to be empty');
+          }
+          
+          if (error.message?.includes('Invalid JSON')) {
+            throw new Error('Request formatting error - invalid JSON structure');
+          }
+          
+          if (error.message?.includes('parameter placeholder')) {
+            throw new Error('Version ID parameter was not properly resolved');
+          }
+
+          throw new Error(error.message || 'Failed to start career enrichment');
+        }
+
+        console.log('useEnrichResume: Successfully received response:', data);
+        return data as EnrichmentResult;
+      } catch (invokeError) {
+        console.error('useEnrichResume: Exception during function invoke:', invokeError);
+        
+        // Re-throw with more context
+        if (invokeError instanceof Error) {
+          throw new Error(`Enrichment request failed: ${invokeError.message}`);
+        }
+        
+        throw new Error('Unexpected error during enrichment request');
+      }
     },
     onSuccess: (data, versionId) => {
+      console.log('useEnrichResume: onSuccess called with:', { data, versionId });
+      
       // Handle different response structures gracefully
       const jobId = data?.job?.id;
       const enrichmentId = data?.enrichment_id;
@@ -164,9 +229,17 @@ export function useEnrichResume() {
       queryClient.invalidateQueries({ queryKey: ['enrichment-status', versionId] });
     },
     onError: (error) => {
+      console.error('useEnrichResume: onError called with:', error);
+      
+      let errorMessage = 'Failed to start career enrichment';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Enrichment Failed",
-        description: error instanceof Error ? error.message : 'Failed to start career enrichment',
+        description: errorMessage,
         variant: "destructive",
       });
     },

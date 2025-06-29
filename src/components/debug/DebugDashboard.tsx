@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,6 +28,8 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   console.log('DebugDashboard - Version ID:', versionId);
+  console.log('DebugDashboard - Version ID type:', typeof versionId);
+  console.log('DebugDashboard - Version ID length:', versionId?.length);
 
   const { data: status, isLoading, error, refetch } = useEnrichmentStatus(versionId);
   const enrichResume = useEnrichResume();
@@ -41,6 +42,19 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
 
   const handleTriggerAnalysis = () => {
     console.log('DebugDashboard - Triggering analysis for:', versionId);
+    console.log('DebugDashboard - versionId validation before trigger:', {
+      versionId,
+      type: typeof versionId,
+      length: versionId?.length,
+      isString: typeof versionId === 'string',
+      isValid: versionId && typeof versionId === 'string' && versionId.length > 10
+    });
+    
+    if (!versionId || typeof versionId !== 'string') {
+      console.error('DebugDashboard - Invalid versionId for analysis trigger:', versionId);
+      return;
+    }
+    
     enrichResume.mutate(versionId);
   };
 
@@ -112,7 +126,7 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
             onClick={handleTriggerAnalysis} 
             variant="outline" 
             size="sm"
-            disabled={enrichResume.isPending || status?.isComplete}
+            disabled={enrichResume.isPending || status?.isComplete || !versionId}
           >
             <Play className="w-4 h-4 mr-2" />
             {enrichResume.isPending ? 'Analyzing...' : 'Trigger Analysis'}
@@ -123,6 +137,16 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
           </Button>
         </div>
       </div>
+
+      {/* Show enrichment error if any */}
+      {enrichResume.error && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Enrichment error: {enrichResume.error.message}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Quick Status Overview */}
       {status && (
