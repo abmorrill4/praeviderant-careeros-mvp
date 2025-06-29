@@ -11,6 +11,15 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import ResumeUpload from "./pages/ResumeUpload";
 import Dashboard from "./pages/Dashboard";
+import ProfileTimelinePage from "./pages/ProfileTimelinePage";
+import ProfileOptimizationPage from "./pages/ProfileOptimizationPage";
+import ProfileManagementPage from "./pages/ProfileManagementPage";
+import ResumeTimelinePage from "./pages/ResumeTimelinePage";
+import ResumeUploadV2 from "./pages/ResumeUploadV2";
+import EntityGraphAdmin from "./pages/EntityGraphAdmin";
+import InterviewPage from "./pages/InterviewPage";
+import ApplicationToolkitPage from "./pages/ApplicationToolkitPage";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +36,16 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/profile-timeline" element={<ProfileTimelinePage />} />
+              <Route path="/profile-optimization" element={<ProfileOptimizationPage />} />
+              <Route path="/profile-management" element={<ProfileManagementPage />} />
               <Route path="/upload" element={<ResumeUpload />} />
+              <Route path="/resume-upload-v2" element={<ResumeUploadV2 />} />
+              <Route path="/resume-timeline" element={<ResumeTimelinePage />} />
+              <Route path="/entity-graph-admin" element={<EntityGraphAdmin />} />
+              <Route path="/interview" element={<InterviewPage />} />
+              <Route path="/application-toolkit" element={<ApplicationToolkitPage />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </AuthProvider>
