@@ -1,43 +1,78 @@
 
-import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, AlertTriangle, Info } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
 import { DebugDashboard } from '@/components/debug/DebugDashboard';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function DebugAnalysisPage() {
-  const params = useParams<{ versionId?: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [versionId, setVersionId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Extract version ID and validate it
-  const rawVersionId = params.versionId;
-  
-  // Debug logging to see what we're receiving
   useEffect(() => {
-    console.log('DebugAnalysisPage - URL Parameters:', {
-      rawVersionId,
-      allParams: params,
-      currentPath: window.location.pathname,
-      search: window.location.search,
-      timestamp: new Date().toISOString()
-    });
-  }, [rawVersionId, params]);
+    const fetchLatestResumeVersion = async () => {
+      if (!user) {
+        setError('Not authenticated');
+        setLoading(false);
+        return;
+      }
 
-  // Validate version ID format (should be a UUID)
-  const isValidVersionId = (id?: string): boolean => {
-    if (!id) return false;
-    // Check for parameter placeholder patterns
-    if (id === ':versionId' || id.startsWith(':') || id === 'undefined' || id === 'null') {
-      return false;
-    }
-    // Check UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(id);
-  };
+      try {
+        console.log('Fetching latest resume version for user:', user.id);
+        
+        // Get the most recent resume version
+        const { data, error } = await supabase
+          .from('resume_versions')
+          .select(`
+            id,
+            version_number,
+            file_name,
+            processing_status,
+            created_at,
+            resume_streams!inner(user_id)
+          `)
+          .eq('resume_streams.user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-  const validVersionId = isValidVersionId(rawVersionId) ? rawVersionId : undefined;
-  const hasParameterPlaceholder = rawVersionId === ':versionId' || (rawVersionId && rawVersionId.startsWith(':'));
+        if (error) {
+          console.error('Error fetching resume version:', error);
+          setError(`Failed to fetch resume: ${error.message}`);
+        } else if (data) {
+          console.log('Found resume version:', data);
+          setVersionId(data.id);
+        } else {
+          console.log('No resume versions found');
+          setError('No resumes found. Please upload a resume first.');
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        setError('Unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLatestResumeVersion();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p>Loading resume data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -52,95 +87,28 @@ export default function DebugAnalysisPage() {
             Back to Profile Management
           </Button>
 
-          {/* URL Debug Information */}
-          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="font-medium text-blue-800 mb-2">Debug Information</h3>
-            <div className="text-sm text-blue-700 space-y-1">
-              <div>Raw versionId parameter: <code className="bg-blue-100 px-1 rounded">{rawVersionId || 'undefined'}</code></div>
-              <div>Current URL: <code className="bg-blue-100 px-1 rounded">{window.location.pathname}</code></div>
-              <div>Is valid UUID: <code className="bg-blue-100 px-1 rounded">{isValidVersionId(rawVersionId) ? 'Yes' : 'No'}</code></div>
-              <div>Has placeholder: <code className="bg-blue-100 px-1 rounded">{hasParameterPlaceholder ? 'Yes' : 'No'}</code></div>
-            </div>
-          </div>
-
-          {/* Parameter placeholder error */}
-          {hasParameterPlaceholder && (
+          {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                <div className="space-y-2">
-                  <p>
-                    <strong>Routing Issue Detected:</strong> The URL parameter wasn't properly substituted.
-                  </p>
-                  <p className="text-sm">
-                    Current parameter: <code className="bg-red-100 px-1 rounded">{rawVersionId}</code>
-                  </p>
-                  <p className="text-sm">
-                    This usually means you're navigating to this page without a valid resume version ID in the URL.
-                    The correct URL format should be: <code className="bg-red-100 px-1 rounded">/debug/[uuid]</code>
-                  </p>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Invalid version ID error */}
-          {rawVersionId && !hasParameterPlaceholder && !validVersionId && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Invalid version ID format: <code>{rawVersionId}</code>
-                <br />
-                <span className="text-sm mt-1 block">
-                  Version ID must be a valid UUID format.
-                </span>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* No version ID provided */}
-          {!rawVersionId && (
-            <Alert className="mb-4">
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                No version ID provided. The debug dashboard will show general system status only.
-                To debug a specific resume, navigate to this page with a valid version ID in the URL.
+                {error}
+                {error.includes('No resumes found') && (
+                  <div className="mt-2">
+                    <Button 
+                      onClick={() => navigate('/resume-upload')} 
+                      variant="outline"
+                      size="sm"
+                    >
+                      Upload Resume
+                    </Button>
+                  </div>
+                )}
               </AlertDescription>
             </Alert>
           )}
         </div>
 
-        {/* Only render DebugDashboard if we don't have critical routing issues */}
-        {!hasParameterPlaceholder && (
-          <DebugDashboard versionId={validVersionId} />
-        )}
-
-        {/* Show routing help if we have parameter placeholder issues */}
-        {hasParameterPlaceholder && (
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="text-lg font-medium mb-4">How to Access Debug Analysis</h3>
-            <div className="space-y-3 text-sm text-gray-600">
-              <p>To debug a specific resume version, you need to navigate to this page with a valid version ID:</p>
-              <div className="bg-gray-100 p-3 rounded font-mono text-xs">
-                /debug/[version-uuid]
-              </div>
-              <p>You can find version IDs in:</p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>The Profile Management page - each resume has a version ID</li>
-                <li>The Resume Upload page - after processing completes</li>
-                <li>The browser URL when viewing resume details</li>
-              </ul>
-              <div className="mt-4">
-                <Button 
-                  onClick={() => navigate('/profile-management')} 
-                  variant="outline"
-                >
-                  Go to Profile Management
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        {versionId && <DebugDashboard versionId={versionId} />}
       </div>
     </div>
   );

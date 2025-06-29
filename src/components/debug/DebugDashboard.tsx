@@ -8,16 +8,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Activity, 
   AlertTriangle, 
-  CheckCircle, 
-  Clock, 
   RefreshCw,
   Database,
   Zap,
   Settings,
   BarChart3,
   Play,
-  Shield,
-  Search,
   Info
 } from 'lucide-react';
 import { SystemStatusMonitor } from './SystemStatusMonitor';
@@ -30,39 +26,17 @@ import { useEnrichmentStatus } from '@/hooks/useEnrichmentStatus';
 import { useEnrichResume } from '@/hooks/useEnrichment';
 
 interface DebugDashboardProps {
-  versionId?: string;
+  versionId: string;
 }
 
 export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   
-  // Enhanced parameter logging
-  useEffect(() => {
-    console.log('DebugDashboard - Props received:', {
-      versionId,
-      versionIdType: typeof versionId,
-      versionIdLength: versionId?.length,
-      isValidUUID: versionId ? /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(versionId) : false,
-      timestamp: new Date().toISOString()
-    });
-  }, [versionId]);
+  console.log('DebugDashboard - Version ID:', versionId);
 
   const { data: status, isLoading, error, refetch } = useEnrichmentStatus(versionId);
   const enrichResume = useEnrichResume();
-
-  // Enhanced status logging
-  useEffect(() => {
-    console.log('DebugDashboard - Status data:', {
-      hasStatus: !!status,
-      statusData: status,
-      isLoading,
-      hasError: !!error,
-      errorMessage: error?.message,
-      versionId,
-      timestamp: new Date().toISOString()
-    });
-  }, [status, isLoading, error, versionId]);
 
   const handleRefresh = () => {
     console.log('DebugDashboard - Manual refresh triggered');
@@ -71,12 +45,8 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
   };
 
   const handleTriggerAnalysis = () => {
-    if (versionId) {
-      console.log('DebugDashboard - Triggering analysis for:', versionId);
-      enrichResume.mutate(versionId);
-    } else {
-      console.warn('DebugDashboard - Cannot trigger analysis: no valid versionId');
-    }
+    console.log('DebugDashboard - Triggering analysis for:', versionId);
+    enrichResume.mutate(versionId);
   };
 
   const getSystemHealth = () => {
@@ -100,15 +70,13 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Enhanced Debug Dashboard</h2>
+          <h2 className="text-2xl font-bold">Resume Debug Dashboard</h2>
           <p className="text-muted-foreground">
-            Comprehensive monitoring, failure detection, and system health analysis
+            Processing monitoring and system health analysis
           </p>
-          {versionId && (
-            <p className="text-xs font-mono text-gray-500 mt-1">
-              Version ID: {versionId.slice(0, 8)}...{versionId.slice(-8)}
-            </p>
-          )}
+          <p className="text-xs font-mono text-gray-500 mt-1">
+            Version: {versionId.slice(0, 8)}...{versionId.slice(-8)}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge 
@@ -118,17 +86,15 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
             <Activity className="w-3 h-3" />
             System {systemHealth.status}
           </Badge>
-          {versionId && (
-            <Button 
-              onClick={handleTriggerAnalysis} 
-              variant="outline" 
-              size="sm"
-              disabled={enrichResume.isPending || status?.isComplete}
-            >
-              <Play className="w-4 h-4 mr-2" />
-              {enrichResume.isPending ? 'Analyzing...' : 'Trigger Analysis'}
-            </Button>
-          )}
+          <Button 
+            onClick={handleTriggerAnalysis} 
+            variant="outline" 
+            size="sm"
+            disabled={enrichResume.isPending || status?.isComplete}
+          >
+            <Play className="w-4 h-4 mr-2" />
+            {enrichResume.isPending ? 'Analyzing...' : 'Trigger Analysis'}
+          </Button>
           <Button onClick={handleRefresh} variant="outline" size="sm">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -136,28 +102,17 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
         </div>
       </div>
 
-      {/* Version ID Status Alert */}
-      {!versionId && (
+      {/* Status Loading/Error States */}
+      {isLoading && (
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            No specific resume version selected. Showing system-wide monitoring and general status.
-            To debug a specific resume, navigate with a valid version ID.
+            Loading processing status...
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Status Loading/Error States */}
-      {versionId && isLoading && (
-        <Alert>
-          <Clock className="h-4 w-4 animate-spin" />
-          <AlertDescription>
-            Loading status for version {versionId.slice(-12)}...
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {versionId && error && (
+      {error && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
@@ -170,7 +125,7 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
       )}
 
       {/* Quick Status Overview */}
-      {versionId && status && (
+      {status && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -217,7 +172,7 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-500" />
+                <Activity className="w-4 h-4 text-orange-500" />
                 <div>
                   <p className="text-sm font-medium">Progress</p>
                   <p className="text-xs text-muted-foreground">
@@ -232,10 +187,9 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="failures">Failures</TabsTrigger>
-          <TabsTrigger value="schema">Schema</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="errors">Errors</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
@@ -255,10 +209,6 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
             versionId={versionId}
             refreshTrigger={refreshTrigger}
           />
-        </TabsContent>
-
-        <TabsContent value="schema" className="space-y-4">
-          <SchemaValidationPanel />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
@@ -287,82 +237,56 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="w-5 h-5" />
-                System Configuration & Health
+                System Status
               </CardTitle>
               <CardDescription>
-                System-wide settings, configuration details, and operational status
+                System health and operational metrics
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {/* Environment Info */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Environment:</span>
-                    <span className="ml-2">{process.env.NODE_ENV}</span>
+              <div className="space-y-4">
+                {/* System Health */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm">Database Connected</span>
                   </div>
-                  <div>
-                    <span className="font-medium">Version ID:</span>
-                    <span className="ml-2 font-mono text-xs">
-                      {versionId ? `${versionId.slice(0, 8)}...${versionId.slice(-4)}` : 'None'}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm">Auth Service</span>
                   </div>
-                </div>
-
-                {/* Parameter Debug Info */}
-                <div className="p-4 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium mb-3">Parameter Debug Information</h4>
-                  <div className="space-y-2 text-sm font-mono">
-                    <div>Raw versionId: <code>{versionId || 'undefined'}</code></div>
-                    <div>Type: <code>{typeof versionId}</code></div>
-                    <div>Valid UUID: <code>{versionId ? /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(versionId).toString() : 'false'}</code></div>
-                    <div>Current URL: <code>{window.location.pathname}</code></div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm">Edge Functions</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm">Processing Pipeline</span>
                   </div>
                 </div>
 
-                {/* System Health Indicators */}
-                <div className="p-4 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium mb-3">Health Indicators</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">Database Connected</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">Auth Service</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm">Edge Functions</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${versionId ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
-                      <span className="text-sm">Version Context</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Operational Metrics */}
+                {/* Status Metrics */}
                 <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium mb-3">Operational Status</h4>
+                  <h4 className="font-medium mb-3">Current Status</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
+                      <span>Resume Version:</span>
+                      <span className="font-mono text-xs">{versionId.slice(-12)}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span>Last Refresh:</span>
-                      <span className="font-mono">{new Date().toLocaleTimeString()}</span>
+                      <span>{new Date().toLocaleTimeString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Refresh Interval:</span>
-                      <span>30 seconds</span>
+                      <span>Processing Stage:</span>
+                      <Badge variant="outline">
+                        {status?.processingStage || 'Unknown'}
+                      </Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span>Debug Mode:</span>
-                      <Badge variant="outline">Active</Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Status Query:</span>
-                      <Badge variant={status ? 'default' : 'secondary'}>
-                        {status ? 'Success' : 'Pending'}
+                      <span>System Health:</span>
+                      <Badge variant={systemHealth.status === 'healthy' ? 'default' : 'destructive'}>
+                        {systemHealth.status}
                       </Badge>
                     </div>
                   </div>
