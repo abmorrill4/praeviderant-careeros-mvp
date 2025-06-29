@@ -21,6 +21,8 @@ interface PerformanceMetricsProps {
   refreshTrigger: number;
 }
 
+type SystemHealthStatus = 'healthy' | 'degraded' | 'critical';
+
 interface PerformanceData {
   averageProcessingTime: number;
   throughput: number;
@@ -31,7 +33,7 @@ interface PerformanceData {
     total: number;
   };
   systemHealth: {
-    status: 'healthy' | 'degraded' | 'critical';
+    status: SystemHealthStatus;
     score: number;
   };
 }
@@ -71,8 +73,10 @@ export const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
 
       // Calculate system health based on various factors
       const healthScore = Math.max(0, 100 - (durations.filter(d => d > 60000).length * 10));
+      const healthStatus: SystemHealthStatus = healthScore > 80 ? 'healthy' : healthScore > 60 ? 'degraded' : 'critical';
+      
       const systemHealth = {
-        status: healthScore > 80 ? 'healthy' : healthScore > 60 ? 'degraded' : 'critical' as const,
+        status: healthStatus,
         score: healthScore
       };
 
@@ -88,7 +92,7 @@ export const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
     refetchInterval: 30000,
   });
 
-  const getHealthColor = (status: string) => {
+  const getHealthColor = (status: SystemHealthStatus) => {
     switch (status) {
       case 'healthy': return 'text-green-600';
       case 'degraded': return 'text-yellow-600';
@@ -97,7 +101,7 @@ export const PerformanceMetrics: React.FC<PerformanceMetricsProps> = ({
     }
   };
 
-  const getHealthBadgeVariant = (status: string) => {
+  const getHealthBadgeVariant = (status: SystemHealthStatus) => {
     switch (status) {
       case 'healthy': return 'default';
       case 'degraded': return 'secondary';

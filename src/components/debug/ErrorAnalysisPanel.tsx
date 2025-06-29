@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -63,6 +62,10 @@ export const ErrorAnalysisPanel: React.FC<ErrorAnalysisPanelProps> = ({
     enabled: !!user,
     refetchInterval: 30000,
   });
+
+  const handleRefresh = () => {
+    refetch();
+  };
 
   const getErrorIcon = (level: string) => {
     switch (level) {
@@ -162,7 +165,7 @@ export const ErrorAnalysisPanel: React.FC<ErrorAnalysisPanelProps> = ({
                 Error logs and warnings from the processing pipeline
               </CardDescription>
             </div>
-            <Button onClick={refetch} variant="outline" size="sm">
+            <Button onClick={handleRefresh} variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
