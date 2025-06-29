@@ -102,7 +102,11 @@ export function useEnrichmentStatus(versionId?: string) {
     queryFn: async (): Promise<EnrichmentStatus> => {
       if (!user) {
         console.log('useEnrichmentStatus: No user authenticated');
-        throw new Error('User not authenticated');
+        // Return fallback instead of throwing to prevent auth error propagation
+        if (versionId && isValidVersionId(versionId)) {
+          return createFallbackStatus(versionId);
+        }
+        throw new Error('Authentication required');
       }
 
       if (!versionId) {
@@ -123,8 +127,13 @@ export function useEnrichmentStatus(versionId?: string) {
         });
 
         if (error) {
-          console.error('useEnrichmentStatus: Error getting processing status:', error);
-          // Return fallback instead of throwing
+          console.error('useEnrichmentStatus: Database error getting processing status:', error);
+          // Check if it's an auth-related error
+          if (error.message?.includes('JWT') || error.message?.includes('auth')) {
+            throw new Error('Authentication expired. Please sign in again.');
+          }
+          // Return fallback for other database errors to prevent UI crashes
+          console.warn('useEnrichmentStatus: Falling back to default status due to database error');
           return createFallbackStatus(versionId);
         }
 
@@ -162,7 +171,16 @@ export function useEnrichmentStatus(versionId?: string) {
         return result;
       } catch (error) {
         console.error('useEnrichmentStatus: Query failed:', error);
-        // Return fallback instead of throwing
+        
+        // Distinguish between different error types
+        if (error instanceof Error) {
+          if (error.message.includes('Authentication') || error.message.includes('JWT')) {
+            throw error; // Re-throw auth errors
+          }
+        }
+        
+        // For other errors, return fallback to prevent UI crashes
+        console.warn('useEnrichmentStatus: Returning fallback status due to error');
         return createFallbackStatus(versionId);
       }
     },
@@ -175,7 +193,15 @@ export function useEnrichmentStatus(versionId?: string) {
       return (!data.isComplete && data.processingStage !== 'failed') ? 3000 : false;
     },
     staleTime: 1000 * 10,
-    retry: 2,
+    retry: (failureCount, error) => {
+      // Don't retry auth errors
+      if (error instanceof Error && 
+          (error.message.includes('Authentication') || error.message.includes('JWT'))) {
+        return false;
+      }
+      // Retry other errors up to 2 times
+      return failureCount < 2;
+    },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 }
