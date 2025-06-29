@@ -19,32 +19,32 @@ export interface EnrichmentStatus {
 
 // Type guard to ensure data exists and has the correct shape
 function isValidEnrichmentStatus(data: unknown): data is EnrichmentStatus {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+  
+  const obj = data as any;
+  const validProcessingStages = ['pending', 'parsing', 'enriching', 'complete', 'failed'];
+  
   return (
-    data !== null &&
-    data !== undefined &&
-    typeof data === 'object' &&
-    'processingStage' in data &&
-    'isComplete' in data &&
-    typeof (data as any).processingStage === 'string' &&
-    typeof (data as any).isComplete === 'boolean'
+    typeof obj.processingStage === 'string' &&
+    validProcessingStages.includes(obj.processingStage) &&
+    typeof obj.isComplete === 'boolean'
   );
 }
 
 // Helper function to determine if we should continue polling
 function shouldContinuePolling(status: EnrichmentStatus): boolean {
-  // Explicitly cast to ensure TypeScript recognizes all possible values
-  const stage = status.processingStage as EnrichmentStatus['processingStage'];
-  
   // Don't poll if processing failed or is complete
-  if (stage === 'failed' || (status.isComplete && stage === 'complete')) {
+  if (status.processingStage === 'failed' || (status.isComplete && status.processingStage === 'complete')) {
     return false;
   }
   
   // Poll more frequently during active processing
-  const shouldPoll = !status.isComplete && stage !== 'failed';
+  const shouldPoll = !status.isComplete && status.processingStage !== 'failed';
   console.log('useEnrichmentStatus: Refetch interval decision:', { 
     isComplete: status.isComplete, 
-    processingStage: stage,
+    processingStage: status.processingStage,
     shouldPoll 
   });
   
