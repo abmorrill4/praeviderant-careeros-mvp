@@ -14,14 +14,9 @@ import {
   Settings,
   BarChart3,
   Play,
-  Info
+  Info,
+  Loader2
 } from 'lucide-react';
-import { SystemStatusMonitor } from './SystemStatusMonitor';
-import { ProcessingAnalytics } from './ProcessingAnalytics';
-import { ErrorAnalysisPanel } from './ErrorAnalysisPanel';
-import { PerformanceMetrics } from './PerformanceMetrics';
-import { FailureDetectionPanel } from './FailureDetectionPanel';
-import { SchemaValidationPanel } from './SchemaValidationPanel';
 import { useEnrichmentStatus } from '@/hooks/useEnrichmentStatus';
 import { useEnrichResume } from '@/hooks/useEnrichment';
 
@@ -65,6 +60,33 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
 
   const systemHealth = getSystemHealth();
 
+  if (isLoading) {
+    return (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+          <p>Loading debug information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load debug information: {error.message}
+            <Button onClick={handleRefresh} variant="outline" size="sm" className="ml-2">
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -101,28 +123,6 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
           </Button>
         </div>
       </div>
-
-      {/* Status Loading/Error States */}
-      {isLoading && (
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Loading processing status...
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load status: {error.message}
-            <Button onClick={handleRefresh} variant="outline" size="sm" className="ml-2">
-              Retry
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Quick Status Overview */}
       {status && (
@@ -187,49 +187,122 @@ export const DebugDashboard: React.FC<DebugDashboardProps> = ({ versionId }) => 
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="failures">Failures</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="errors">Errors</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="status">Status</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <SystemStatusMonitor 
-            versionId={versionId} 
-            status={status}
-            refreshTrigger={refreshTrigger}
-          />
+          <Card>
+            <CardHeader>
+              <CardTitle>Processing Overview</CardTitle>
+              <CardDescription>Current state of resume processing pipeline</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {status ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-medium">Current Stage</h4>
+                      <Badge variant="outline">{status.currentStage}</Badge>
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Processing Status</h4>
+                      <Badge variant={status.processingStatus === 'completed' ? 'default' : 'secondary'}>
+                        {status.processingStatus}
+                      </Badge>
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Progress</h4>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${status.processingProgress}%` }}
+                          />
+                        </div>
+                        <span className="text-sm">{status.processingProgress}%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Last Updated</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(status.lastUpdated).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Processing Stages */}
+                  <div className="mt-6">
+                    <h4 className="font-medium mb-3">Processing Stages</h4>
+                    <div className="space-y-2">
+                      {status.stages && Object.entries(status.stages).map(([stage, stageData]: [string, any]) => (
+                        <div key={stage} className="flex items-center justify-between p-3 border rounded">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${
+                              stageData?.status === 'completed' ? 'bg-green-500' :
+                              stageData?.status === 'in_progress' ? 'bg-blue-500' :
+                              stageData?.status === 'failed' ? 'bg-red-500' : 'bg-gray-300'
+                            }`} />
+                            <span className="capitalize">{stage}</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {stageData?.status || 'pending'}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Info className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No processing data available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="failures" className="space-y-4">
-          <FailureDetectionPanel 
-            versionId={versionId}
-            refreshTrigger={refreshTrigger}
-          />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <ProcessingAnalytics 
-            versionId={versionId}
-            refreshTrigger={refreshTrigger}
-          />
-        </TabsContent>
-
-        <TabsContent value="errors" className="space-y-4">
-          <ErrorAnalysisPanel 
-            versionId={versionId}
-            refreshTrigger={refreshTrigger}
-          />
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-4">
-          <PerformanceMetrics 
-            versionId={versionId}
-            refreshTrigger={refreshTrigger}
-          />
+        <TabsContent value="status" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Data Availability</CardTitle>
+              <CardDescription>Status of processed data components</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center gap-3 p-4 border rounded">
+                  <Database className="w-8 h-8 text-blue-500" />
+                  <div>
+                    <h4 className="font-medium">Parsed Entities</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {status?.hasEntities ? 'Available' : 'Not available'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 border rounded">
+                  <Zap className="w-8 h-8 text-purple-500" />
+                  <div>
+                    <h4 className="font-medium">Career Enrichment</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {status?.hasEnrichment ? 'Available' : 'Not available'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 border rounded">
+                  <BarChart3 className="w-8 h-8 text-green-500" />
+                  <div>
+                    <h4 className="font-medium">Career Narratives</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {status?.hasNarratives ? 'Available' : 'Not available'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="system" className="space-y-4">

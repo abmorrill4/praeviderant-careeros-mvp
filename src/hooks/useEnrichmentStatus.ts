@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,48 +17,9 @@ export interface EnrichmentStatus {
   processingStage: 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed';
 }
 
-// Type guard to ensure data exists and has the correct shape
-function isValidEnrichmentStatus(data: unknown): data is EnrichmentStatus {
-  if (!data || typeof data !== 'object') {
-    return false;
-  }
-  
-  const obj = data as any;
-  const validProcessingStages = ['pending', 'parsing', 'enriching', 'complete', 'failed'];
-  
-  return (
-    typeof obj.processingStage === 'string' &&
-    validProcessingStages.includes(obj.processingStage) &&
-    typeof obj.isComplete === 'boolean'
-  );
-}
-
-// Helper function to determine if we should continue polling
-function shouldContinuePolling(status: EnrichmentStatus): boolean {
-  console.log('useEnrichmentStatus: Refetch interval decision:', { 
-    isComplete: status.isComplete, 
-    processingStage: status.processingStage,
-  });
-
-  switch (status.processingStage) {
-    case 'failed':
-      return false;
-    case 'complete':
-      return !status.isComplete;
-    case 'pending':
-    case 'parsing':
-    case 'enriching':
-      return !status.isComplete;
-    default:
-      return false;
-  }
-}
-
-// Enhanced version ID validation
 function isValidVersionId(versionId?: string): boolean {
   if (!versionId) return false;
   
-  // Check for common invalid patterns
   if (versionId === ':versionId' || 
       versionId.startsWith(':') || 
       versionId === 'undefined' || 
@@ -66,9 +28,70 @@ function isValidVersionId(versionId?: string): boolean {
     return false;
   }
   
-  // Check UUID format
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(versionId);
+}
+
+function createFallbackStatus(versionId: string): EnrichmentStatus {
+  return {
+    versionId,
+    currentStage: 'upload',
+    processingProgress: 0,
+    processingStatus: 'pending',
+    stages: {
+      upload: { status: 'pending', started_at: null, completed_at: null, error: null },
+      parse: { status: 'pending', started_at: null, completed_at: null, error: null },
+      enrich: { status: 'pending', started_at: null, completed_at: null, error: null },
+      complete: { status: 'pending', started_at: null, completed_at: null, error: null }
+    },
+    hasEntities: false,
+    hasEnrichment: false,
+    hasNarratives: false,
+    isComplete: false,
+    lastUpdated: new Date().toISOString(),
+    processingStage: 'pending'
+  };
+}
+
+function mapCurrentStageToProcessingStage(
+  currentStage: string, 
+  processingStatus: string,
+  hasEntities: boolean,
+  hasEnrichment: boolean,
+  hasNarratives: boolean
+): EnrichmentStatus['processingStage'] {
+  if (processingStatus === 'failed') {
+    return 'failed';
+  }
+  
+  if (processingStatus === 'completed' && hasNarratives && hasEnrichment) {
+    return 'complete';
+  }
+  
+  if (hasNarratives && hasEnrichment && hasEntities) {
+    return 'complete';
+  }
+  
+  if (hasEnrichment && hasEntities) {
+    return 'enriching';
+  }
+  
+  if (hasEntities) {
+    return 'parsing';
+  }
+  
+  switch (currentStage) {
+    case 'upload':
+      return 'pending';
+    case 'parse':
+      return 'parsing';
+    case 'enrich':
+      return 'enriching';
+    case 'complete':
+      return 'complete';
+    default:
+      return 'pending';
+  }
 }
 
 export function useEnrichmentStatus(versionId?: string) {
@@ -76,20 +99,17 @@ export function useEnrichmentStatus(versionId?: string) {
   
   return useQuery({
     queryKey: ['enrichment-status', versionId],
-    queryFn: async (): Promise<EnrichmentStatus | null> => {
-      // Early return if no user
+    queryFn: async (): Promise<EnrichmentStatus> => {
       if (!user) {
         console.log('useEnrichmentStatus: No user authenticated');
-        return null;
+        throw new Error('User not authenticated');
       }
 
-      // Early return if no versionId provided
       if (!versionId) {
         console.log('useEnrichmentStatus: No versionId provided');
-        return null;
+        throw new Error('Version ID is required');
       }
 
-      // Validate version ID format
       if (!isValidVersionId(versionId)) {
         console.error('useEnrichmentStatus: Invalid versionId format:', versionId);
         throw new Error(`Invalid version ID format: ${versionId}`);
@@ -98,44 +118,24 @@ export function useEnrichmentStatus(versionId?: string) {
       console.log('useEnrichmentStatus: Checking comprehensive processing status for version:', versionId);
       
       try {
-        // Use the comprehensive status function
         const { data, error } = await supabase.rpc('get_resume_processing_status', {
           p_version_id: versionId
         });
 
         if (error) {
           console.error('useEnrichmentStatus: Error getting processing status:', error);
-          
-          // Check if the error is due to invalid UUID format
-          if (error.message?.includes('invalid input syntax for type uuid')) {
-            throw new Error(`Invalid UUID format provided: ${versionId}`);
-          }
-          
-          // Don't throw for other errors - return safe fallback
-          return {
-            versionId,
-            currentStage: 'upload',
-            processingProgress: 0,
-            processingStatus: 'failed',
-            stages: {},
-            hasEntities: false,
-            hasEnrichment: false,
-            hasNarratives: false,
-            isComplete: false,
-            lastUpdated: new Date().toISOString(),
-            processingStage: 'failed'
-          };
+          // Return fallback instead of throwing
+          return createFallbackStatus(versionId);
         }
 
         if (!data || data.length === 0) {
           console.log('useEnrichmentStatus: No processing status found for version:', versionId);
-          return null;
+          return createFallbackStatus(versionId);
         }
 
         const status = data[0];
         console.log('useEnrichmentStatus: Raw status from database:', status);
 
-        // Enhanced stage mapping
         const processingStage = mapCurrentStageToProcessingStage(
           status.current_stage, 
           status.processing_status,
@@ -162,108 +162,20 @@ export function useEnrichmentStatus(versionId?: string) {
         return result;
       } catch (error) {
         console.error('useEnrichmentStatus: Query failed:', error);
-        
-        // Re-throw validation errors
-        if (error instanceof Error && (
-          error.message.includes('Invalid version ID') || 
-          error.message.includes('Invalid UUID format')
-        )) {
-          throw error;
-        }
-        
-        // Return safe fallback for other errors
-        return {
-          versionId,
-          currentStage: 'upload',
-          processingProgress: 0,
-          processingStatus: 'failed',
-          stages: {},
-          hasEntities: false,
-          hasEnrichment: false,
-          hasNarratives: false,
-          isComplete: false,
-          lastUpdated: new Date().toISOString(),
-          processingStage: 'failed'
-        };
+        // Return fallback instead of throwing
+        return createFallbackStatus(versionId);
       }
     },
     enabled: !!user && isValidVersionId(versionId),
     refetchInterval: (query) => {
-      // Use type guard to safely access the data
-      if (!isValidEnrichmentStatus(query.state.data)) {
-        return false;
-      }
+      const data = query.state.data;
+      if (!data) return false;
       
-      return shouldContinuePolling(query.state.data) ? 3000 : false;
+      // Continue polling if not complete and not failed
+      return (!data.isComplete && data.processingStage !== 'failed') ? 3000 : false;
     },
     staleTime: 1000 * 10,
-    retry: (failureCount, error) => {
-      console.log('useEnrichmentStatus: Retry decision:', { failureCount, error });
-      
-      // Don't retry validation errors
-      if (error instanceof Error && (
-        error.message.includes('Invalid version ID') || 
-        error.message.includes('Invalid UUID format')
-      )) {
-        return false;
-      }
-      
-      return failureCount < 2;
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
-}
-
-function mapCurrentStageToProcessingStage(
-  currentStage: string, 
-  processingStatus: string,
-  hasEntities: boolean,
-  hasEnrichment: boolean,
-  hasNarratives: boolean
-): EnrichmentStatus['processingStage'] {
-  // Define all possible return values to help TypeScript understand the full union
-  const validStages = {
-    pending: 'pending' as const,
-    parsing: 'parsing' as const,
-    enriching: 'enriching' as const,
-    complete: 'complete' as const,
-    failed: 'failed' as const
-  };
-  
-  // Check for explicit failed status first
-  if (processingStatus === 'failed') {
-    return validStages.failed;
-  }
-  
-  // Check for complete status with all data available
-  if (processingStatus === 'completed' && hasNarratives && hasEnrichment) {
-    return validStages.complete;
-  }
-  
-  // Determine stage based on data availability and current stage
-  if (hasNarratives && hasEnrichment && hasEntities) {
-    return validStages.complete;
-  }
-  
-  if (hasEnrichment && hasEntities) {
-    return validStages.enriching;
-  }
-  
-  if (hasEntities) {
-    return validStages.parsing;
-  }
-  
-  // Map stage names to processing stages as fallback
-  switch (currentStage) {
-    case 'upload':
-      return validStages.pending;
-    case 'parse':
-      return validStages.parsing;
-    case 'enrich':
-      return validStages.enriching;
-    case 'complete':
-      return validStages.complete;
-    default:
-      return validStages.pending;
-  }
 }
