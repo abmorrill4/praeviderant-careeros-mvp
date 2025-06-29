@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,19 +42,33 @@ export const EnhancedProfileOverview: React.FC = () => {
 
       enrichments?.forEach(e => {
         if (e.skills_identified && Array.isArray(e.skills_identified)) {
-          allSkills.push(...e.skills_identified);
+          // Handle Json type properly
+          const skills = e.skills_identified.map(skill => 
+            typeof skill === 'string' ? skill : String(skill)
+          );
+          allSkills.push(...skills);
         }
         if (e.insights && Array.isArray(e.insights)) {
-          allInsights.push(...e.insights);
+          // Handle Json type properly
+          const insights = e.insights.map(insight => 
+            typeof insight === 'string' ? insight : String(insight)
+          );
+          allInsights.push(...insights);
         }
         if (e.recommendations && Array.isArray(e.recommendations)) {
-          allRecommendations.push(...e.recommendations);
+          // Handle Json type properly
+          const recommendations = e.recommendations.map(rec => 
+            typeof rec === 'string' ? rec : String(rec)
+          );
+          allRecommendations.push(...recommendations);
         }
       });
 
       // Determine overall experience level
       const levelCounts = experienceLevels.reduce((acc, level) => {
-        acc[level] = (acc[level] || 0) + 1;
+        if (level) {
+          acc[level] = (acc[level] || 0) + 1;
+        }
         return acc;
       }, {} as Record<string, number>);
 

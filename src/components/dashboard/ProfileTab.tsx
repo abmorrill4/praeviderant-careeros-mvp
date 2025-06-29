@@ -123,21 +123,21 @@ export const ProfileTab: React.FC = () => {
               />
             ) : (
               <div>
-                <h4 className="font-medium text-sm">{item.title}</h4>
+                <h4 className="font-medium text-sm">{(item as WorkExperience).title}</h4>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                   <Building className="w-3 h-3" />
-                  <span>{item.company}</span>
-                  {item.start_date && (
+                  <span>{(item as WorkExperience).company}</span>
+                  {(item as WorkExperience).start_date && (
                     <>
                       <span className="ml-2">
-                        {item.start_date} - {item.end_date || 'Present'}
+                        {(item as WorkExperience).start_date} - {(item as WorkExperience).end_date || 'Present'}
                       </span>
                     </>
                   )}
                 </div>
-                {item.description && (
+                {(item as WorkExperience).description && (
                   <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                    {item.description}
+                    {(item as WorkExperience).description}
                   </p>
                 )}
               </div>
@@ -160,19 +160,19 @@ export const ProfileTab: React.FC = () => {
               />
             ) : (
               <div>
-                <h4 className="font-medium text-sm">{item.degree}</h4>
+                <h4 className="font-medium text-sm">{(item as Education).degree}</h4>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                   <Building className="w-3 h-3" />
-                  <span>{item.institution}</span>
-                  {item.start_date && (
+                  <span>{(item as Education).institution}</span>
+                  {(item as Education).start_date && (
                     <span className="ml-2">
-                      {item.start_date} - {item.end_date || 'Present'}
+                      {(item as Education).start_date} - {(item as Education).end_date || 'Present'}
                     </span>
                   )}
                 </div>
-                {item.field_of_study && (
+                {(item as Education).field_of_study && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Field: {item.field_of_study}
+                    Field: {(item as Education).field_of_study}
                   </p>
                 )}
               </div>
@@ -195,15 +195,15 @@ export const ProfileTab: React.FC = () => {
               />
             ) : (
               <div>
-                <h4 className="font-medium text-sm">{item.name}</h4>
+                <h4 className="font-medium text-sm">{(item as Skill).name}</h4>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                  {item.category && (
-                    <span className="bg-muted px-2 py-1 rounded">{item.category}</span>
+                  {(item as Skill).category && (
+                    <span className="bg-muted px-2 py-1 rounded">{(item as Skill).category}</span>
                   )}
-                  {item.proficiency_level && (
+                  {(item as Skill).proficiency_level && (
                     <div className="flex items-center gap-1">
                       <Star className="w-3 h-3" />
-                      <span>{item.proficiency_level}</span>
+                      <span>{(item as Skill).proficiency_level}</span>
                     </div>
                   )}
                 </div>
@@ -227,17 +227,17 @@ export const ProfileTab: React.FC = () => {
               />
             ) : (
               <div>
-                <h4 className="font-medium text-sm">{item.name}</h4>
-                {item.start_date && (
+                <h4 className="font-medium text-sm">{(item as Project).name}</h4>
+                {(item as Project).start_date && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     <span>
-                      {item.start_date} - {item.end_date || 'Ongoing'}
+                      {(item as Project).start_date} - {(item as Project).end_date || 'Ongoing'}
                     </span>
                   </div>
                 )}
-                {item.description && (
+                {(item as Project).description && (
                   <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                    {item.description}
+                    {(item as Project).description}
                   </p>
                 )}
               </div>
@@ -260,13 +260,13 @@ export const ProfileTab: React.FC = () => {
               />
             ) : (
               <div>
-                <h4 className="font-medium text-sm">{item.name}</h4>
+                <h4 className="font-medium text-sm">{(item as Certification).name}</h4>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                   <Building className="w-3 h-3" />
-                  <span>{item.issuing_organization}</span>
-                  {item.issue_date && (
+                  <span>{(item as Certification).issuing_organization}</span>
+                  {(item as Certification).issue_date && (
                     <span className="ml-2">
-                      Issued: {item.issue_date}
+                      Issued: {(item as Certification).issue_date}
                     </span>
                   )}
                 </div>

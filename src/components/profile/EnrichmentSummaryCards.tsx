@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,7 +46,11 @@ export const EnrichmentSummaryCards: React.FC<EnrichmentSummaryCardsProps> = ({ 
       const allSkills: string[] = [];
       enrichments?.forEach(e => {
         if (e.skills_identified && Array.isArray(e.skills_identified)) {
-          allSkills.push(...e.skills_identified);
+          // Handle Json type properly
+          const skills = e.skills_identified.map(skill => 
+            typeof skill === 'string' ? skill : String(skill)
+          );
+          allSkills.push(...skills);
         }
       });
 
