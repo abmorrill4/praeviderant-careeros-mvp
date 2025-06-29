@@ -166,36 +166,49 @@ function mapCurrentStageToProcessingStage(
   hasEnrichment: boolean,
   hasNarratives: boolean
 ): EnrichmentStatus['processingStage'] {
+  // Define all possible return values to help TypeScript understand the full union
+  const validStages = {
+    pending: 'pending' as const,
+    parsing: 'parsing' as const,
+    enriching: 'enriching' as const,
+    complete: 'complete' as const,
+    failed: 'failed' as const
+  };
+  
   // Check for explicit failed status first
   if (processingStatus === 'failed') {
-    return 'failed';
+    return validStages.failed;
   }
   
-  // Check for complete status
+  // Check for complete status with all data available
   if (processingStatus === 'completed' && hasNarratives && hasEnrichment) {
-    return 'complete';
+    return validStages.complete;
   }
   
   // Determine stage based on data availability and current stage
   if (hasNarratives && hasEnrichment && hasEntities) {
-    return 'complete';
-  } else if (hasEnrichment && hasEntities) {
-    return 'enriching';
-  } else if (hasEntities) {
-    return 'parsing';
-  } else {
-    // Map stage names to processing stages
-    switch (currentStage) {
-      case 'upload':
-        return 'pending';
-      case 'parse':
-        return 'parsing';
-      case 'enrich':
-        return 'enriching';
-      case 'complete':
-        return 'complete';
-      default:
-        return 'pending';
-    }
+    return validStages.complete;
+  }
+  
+  if (hasEnrichment && hasEntities) {
+    return validStages.enriching;
+  }
+  
+  if (hasEntities) {
+    return validStages.parsing;
+  }
+  
+  // Map stage names to processing stages as fallback
+  switch (currentStage) {
+    case 'upload':
+      return validStages.pending;
+    case 'parse':
+      return validStages.parsing;
+    case 'enrich':
+      return validStages.enriching;
+    case 'complete':
+      return validStages.complete;
+    default:
+      return validStages.pending;
   }
 }
