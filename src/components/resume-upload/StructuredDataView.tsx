@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -51,22 +52,11 @@ interface StructuredDataViewProps {
   onProfileUpdated?: () => void;
 }
 
-interface ParsedResumeEntity {
-  id: string;
-  field_name: string;
-  raw_value: string;
-  confidence_score: number;
-  source_type: string;
-  // Add enrichment data to match what the code expects
-  enrichment_data?: {
-    insights?: string[];
-    skills_identified?: string[];
-    experience_level?: string;
-    career_progression?: string;
-    market_relevance?: string;
-    recommendations?: string[];
-    parsed_structure?: any;
-  };
+interface CategoryConfig {
+  title: string;
+  icon: React.ReactNode;
+  priority: number;
+  color: string;
 }
 
 interface GroupedEntity {
@@ -329,15 +319,15 @@ export const StructuredDataView: React.FC<StructuredDataViewProps> = ({
         grouped[finalSection] = [];
       }
       
-      // Include enrichment data if available
-      const enrichmentData = entity.enrichment_data ? {
-        insights: entity.enrichment_data.insights || [],
-        skills_identified: entity.enrichment_data.skills_identified || [],
-        experience_level: entity.enrichment_data.experience_level,
-        career_progression: entity.enrichment_data.career_progression,
-        market_relevance: entity.enrichment_data.market_relevance,
-        recommendations: entity.enrichment_data.recommendations || [],
-        parsed_structure: entity.enrichment_data.parsed_structure
+      // Safely access enrichment data - check if it exists on the entity
+      const enrichmentData = (entity as any).enrichment_data ? {
+        insights: (entity as any).enrichment_data.insights || [],
+        skills_identified: (entity as any).enrichment_data.skills_identified || [],
+        experience_level: (entity as any).enrichment_data.experience_level,
+        career_progression: (entity as any).enrichment_data.career_progression,
+        market_relevance: (entity as any).enrichment_data.market_relevance,
+        recommendations: (entity as any).enrichment_data.recommendations || [],
+        parsed_structure: (entity as any).enrichment_data.parsed_structure
       } : undefined;
       
       grouped[finalSection].push({
