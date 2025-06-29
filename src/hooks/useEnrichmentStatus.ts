@@ -32,16 +32,19 @@ function isValidEnrichmentStatus(data: unknown): data is EnrichmentStatus {
 
 // Helper function to determine if we should continue polling
 function shouldContinuePolling(status: EnrichmentStatus): boolean {
+  // Explicitly cast to ensure TypeScript recognizes all possible values
+  const stage = status.processingStage as EnrichmentStatus['processingStage'];
+  
   // Don't poll if processing failed or is complete
-  if (status.processingStage === 'failed' || (status.isComplete && status.processingStage === 'complete')) {
+  if (stage === 'failed' || (status.isComplete && stage === 'complete')) {
     return false;
   }
   
   // Poll more frequently during active processing
-  const shouldPoll = !status.isComplete && status.processingStage !== 'failed';
+  const shouldPoll = !status.isComplete && stage !== 'failed';
   console.log('useEnrichmentStatus: Refetch interval decision:', { 
     isComplete: status.isComplete, 
-    processingStage: status.processingStage,
+    processingStage: stage,
     shouldPoll 
   });
   
@@ -113,7 +116,7 @@ export function useEnrichmentStatus(versionId?: string) {
           hasNarratives: Boolean(status.has_narratives),
           isComplete: Boolean(status.is_complete),
           lastUpdated: status.last_updated || new Date().toISOString(),
-          processingStage: processingStage as EnrichmentStatus['processingStage']
+          processingStage: processingStage
         };
 
         console.log('useEnrichmentStatus: Mapped result:', result);
@@ -162,7 +165,7 @@ function mapCurrentStageToProcessingStage(
   hasEntities: boolean,
   hasEnrichment: boolean,
   hasNarratives: boolean
-): 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed' {
+): EnrichmentStatus['processingStage'] {
   // Check for explicit failed status first
   if (processingStatus === 'failed') {
     return 'failed';
