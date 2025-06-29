@@ -14,16 +14,28 @@ export default function ProcessingPage() {
   
   const { data: status, isLoading, error } = useEnrichmentStatus(enrichmentId);
 
-  // FIXED: Add auto-redirect when processing is complete
+  // FIXED: Enhanced auto-redirect when processing is complete
   useEffect(() => {
-    if (status?.isComplete && status?.processingProgress === 100) {
-      console.log('ProcessingPage: Analysis complete, redirecting to profile management...');
+    if (status?.isComplete) {
+      console.log('ProcessingPage: Analysis complete, preparing redirect...', {
+        isComplete: status.isComplete,
+        processingProgress: status.processingProgress,
+        versionId: status.versionId,
+        hasEntities: status.hasEntities,
+        hasEnrichment: status.hasEnrichment,
+        hasNarratives: status.hasNarratives
+      });
+      
       // Small delay to let user see completion state
-      setTimeout(() => {
+      const redirectTimer = setTimeout(() => {
+        console.log('ProcessingPage: Redirecting to profile management...');
         navigate(`/profile-management?tab=resumes&version=${status.versionId}`);
       }, 2000);
+
+      // Cleanup timer if component unmounts
+      return () => clearTimeout(redirectTimer);
     }
-  }, [status?.isComplete, status?.processingProgress, status?.versionId, navigate]);
+  }, [status?.isComplete, status?.versionId, navigate]);
 
   // Handle missing enrichmentId
   if (!enrichmentId) {
@@ -176,8 +188,8 @@ export default function ProcessingPage() {
     );
   }
 
-  // Show processing in progress
-  const isComplete = status.isComplete && status.processingProgress === 100;
+  // Show processing in progress or completion
+  const isComplete = status.isComplete;
 
   return (
     <div className="min-h-screen bg-gray-50">

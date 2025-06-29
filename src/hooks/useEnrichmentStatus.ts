@@ -64,7 +64,7 @@ function mapCurrentStageToProcessingStage(
     return 'failed';
   }
   
-  // FIXED: If we have all three components (entities, enrichment, narratives), we're complete
+  // FIXED: Simplified completion check - if we have all three components, we're complete
   if (hasEntities && hasEnrichment && hasNarratives) {
     return 'complete';
   }
@@ -139,23 +139,23 @@ export function useEnrichmentStatus(versionId?: string) {
         const status = data[0];
         console.log('useEnrichmentStatus: Raw status from database:', status);
 
+        // Extract boolean values
+        const hasEntities = Boolean(status.has_entities);
+        const hasEnrichment = Boolean(status.has_enrichment);
+        const hasNarratives = Boolean(status.has_narratives);
+
+        // FIXED: Simplified completion logic - just check if we have all three components
+        const isComplete = hasEntities && hasEnrichment && hasNarratives;
+        
         const processingStage = mapCurrentStageToProcessingStage(
           status.current_stage, 
           status.processing_status,
-          status.has_entities,
-          status.has_enrichment,
-          status.has_narratives
+          hasEntities,
+          hasEnrichment,
+          hasNarratives
         );
         
-        // FIXED: Improved completion logic
-        const isComplete = Boolean(
-          status.has_entities && 
-          status.has_enrichment && 
-          status.has_narratives &&
-          (processingStage === 'complete' || (status.has_entities && status.has_enrichment && status.has_narratives))
-        );
-        
-        // FIXED: Set progress to 100% when complete
+        // FIXED: Set progress to 100% when complete, otherwise use database value
         const processingProgress = isComplete ? 100 : Math.max(0, Math.min(100, status.processing_progress || 0));
         
         const result: EnrichmentStatus = {
@@ -164,15 +164,24 @@ export function useEnrichmentStatus(versionId?: string) {
           processingProgress: processingProgress,
           processingStatus: isComplete ? 'completed' : (status.processing_status || 'pending'),
           stages: status.stages || {},
-          hasEntities: Boolean(status.has_entities),
-          hasEnrichment: Boolean(status.has_enrichment),
-          hasNarratives: Boolean(status.has_narratives),
+          hasEntities: hasEntities,
+          hasEnrichment: hasEnrichment,
+          hasNarratives: hasNarratives,
           isComplete: isComplete,
           lastUpdated: status.last_updated || new Date().toISOString(),
           processingStage: processingStage
         };
 
-        console.log('useEnrichmentStatus: Mapped result:', result);
+        console.log('useEnrichmentStatus: Final mapped result:', {
+          versionId: result.versionId,
+          hasEntities: result.hasEntities,
+          hasEnrichment: result.hasEnrichment,
+          hasNarratives: result.hasNarratives,
+          isComplete: result.isComplete,
+          processingProgress: result.processingProgress,
+          processingStage: result.processingStage
+        });
+        
         return result;
       } catch (error) {
         console.error('useEnrichmentStatus: Query failed:', error);
@@ -192,8 +201,8 @@ export function useEnrichmentStatus(versionId?: string) {
       const data = query.state.data;
       if (!data) return false;
       
-      // FIXED: Stop polling when complete
-      if (data.isComplete && data.processingProgress === 100) {
+      // FIXED: Stop polling when complete (simplified check)
+      if (data.isComplete) {
         console.log('useEnrichmentStatus: Processing complete, stopping polling');
         return false;
       }
