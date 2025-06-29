@@ -103,6 +103,7 @@ serve(async (req) => {
       .from('career_enrichment')
       .select('id, created_at')
       .eq('resume_version_id', versionId)
+      .eq('user_id', version.resume_streams.user_id)
       .maybeSingle();
 
     if (existingError) {
@@ -202,7 +203,7 @@ serve(async (req) => {
       });
     }
 
-    // Store enrichment data with better error handling
+    // Store enrichment data with better error handling - use upsert to handle unique constraint
     console.log('Storing enrichment data...');
     const { data: enrichmentData, error: enrichmentError } = await supabase
       .from('career_enrichment')

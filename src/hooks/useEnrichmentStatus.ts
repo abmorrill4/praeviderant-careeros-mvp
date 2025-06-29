@@ -50,7 +50,7 @@ export function useEnrichmentStatus(versionId?: string) {
             hasNarratives: false,
             isComplete: false,
             lastUpdated: new Date().toISOString(),
-            processingStage: 'failed' as const
+            processingStage: 'failed'
           };
         }
 
@@ -102,7 +102,7 @@ export function useEnrichmentStatus(versionId?: string) {
           hasNarratives: false,
           isComplete: false,
           lastUpdated: new Date().toISOString(),
-          processingStage: 'failed' as const
+          processingStage: 'failed'
         };
       }
     },
@@ -147,7 +147,9 @@ function mapCurrentStageToProcessingStage(
   hasNarratives: boolean
 ): 'pending' | 'parsing' | 'enriching' | 'complete' | 'failed' {
   // Check for explicit failed status first
-  if (processingStatus === 'failed') return 'failed';
+  if (processingStatus === 'failed') {
+    return 'failed';
+  }
   
   // Check for complete status
   if (processingStatus === 'completed' && hasNarratives && hasEnrichment) {
