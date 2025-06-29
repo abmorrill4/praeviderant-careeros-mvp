@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,22 +32,26 @@ function isValidEnrichmentStatus(data: unknown): data is EnrichmentStatus {
   );
 }
 
-// Helper function to determine if we should continue polling
+// Helper function to determine if we should continue polling - using switch to avoid type narrowing issues
 function shouldContinuePolling(status: EnrichmentStatus): boolean {
-  // Don't poll if processing failed or is complete
-  if (status.processingStage === 'failed' || (status.isComplete && status.processingStage === 'complete')) {
-    return false;
-  }
-  
-  // Poll more frequently during active processing
-  const shouldPoll = !status.isComplete && status.processingStage !== 'failed';
   console.log('useEnrichmentStatus: Refetch interval decision:', { 
     isComplete: status.isComplete, 
     processingStage: status.processingStage,
-    shouldPoll 
   });
-  
-  return shouldPoll;
+
+  // Use switch statement to avoid TypeScript control flow analysis issues
+  switch (status.processingStage) {
+    case 'failed':
+      return false;
+    case 'complete':
+      return !status.isComplete; // Only continue if not actually complete
+    case 'pending':
+    case 'parsing':
+    case 'enriching':
+      return !status.isComplete; // Continue polling for active stages
+    default:
+      return false;
+  }
 }
 
 export function useEnrichmentStatus(versionId?: string) {
