@@ -44,13 +44,13 @@ const ProfileManagementPage: React.FC = () => {
   return (
     <ProfileLayout activeSection={activeSection} onSectionChange={setActiveSection}>
       <div className="h-full flex flex-col">
-        <div className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'} border-b p-6`}>
+        <div className="bg-career-panel-light border-career-gray-light border-b p-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+            <h1 className="text-2xl font-bold text-career-text-light mb-2">
               {showResumeReview ? 'Resume Analysis Results' : 'Profile Management'}
             </h1>
           </div>
-          <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-4`}>
+          <p className="text-career-text-muted-light mb-4">
             {showResumeReview 
               ? 'Review your extracted resume data and add it to your profile'
               : 'Manage your profile data, upload resumes, and access advanced tools'
@@ -59,7 +59,7 @@ const ProfileManagementPage: React.FC = () => {
           
           {!showResumeReview && (
             <Tabs value={activeManagementSection} onValueChange={(value) => setActiveManagementSection(value as ManagementSection)}>
-              <TabsList className={`grid w-full grid-cols-4 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`}>
+              <TabsList className="grid w-full grid-cols-4 bg-career-gray-light">
                 <TabsTrigger value="profile">Profile Info</TabsTrigger>
                 <TabsTrigger value="uploads">Resume Upload</TabsTrigger>
                 <TabsTrigger value="data">Data Management</TabsTrigger>
@@ -82,9 +82,9 @@ const ProfileManagementPage: React.FC = () => {
           ) : (
             <Tabs value={activeManagementSection} onValueChange={(value) => setActiveManagementSection(value as ManagementSection)}>
               <TabsContent value="profile" className="mt-0">
-                <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+                <Card className="neumorphic-panel light bg-career-panel-light">
                   <CardHeader>
-                    <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <CardTitle className="flex items-center gap-2 text-career-text-light">
                       <User className="w-5 h-5" />
                       Profile Information
                     </CardTitle>
@@ -92,13 +92,13 @@ const ProfileManagementPage: React.FC = () => {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                        <p className="text-career-text-light">
                           <span className="font-medium">Email:</span> {user?.email}
                         </p>
-                        <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                        <p className="text-career-text-light">
                           <span className="font-medium">User ID:</span> {user?.id}
                         </p>
-                        <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                        <p className="text-career-text-muted-light">
                           Manage your profile settings and account preferences here.
                         </p>
                       </div>
@@ -117,22 +117,22 @@ const ProfileManagementPage: React.FC = () => {
 
               <TabsContent value="admin" className="mt-0">
                 <Card
-                  className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark hover:shadow-neumorphic-hover-dark' : 'neumorphic-panel light bg-career-panel-light hover:shadow-neumorphic-hover-light'} transition-all duration-200 cursor-pointer`}
+                  className="neumorphic-panel light bg-career-panel-light hover:shadow-neumorphic-hover-light transition-all duration-200 cursor-pointer"
                   onClick={handleNavigateToAdmin}
                 >
                   <CardHeader>
-                    <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <CardTitle className="flex items-center gap-2 text-career-text-light">
                       <Settings className="w-5 h-5 text-career-accent" />
                       Admin Tools
                     </CardTitle>
-                    <CardDescription className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    <CardDescription className="text-career-text-muted-light">
                       Advanced tools for managing your profile entities
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button
                       variant="outline"
-                      className={`w-full ${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+                      className="w-full border-career-gray-light hover:bg-career-gray-light"
                     >
                       Open Admin Tools
                     </Button>

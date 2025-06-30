@@ -17,11 +17,11 @@ const ProfileOptimizationPage: React.FC = () => {
   return (
     <ProfileLayout activeSection={activeSection} onSectionChange={setActiveSection}>
       <div className="h-full flex flex-col">
-        <div className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'} border-b p-6`}>
-          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+        <div className="bg-career-panel-light border-career-gray-light border-b p-6">
+          <h1 className="text-2xl font-bold text-career-text-light mb-2">
             Profile Optimization
           </h1>
-          <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+          <p className="text-career-text-muted-light">
             Enhance your profile with AI-powered insights and resume best practices
           </p>
         </div>
@@ -66,68 +66,68 @@ const ProfileOptimizationPage: React.FC = () => {
 
             <TabsContent value="guidance" className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+                <Card className="bg-career-panel-light border-career-text-light/20">
                   <CardHeader>
-                    <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <CardTitle className="text-lg text-career-text-light">
                       Work Experience Best Practices
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-career-background-dark/50' : 'bg-career-background-light/50'}`}>
-                      <h4 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                    <div className="p-3 rounded-lg bg-career-background-light/50">
+                      <h4 className="font-medium text-career-text-light mb-2">
                         Use Strong Action Verbs
                       </h4>
-                      <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      <p className="text-sm text-career-text-muted-light">
                         Start bullet points with powerful verbs like "achieved," "developed," "led," "implemented," or "optimized."
                       </p>
                     </div>
-                    <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-career-background-dark/50' : 'bg-career-background-light/50'}`}>
-                      <h4 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                    <div className="p-3 rounded-lg bg-career-background-light/50">
+                      <h4 className="font-medium text-career-text-light mb-2">
                         Quantify Your Achievements
                       </h4>
-                      <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      <p className="text-sm text-career-text-muted-light">
                         Include specific numbers, percentages, dollar amounts, or other metrics to demonstrate impact.
                       </p>
                     </div>
-                    <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-career-background-dark/50' : 'bg-career-background-light/50'}`}>
-                      <h4 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                    <div className="p-3 rounded-lg bg-career-background-light/50">
+                      <h4 className="font-medium text-career-text-light mb-2">
                         Focus on Results
                       </h4>
-                      <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      <p className="text-sm text-career-text-muted-light">
                         Emphasize outcomes and impacts rather than just listing responsibilities or duties.
                       </p>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+                <Card className="bg-career-panel-light border-career-text-light/20">
                   <CardHeader>
-                    <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <CardTitle className="text-lg text-career-text-light">
                       Skills Section Tips
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-career-background-dark/50' : 'bg-career-background-light/50'}`}>
-                      <h4 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                    <div className="p-3 rounded-lg bg-career-background-light/50">
+                      <h4 className="font-medium text-career-text-light mb-2">
                         Provide Context
                       </h4>
-                      <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      <p className="text-sm text-career-text-muted-light">
                         Don't just list skills—explain how you've used them and in what contexts.
                       </p>
                     </div>
-                    <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-career-background-dark/50' : 'bg-career-background-light/50'}`}>
-                      <h4 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                    <div className="p-3 rounded-lg bg-career-background-light/50">
+                      <h4 className="font-medium text-career-text-light mb-2">
                         Balance Technical & Soft Skills
                       </h4>
-                      <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      <p className="text-sm text-career-text-muted-light">
                         Include both technical competencies and interpersonal skills relevant to your target role.
                       </p>
                     </div>
-                    <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-career-background-dark/50' : 'bg-career-background-light/50'}`}>
-                      <h4 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+                    <div className="p-3 rounded-lg bg-career-background-light/50">
+                      <h4 className="font-medium text-career-text-light mb-2">
                         Show Proficiency Levels
                       </h4>
-                      <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      <p className="text-sm text-career-text-muted-light">
                         Indicate your level of expertise and years of experience with each skill.
                       </p>
                     </div>
