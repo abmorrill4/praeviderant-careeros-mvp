@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Brain, Zap, Clock, Database } from 'lucide-react';
 import { useLLMProxy, type LLMProxyResponse } from '@/hooks/useLLMProxy';
-import { useTheme } from '@/contexts/ThemeContext';
 
 const LLMProxyDemo = () => {
   const [message, setMessage] = useState('');
@@ -16,7 +15,6 @@ const LLMProxyDemo = () => {
   const [response, setResponse] = useState<LLMProxyResponse | null>(null);
   
   const { sendRequest, isLoading } = useLLMProxy();
-  const { theme } = useTheme();
 
   const handleSubmit = async () => {
     if (!message.trim()) return;
@@ -44,15 +42,15 @@ const LLMProxyDemo = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+      <Card className="bg-career-panel border-career-text/20">
         <CardHeader>
-          <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <CardTitle className="text-career-text">
             LLM Proxy Service Demo
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <label className="text-sm font-medium text-career-text">
               Complexity Level
             </label>
             <Select value={complexity} onValueChange={(value: 'simple' | 'complex') => setComplexity(value)}>
@@ -77,7 +75,7 @@ const LLMProxyDemo = () => {
           </div>
 
           <div className="space-y-2">
-            <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <label className="text-sm font-medium text-career-text">
               System Prompt (Optional)
             </label>
             <Textarea
@@ -89,7 +87,7 @@ const LLMProxyDemo = () => {
           </div>
 
           <div className="space-y-2">
-            <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <label className="text-sm font-medium text-career-text">
               Your Message
             </label>
             <Textarea
@@ -121,10 +119,10 @@ const LLMProxyDemo = () => {
       </Card>
 
       {response && (
-        <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+        <Card className="bg-career-panel border-career-text/20">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+              <CardTitle className="text-career-text">
                 Response
               </CardTitle>
               <div className="flex items-center space-x-2">
@@ -151,27 +149,27 @@ const LLMProxyDemo = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-career-bg-dark' : 'bg-gray-50'}`}>
-              <p className={`whitespace-pre-wrap ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <div className="p-4 rounded-lg bg-gray-50">
+              <p className="whitespace-pre-wrap text-career-text">
                 {response.response}
               </p>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <span className={`font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <span className="font-medium text-career-text-muted">
                   Processing Time:
                 </span>
-                <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                <p className="text-career-text">
                   {response.metadata.processing_time_ms}ms
                 </p>
               </div>
 
               <div>
-                <span className={`font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <span className="font-medium text-career-text-muted">
                   Cache Status:
                 </span>
-                <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                <p className="text-career-text">
                   {response.metadata.cache_hit ? 'Hit' : 'Miss'}
                 </p>
               </div>
@@ -179,19 +177,19 @@ const LLMProxyDemo = () => {
               {response.usage && (
                 <>
                   <div>
-                    <span className={`font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    <span className="font-medium text-career-text-muted">
                       Prompt Tokens:
                     </span>
-                    <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <p className="text-career-text">
                       {response.usage.prompt_tokens}
                     </p>
                   </div>
                   
                   <div>
-                    <span className={`font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    <span className="font-medium text-career-text-muted">
                       Completion Tokens:
                     </span>
-                    <p className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <p className="text-career-text">
                       {response.usage.completion_tokens}
                     </p>
                   </div>

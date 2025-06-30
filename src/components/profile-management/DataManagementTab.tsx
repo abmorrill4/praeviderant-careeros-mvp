@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -21,7 +20,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const DataManagementTab: React.FC = () => {
-  const { theme } = useTheme();
   const { toast } = useToast();
   const [showPreview, setShowPreview] = useState(false);
   const [confirmingDeletion, setConfirmingDeletion] = useState(false);
@@ -104,22 +102,22 @@ export const DataManagementTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className={`text-lg font-semibold mb-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+        <h3 className="text-lg font-semibold mb-2 text-career-text">
           Data Management
         </h3>
-        <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+        <p className="text-sm text-career-text-muted">
           Manage your personal data, uploaded resumes, and privacy settings
         </p>
       </div>
 
       {/* Resume Data Management */}
-      <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+      <Card className="bg-career-panel border-career-text/20">
         <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <CardTitle className="flex items-center gap-2 text-career-text">
             <FileText className="w-5 h-5" />
             Resume Collections
           </CardTitle>
-          <CardDescription className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+          <CardDescription className="text-career-text-muted">
             Manage all your uploaded resumes and their versions
           </CardDescription>
         </CardHeader>
@@ -134,7 +132,7 @@ export const DataManagementTab: React.FC = () => {
                   {totalResumeVersions} Total Versions
                 </Badge>
               </div>
-              <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              <p className="text-sm text-career-text-muted">
                 {streamsLoading ? 'Loading resume data...' : 
                  totalResumeStreams === 0 ? 'No uploaded resumes found' :
                  `You have ${totalResumeStreams} resume collection${totalResumeStreams !== 1 ? 's' : ''} with ${totalResumeVersions} total version${totalResumeVersions !== 1 ? 's' : ''}`}
@@ -158,13 +156,13 @@ export const DataManagementTab: React.FC = () => {
       </Card>
 
       {/* Profile Data Management */}
-      <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+      <Card className="bg-career-panel border-career-text/20">
         <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <CardTitle className="flex items-center gap-2 text-career-text">
             <Database className="w-5 h-5" />
             Complete Data Deletion
           </CardTitle>
-          <CardDescription className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+          <CardDescription className="text-career-text-muted">
             Permanently delete all your profile data and account information
           </CardDescription>
         </CardHeader>
@@ -216,17 +214,17 @@ export const DataManagementTab: React.FC = () => {
             <div className="mt-4 space-y-3">
               <Separator />
               <div>
-                <h4 className={`font-medium mb-3 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                <h4 className="font-medium mb-3 text-career-text">
                   Data Deletion Preview ({totalDataRows} total records)
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {deletionPreview.map((item, index) => (
                     <div
                       key={index}
-                      className={`p-2 rounded border ${theme === 'dark' ? 'border-career-gray-dark bg-career-gray-dark/30' : 'border-career-gray-light bg-career-gray-light/30'}`}
+                      className="p-2 rounded border border-career-gray bg-career-gray/30"
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                        <span className="text-sm font-medium text-career-text">
                           {item.table_name.replace(/_/g, ' ')}
                         </span>
                         <Badge variant={item.rows_to_delete > 0 ? "destructive" : "secondary"}>

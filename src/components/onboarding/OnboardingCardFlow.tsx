@@ -1,8 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTheme } from "@/contexts/ThemeContext";
+import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { onboardingSteps } from "./onboardingConfig";
 import { OnboardingData, OnboardingStep } from "./types";
@@ -12,7 +11,6 @@ interface OnboardingCardFlowProps {
 }
 
 const OnboardingCardFlow = ({ onComplete }: OnboardingCardFlowProps) => {
-  const { theme } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
   const [responses, setResponses] = useState<OnboardingData>({});
 
@@ -75,9 +73,7 @@ const OnboardingCardFlow = ({ onComplete }: OnboardingCardFlowProps) => {
                   ? 'bg-career-accent'
                   : index < currentStep
                   ? 'bg-career-accent/60'
-                  : theme === 'dark'
-                  ? 'bg-career-gray-dark'
-                  : 'bg-career-gray-light'
+                  : 'bg-career-gray'
               }`}
             />
           ))}
@@ -86,10 +82,10 @@ const OnboardingCardFlow = ({ onComplete }: OnboardingCardFlowProps) => {
 
       {/* Step content */}
       <div className="text-center mb-6">
-        <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+        <h3 className="text-xl font-bold text-career-text mb-2">
           {step.title}
         </h3>
-        <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+        <p className="text-sm text-career-text-muted">
           {step.type === 'multi-select' ? 'Select all that apply:' : 'Choose one option:'}
         </p>
       </div>
@@ -105,9 +101,7 @@ const OnboardingCardFlow = ({ onComplete }: OnboardingCardFlowProps) => {
               className={`cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
                 isSelected
                   ? 'ring-2 ring-career-accent bg-career-accent/5'
-                  : theme === 'dark'
-                  ? 'bg-career-panel-dark border-career-text-dark/20 hover:border-career-accent/50'
-                  : 'bg-career-panel-light border-career-text-light/20 hover:border-career-accent/50'
+                  : 'bg-career-panel border-career-text/20 hover:border-career-accent/50'
               }`}
               onClick={() => {
                 if (step.type === 'single-select') {
@@ -119,7 +113,7 @@ const OnboardingCardFlow = ({ onComplete }: OnboardingCardFlowProps) => {
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <span className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} font-medium`}>
+                  <span className="text-career-text font-medium">
                     {option.label}
                   </span>
                   {isSelected && (
@@ -138,7 +132,7 @@ const OnboardingCardFlow = ({ onComplete }: OnboardingCardFlowProps) => {
           onClick={handlePrevious}
           disabled={currentStep === 0}
           variant="outline"
-          className={`${theme === 'dark' ? 'border-career-text-dark/20 text-career-text-dark hover:bg-career-text-dark/10' : 'border-career-text-light/20 text-career-text-light hover:bg-career-text-light/10'} transition-all duration-200`}
+          className="border-career-text/20 text-career-text hover:bg-career-text/10 transition-all duration-200"
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
           Previous

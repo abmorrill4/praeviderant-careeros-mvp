@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +14,6 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
   focusedCard,
   onCardFocus,
 }) => {
-  const { theme } = useTheme();
-
   // Mock data - in a real app, this would come from your analytics service
   const analyticsData = {
     profileViews: 156,
@@ -67,10 +64,10 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <div className="mb-8">
-        <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+        <h2 className="text-2xl font-bold text-career-text mb-2">
           Career Analytics
         </h2>
-        <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+        <p className="text-career-text-muted">
           Track your career progress and profile performance
         </p>
       </div>
@@ -80,21 +77,21 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         {statsCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.title} className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+            <Card key={stat.title} className="bg-career-panel border-career-text/20">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    <p className="text-sm text-career-text-muted">
                       {stat.title}
                     </p>
-                    <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <p className="text-2xl font-bold text-career-text">
                       {stat.value}
                     </p>
                   </div>
-                  <Icon className={`w-8 h-8 ${theme === 'dark' ? 'text-career-accent' : 'text-career-accent'}`} />
+                  <Icon className="w-8 h-8 text-career-accent" />
                 </div>
                 <div className="mt-4">
-                  <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                  <p className="text-xs text-career-text-muted">
                     {stat.description}
                   </p>
                   <Badge variant="secondary" className="mt-2">
@@ -111,9 +108,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
       {/* Progress Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Profile Completeness */}
-        <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+        <Card className="bg-career-panel border-career-text/20">
           <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <CardTitle className="flex items-center gap-2 text-career-text">
               <BarChart3 className="w-5 h-5" />
               Profile Completion
             </CardTitle>
@@ -152,9 +149,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
         </Card>
 
         {/* Goals Progress */}
-        <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+        <Card className="bg-career-panel border-career-text/20">
           <CardHeader>
-            <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <CardTitle className="flex items-center gap-2 text-career-text">
               <Target className="w-5 h-5" />
               Career Goals
             </CardTitle>
@@ -194,9 +191,9 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
       </div>
 
       {/* Recent Activity */}
-      <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+      <Card className="bg-career-panel border-career-text/20">
         <CardHeader>
-          <CardTitle className={`${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <CardTitle className="text-career-text">
             Recent Activity
           </CardTitle>
           <CardDescription>
@@ -207,12 +204,12 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
           <div className="space-y-4">
             {analyticsData.recentActivity.map((activity, index) => (
               <div key={index} className="flex items-center gap-4">
-                <div className={`w-2 h-2 rounded-full ${theme === 'dark' ? 'bg-career-accent' : 'bg-career-accent'}`} />
+                <div className="w-2 h-2 rounded-full bg-career-accent" />
                 <div className="flex-1">
-                  <p className={`text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                  <p className="text-sm text-career-text">
                     {activity.action}
                   </p>
-                  <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                  <p className="text-xs text-career-text-muted">
                     {activity.date}
                   </p>
                 </div>
