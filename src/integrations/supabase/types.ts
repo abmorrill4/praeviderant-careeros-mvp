@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      auth_rate_limits: {
+        Row: {
+          action_type: string
+          attempt_count: number | null
+          blocked_until: string | null
+          created_at: string | null
+          first_attempt: string | null
+          id: string
+          identifier: string
+          last_attempt: string | null
+        }
+        Insert: {
+          action_type: string
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          first_attempt?: string | null
+          id?: string
+          identifier: string
+          last_attempt?: string | null
+        }
+        Update: {
+          action_type?: string
+          attempt_count?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          first_attempt?: string | null
+          id?: string
+          identifier?: string
+          last_attempt?: string | null
+        }
+        Relationships: []
+      }
       career_enrichment: {
         Row: {
           confidence_score: number | null
@@ -1510,6 +1543,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          is_active: boolean | null
+          session_end: string | null
+          session_start: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean | null
+          session_end?: string | null
+          session_start?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean | null
+          session_end?: string | null
+          session_start?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       work_experience: {
         Row: {
           company: string
@@ -1563,6 +1629,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          p_identifier: string
+          p_action_type: string
+          p_max_attempts?: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
       find_similar_entities: {
         Args: { p_entity_id: string; p_similarity_threshold?: number }
         Returns: {
@@ -1671,6 +1746,10 @@ export type Database = {
           p_error?: string
           p_progress?: number
         }
+        Returns: boolean
+      }
+      validate_password_strength: {
+        Args: { password_text: string }
         Returns: boolean
       }
     }
