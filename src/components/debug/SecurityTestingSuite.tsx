@@ -14,7 +14,9 @@ import {
   Database,
   Users,
   Lock,
-  Zap
+  Zap,
+  Key,
+  Activity
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
