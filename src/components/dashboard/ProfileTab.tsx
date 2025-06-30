@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { 
   Building,
   GraduationCap,
@@ -39,7 +38,6 @@ import {
 } from '@/components/profile/entityFieldConfigs';
 
 export const ProfileTab: React.FC = () => {
-  const { theme } = useTheme();
   const { user } = useAuth();
   const [showEnhancedView, setShowEnhancedView] = useState(true);
 
@@ -62,7 +60,7 @@ export const ProfileTab: React.FC = () => {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h2 className={`text-3xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+        <h2 className="text-3xl font-bold text-career-text">
           Profile Data
         </h2>
         <div className="grid gap-6">
@@ -77,7 +75,7 @@ export const ProfileTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className={`text-3xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+        <h2 className="text-3xl font-bold text-career-text">
           Profile Data
         </h2>
         <div className="flex items-center space-x-2">
@@ -93,14 +91,14 @@ export const ProfileTab: React.FC = () => {
         </div>
       </div>
 
-      <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+      <p className="text-sm text-career-text-muted">
         Review and manage your comprehensive career information with AI-powered insights
       </p>
 
       {/* Enrichment Summary */}
       {showEnhancedView && user && (
         <div>
-          <h3 className={`text-lg font-semibold mb-4 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <h3 className="text-lg font-semibold mb-4 text-career-text">
             AI Analysis Summary
           </h3>
           <EnrichmentSummaryCards userId={user.id} />
@@ -277,14 +275,14 @@ export const ProfileTab: React.FC = () => {
       </div>
 
       {/* Note about additional sections */}
-      <div className={`mt-8 p-4 border rounded-lg ${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'}`}>
+      <div className="mt-8 p-4 border rounded-lg bg-career-panel border-career-gray">
         <div className="flex items-start gap-3">
           <Star className="w-5 h-5 text-career-accent mt-0.5" />
           <div>
-            <h3 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <h3 className="font-medium text-career-text">
               AI-Enhanced Profile Analysis
             </h3>
-            <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <p className="text-sm mt-1 text-career-text-muted">
               Your profile includes AI-powered insights that analyze your experience, identify key skills, 
               assess market relevance, and provide personalized recommendations for career advancement. 
               Toggle the AI Enhanced View to see or hide these insights.

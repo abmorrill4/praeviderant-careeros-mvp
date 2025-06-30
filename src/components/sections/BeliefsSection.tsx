@@ -1,9 +1,5 @@
 
-import { useTheme } from "@/contexts/ThemeContext";
-
 const BeliefsSection = () => {
-  const { theme } = useTheme();
-
   const beliefStatements = [
     "Resumes are built for machines. You are not.",
     "No one should have to flatten themselves to apply.",
@@ -16,7 +12,7 @@ const BeliefsSection = () => {
   return (
     <section className="py-16 md:py-24">
       <div className="text-center mb-12">
-        <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+        <h2 className="text-3xl md:text-4xl font-bold mb-6 text-career-text">
           What We Believe
         </h2>
       </div>
@@ -25,9 +21,9 @@ const BeliefsSection = () => {
         {beliefStatements.map((statement, index) => (
           <div
             key={index}
-            className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-career-panel-dark' : 'bg-career-panel-light'} border border-opacity-20 hover:border-career-accent transition-all duration-300`}
+            className="p-6 rounded-xl bg-career-panel border border-opacity-20 hover:border-career-accent transition-all duration-300"
           >
-            <p className={`text-lg font-semibold leading-relaxed ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <p className="text-lg font-semibold leading-relaxed text-career-text">
               {statement}
             </p>
           </div>

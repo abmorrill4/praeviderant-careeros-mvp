@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useInterviewSession } from '@/hooks/useInterviewSession';
 import { SimpleWebRTCManager } from '@/utils/simpleWebRTC';
 import { Mic, MicOff, Volume2, VolumeX, Play, Square, Loader2, Wifi, WifiOff } from 'lucide-react';
@@ -16,7 +15,6 @@ interface ConnectionStats {
 }
 
 const SimpleVoiceInterview = () => {
-  const { theme } = useTheme();
   const { toast } = useToast();
   const { session, transcript, isLoading, createSession, addTranscriptEntry, updateSessionStatus, endSession } = useInterviewSession();
 
@@ -325,7 +323,7 @@ const SimpleVoiceInterview = () => {
       case 'connected': return 'text-green-500';
       case 'connecting': return 'text-yellow-500';
       case 'failed': case 'disconnected': return 'text-red-500';
-      default: return theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light';
+      default: return 'text-career-text-muted';
     }
   };
 
@@ -338,9 +336,9 @@ const SimpleVoiceInterview = () => {
   return (
     <div className="space-y-4">
       {/* Connection Status & Controls */}
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+      <Card className="bg-career-panel border-career-text/20">
         <CardHeader className="pb-3">
-          <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center justify-between`}>
+          <CardTitle className="text-lg text-career-text flex items-center justify-between">
             <span className="flex items-center gap-2">
               <ConnectionIcon className={`w-5 h-5 ${getConnectionStatusColor()}`} />
               Voice Interview
@@ -350,7 +348,7 @@ const SimpleVoiceInterview = () => {
                 {connectionState}
               </span>
               {isConnected && (
-                <span className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <span className="text-xs text-career-text-muted">
                   {Math.round(connectionStats.latency)}ms
                 </span>
               )}
@@ -408,7 +406,7 @@ const SimpleVoiceInterview = () => {
           {/* Status Indicators */}
           {isConnected && (
             <div className="mt-4 space-y-2">
-              <div className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} flex items-center gap-4 flex-wrap`}>
+              <div className="text-sm text-career-text-muted flex items-center gap-4 flex-wrap">
                 <span className="flex items-center gap-2">
                   💡 Speak naturally - the AI responds when you finish talking
                 </span>
@@ -429,12 +427,12 @@ const SimpleVoiceInterview = () => {
       </Card>
 
       {/* Real-time Transcript */}
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+      <Card className="bg-career-panel border-career-text/20">
         <CardHeader className="pb-3">
-          <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center justify-between`}>
+          <CardTitle className="text-lg text-career-text flex items-center justify-between">
             <span>Live Transcript</span>
             {transcript.length > 0 && (
-              <span className={`text-sm font-normal ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              <span className="text-sm font-normal text-career-text-muted">
                 {transcript.length} messages
               </span>
             )}
@@ -444,7 +442,7 @@ const SimpleVoiceInterview = () => {
           <ScrollArea ref={scrollAreaRef} className="h-80">
             <div className="space-y-3 pr-4">
               {transcript.length === 0 ? (
-                <div className={`text-center py-8 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <div className="text-center py-8 text-career-text-muted">
                   {isConnected 
                     ? "The conversation transcript will appear here as you and the AI speak..." 
                     : "Start the interview to see the real-time conversation transcript."
@@ -456,15 +454,11 @@ const SimpleVoiceInterview = () => {
                     key={entry.id || index}
                     className={`p-4 rounded-lg border transition-all duration-200 ${
                       entry.speaker === 'user'
-                        ? theme === 'dark'
-                          ? 'bg-career-accent/20 border-career-accent/30 ml-8'
-                          : 'bg-career-accent/10 border-career-accent/20 ml-8'
-                        : theme === 'dark'
-                          ? 'bg-career-gray-dark/30 border-career-gray-dark/40 mr-8'
-                          : 'bg-career-gray-light/30 border-career-gray-light/40 mr-8'
+                        ? 'bg-career-accent/10 border-career-accent/20 ml-8'
+                        : 'bg-career-gray/30 border-career-gray/40 mr-8'
                     }`}
                   >
-                    <div className={`text-xs font-semibold mb-2 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} flex items-center justify-between`}>
+                    <div className="text-xs font-semibold mb-2 text-career-text-muted flex items-center justify-between">
                       <span className="flex items-center gap-2">
                         {entry.speaker === 'user' ? (
                           <>
@@ -482,7 +476,7 @@ const SimpleVoiceInterview = () => {
                         {new Date(entry.created_at).toLocaleTimeString()}
                       </span>
                     </div>
-                    <div className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <div className="text-sm leading-relaxed text-career-text">
                       {entry.content}
                     </div>
                   </div>
@@ -491,7 +485,7 @@ const SimpleVoiceInterview = () => {
               
               {/* Live indicators */}
               {isConnected && (isListening || isSpeaking) && (
-                <div className={`text-center py-2 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <div className="text-center py-2 text-career-text-muted">
                   {isListening && <div className="animate-pulse">🎤 Listening for your voice...</div>}
                   {isSpeaking && <div className="animate-pulse">🔊 AI is responding...</div>}
                 </div>

@@ -1,9 +1,5 @@
 
-import { useTheme } from "@/contexts/ThemeContext";
-
 const UseCasesSection = () => {
-  const { theme } = useTheme();
-
   const useCases = [
     {
       icon: "🎯",
@@ -35,7 +31,7 @@ const UseCasesSection = () => {
   return (
     <section className="py-16 md:py-24">
       <div className="text-center mb-12">
-        <h2 className={`text-3xl md:text-4xl font-bold mb-6 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+        <h2 className="text-3xl md:text-4xl font-bold mb-6 text-career-text">
           Made for Real People With Real Stories
         </h2>
       </div>
@@ -44,13 +40,13 @@ const UseCasesSection = () => {
         {useCases.map((useCase, index) => (
           <div
             key={index}
-            className={`p-6 rounded-xl ${theme === 'dark' ? 'bg-career-panel-dark' : 'bg-career-panel-light'} border border-opacity-20 hover:border-career-accent transition-all duration-300 text-center`}
+            className="p-6 rounded-xl bg-career-panel border border-opacity-20 hover:border-career-accent transition-all duration-300 text-center"
           >
             <div className="text-4xl mb-4">{useCase.icon}</div>
-            <h3 className={`text-xl font-bold mb-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <h3 className="text-xl font-bold mb-2 text-career-text">
               {useCase.title}
             </h3>
-            <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <p className="text-career-text-muted">
               {useCase.description}
             </p>
           </div>

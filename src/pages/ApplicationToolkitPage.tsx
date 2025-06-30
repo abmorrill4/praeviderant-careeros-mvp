@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProfileLayout } from '@/components/layout/ProfileLayout';
@@ -8,7 +7,6 @@ import { FileText, Mail, Target, Briefcase } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 const ApplicationToolkitPage: React.FC = () => {
-  const { theme } = useTheme();
   const [activeSection, setActiveSection] = useState<TimelineSection>('overview');
 
   const toolkitSections = [
@@ -41,11 +39,11 @@ const ApplicationToolkitPage: React.FC = () => {
   return (
     <ProfileLayout activeSection={activeSection} onSectionChange={setActiveSection}>
       <div className="h-full flex flex-col">
-        <div className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-gray-dark' : 'bg-career-panel-light border-career-gray-light'} border-b p-6`}>
-          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+        <div className="bg-career-panel border-career-gray border-b p-6">
+          <h1 className="text-2xl font-bold text-career-text mb-2">
             Application Toolkit
           </h1>
-          <p className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+          <p className="text-career-text-muted">
             Tools to help you create tailored resumes and cover letters for your job applications
           </p>
         </div>
@@ -57,26 +55,26 @@ const ApplicationToolkitPage: React.FC = () => {
               return (
                 <Card
                   key={section.title}
-                  className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}
+                  className="neumorphic-panel bg-career-panel"
                 >
                   <CardHeader>
-                    <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                    <CardTitle className="flex items-center gap-2 text-career-text">
                       <Icon className="w-5 h-5 text-career-accent" />
                       {section.title}
                     </CardTitle>
-                    <CardDescription className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                    <CardDescription className="text-career-text-muted">
                       {section.description}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {section.comingSoon ? (
-                      <div className={`text-center py-8 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      <div className="text-center py-8 text-career-text-muted">
                         <p className="text-sm">Coming soon...</p>
                       </div>
                     ) : (
                       <Button
                         variant="outline"
-                        className={`w-full ${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+                        className="w-full border-career-gray hover:bg-career-gray"
                       >
                         Get Started
                       </Button>
