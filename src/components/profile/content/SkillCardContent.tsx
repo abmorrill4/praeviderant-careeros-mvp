@@ -33,7 +33,7 @@ export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item, onEdit
     <div className="space-y-6">
       {/* Skill Name Header */}
       <div className="border-b pb-4">
-        <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+        <h3 className="text-lg font-semibold text-career-text-light">
           {parsedSkill.name}
         </h3>
       </div>
@@ -42,7 +42,7 @@ export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item, onEdit
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {(parsedSkill.category || item.category) && (
           <div>
-            <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
+            <h4 className="text-sm font-medium text-career-text-muted-light mb-2">
               Category
             </h4>
             <Badge 
@@ -55,10 +55,10 @@ export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item, onEdit
         
         {(parsedSkill.proficiency_level || item.proficiency_level) && (
           <div>
-            <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
+            <h4 className="text-sm font-medium text-career-text-muted-light mb-2">
               Proficiency
             </h4>
-            <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <div className="flex items-center gap-2 text-sm text-career-text-light">
               <Star className="w-4 h-4 text-career-accent" />
               <span>{formatProficiencyLevel(parsedSkill.proficiency_level || item.proficiency_level)}</span>
             </div>
@@ -67,10 +67,10 @@ export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item, onEdit
         
         {(parsedSkill.years_of_experience || item.years_of_experience) && (
           <div>
-            <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
+            <h4 className="text-sm font-medium text-career-text-muted-light mb-2">
               Experience
             </h4>
-            <p className={`text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <p className="text-sm text-career-text-light">
               {parsedSkill.years_of_experience || item.years_of_experience} years
             </p>
           </div>
@@ -80,15 +80,15 @@ export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item, onEdit
       {/* Missing Information Prompts */}
       <div className="space-y-3">
         {!parsedSkill.category && !item.category && (
-          <div className={`p-4 rounded-lg border-2 border-dashed ${theme === 'dark' ? 'border-career-gray-dark' : 'border-career-gray-light'} text-center`}>
-            <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-3`}>
+          <div className="p-4 rounded-lg border-2 border-dashed border-career-gray-light text-center">
+            <p className="text-sm text-career-text-muted-light mb-3">
               No category assigned
             </p>
             <Button 
               variant="outline" 
               size="sm"
               onClick={() => handleAction('Add Category')}
-              className={`${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+              className="border-career-gray-light hover:bg-career-gray-light"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Category
@@ -97,15 +97,15 @@ export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item, onEdit
         )}
 
         {!parsedSkill.proficiency_level && !item.proficiency_level && (
-          <div className={`p-4 rounded-lg border-2 border-dashed ${theme === 'dark' ? 'border-career-gray-dark' : 'border-career-gray-light'} text-center`}>
-            <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-3`}>
+          <div className="p-4 rounded-lg border-2 border-dashed border-career-gray-light text-center">
+            <p className="text-sm text-career-text-muted-light mb-3">
               No proficiency level set
             </p>
             <Button 
               variant="outline" 
               size="sm"
               onClick={() => handleAction('Add Proficiency')}
-              className={`${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+              className="border-career-gray-light hover:bg-career-gray-light"
             >
               <Star className="w-4 h-4 mr-2" />
               Rate Proficiency
@@ -120,7 +120,7 @@ export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item, onEdit
           variant="outline"
           size="sm"
           onClick={() => handleAction('Edit Skill')}
-          className={`${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+          className="border-career-gray-light hover:bg-career-gray-light"
         >
           <Edit className="w-4 h-4 mr-2" />
           Edit Skill
@@ -130,7 +130,7 @@ export const SkillCardContent: React.FC<SkillCardContentProps> = ({ item, onEdit
           variant="outline"
           size="sm"
           onClick={() => handleAction('Add Context')}
-          className={`${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+          className="border-career-gray-light hover:bg-career-gray-light"
         >
           <Target className="w-4 h-4 mr-2" />
           Add Context

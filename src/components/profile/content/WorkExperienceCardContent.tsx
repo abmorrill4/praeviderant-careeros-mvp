@@ -22,20 +22,20 @@ export const WorkExperienceCardContent: React.FC<WorkExperienceCardContentProps>
       {/* Basic Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
+          <h4 className="text-sm font-medium text-career-text-muted-light mb-2">
             Duration
           </h4>
-          <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <div className="flex items-center gap-2 text-sm text-career-text-light">
             <Calendar className="w-4 h-4" />
             <span>{item.start_date} - {item.end_date || 'Present'}</span>
           </div>
         </div>
         
         <div>
-          <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
+          <h4 className="text-sm font-medium text-career-text-muted-light mb-2">
             Company
           </h4>
-          <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <div className="flex items-center gap-2 text-sm text-career-text-light">
             <span>{item.company}</span>
           </div>
         </div>
@@ -44,23 +44,23 @@ export const WorkExperienceCardContent: React.FC<WorkExperienceCardContentProps>
       {/* Description */}
       {item.description ? (
         <div>
-          <h4 className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-2`}>
+          <h4 className="text-sm font-medium text-career-text-muted-light mb-2">
             Role Description
           </h4>
-          <p className={`text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} leading-relaxed`}>
+          <p className="text-sm text-career-text-light leading-relaxed">
             {item.description}
           </p>
         </div>
       ) : (
-        <div className={`p-4 rounded-lg border-2 border-dashed ${theme === 'dark' ? 'border-career-gray-dark' : 'border-career-gray-light'} text-center`}>
-          <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-3`}>
+        <div className="p-4 rounded-lg border-2 border-dashed border-career-gray-light text-center">
+          <p className="text-sm text-career-text-muted-light mb-3">
             No role description added yet
           </p>
           <Button 
             variant="outline" 
             size="sm"
             onClick={() => handleAction('Add Description')}
-            className={`${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+            className="border-career-gray-light hover:bg-career-gray-light"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Description
@@ -74,7 +74,7 @@ export const WorkExperienceCardContent: React.FC<WorkExperienceCardContentProps>
           variant="outline"
           size="sm"
           onClick={() => handleAction('Edit Basic Info')}
-          className={`${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+          className="border-career-gray-light hover:bg-career-gray-light"
         >
           <Edit className="w-4 h-4 mr-2" />
           Edit Details
@@ -85,7 +85,7 @@ export const WorkExperienceCardContent: React.FC<WorkExperienceCardContentProps>
             variant="outline"
             size="sm"
             onClick={() => handleAction('Add Context')}
-            className={`${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+            className="border-career-gray-light hover:bg-career-gray-light"
           >
             <FileText className="w-4 h-4 mr-2" />
             Add Context
@@ -96,7 +96,7 @@ export const WorkExperienceCardContent: React.FC<WorkExperienceCardContentProps>
           variant="outline"
           size="sm"
           onClick={() => handleAction('Add Achievement')}
-          className={`${theme === 'dark' ? 'border-career-gray-dark hover:bg-career-gray-dark' : 'border-career-gray-light hover:bg-career-gray-light'}`}
+          className="border-career-gray-light hover:bg-career-gray-light"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Achievement

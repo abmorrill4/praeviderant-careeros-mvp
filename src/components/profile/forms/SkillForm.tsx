@@ -72,9 +72,9 @@ export const SkillForm: React.FC<SkillFormProps> = ({
   };
 
   return (
-    <div className={`p-4 rounded-lg border ${theme === 'dark' ? 'border-career-gray-dark bg-career-panel-dark' : 'border-career-gray-light bg-career-panel-light'}`}>
+    <div className="p-4 rounded-lg border border-career-gray-light bg-career-panel-light">
       <div className="flex items-center justify-between mb-4">
-        <h3 className={`text-lg font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+        <h3 className="text-lg font-medium text-career-text-light">
           {isEditing ? 'Edit Skill' : 'Add New Skill'}
         </h3>
         <Button variant="ghost" size="sm" onClick={onCancel}>
@@ -95,7 +95,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
                   <Input 
                     placeholder="e.g. React, Python, Project Management"
                     {...field}
-                    className={theme === 'dark' ? 'bg-career-gray-dark border-career-gray-dark text-career-text-dark' : 'bg-white border-career-gray-light text-career-text-light'}
+                    className="bg-white border-career-gray-light text-career-text-light"
                   />
                 </FormControl>
                 <FormMessage />
@@ -111,7 +111,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
                 <FormLabel>Category</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger className={theme === 'dark' ? 'bg-career-gray-dark border-career-gray-dark text-career-text-dark' : 'bg-white border-career-gray-light text-career-text-light'}>
+                    <SelectTrigger className="bg-white border-career-gray-light text-career-text-light">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                   </FormControl>
@@ -136,7 +136,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
                 <FormLabel>Proficiency Level</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger className={theme === 'dark' ? 'bg-career-gray-dark border-career-gray-dark text-career-text-dark' : 'bg-white border-career-gray-light text-career-text-light'}>
+                    <SelectTrigger className="bg-white border-career-gray-light text-career-text-light">
                       <SelectValue placeholder="Select proficiency level" />
                     </SelectTrigger>
                   </FormControl>
@@ -167,7 +167,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
                     placeholder="0"
                     {...field}
                     onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                    className={theme === 'dark' ? 'bg-career-gray-dark border-career-gray-dark text-career-text-dark' : 'bg-white border-career-gray-light text-career-text-light'}
+                    className="bg-white border-career-gray-light text-career-text-light"
                   />
                 </FormControl>
                 <FormMessage />
@@ -186,7 +186,7 @@ export const SkillForm: React.FC<SkillFormProps> = ({
                     placeholder="Describe how you used this skill, key projects, achievements, or any relevant context..."
                     rows={4}
                     {...field}
-                    className={theme === 'dark' ? 'bg-career-gray-dark border-career-gray-dark text-career-text-dark' : 'bg-white border-career-gray-light text-career-text-light'}
+                    className="bg-white border-career-gray-light text-career-text-light"
                   />
                 </FormControl>
                 <FormMessage />
