@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -26,7 +25,6 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   onSectionChange,
 }) => {
   const { user } = useAuth();
-  const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -56,33 +54,33 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   };
 
   return (
-    <div className={`h-full ${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} m-3 p-4 flex flex-col`}>
+    <div className="h-full bg-white shadow-lg m-3 p-4 flex flex-col rounded-lg border border-slate-200">
       {/* User Identity Section */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-3">
           <Avatar className="w-10 h-10">
             <AvatarImage src={user?.user_metadata?.avatar_url} />
-            <AvatarFallback className={`${theme === 'dark' ? 'bg-career-gray-dark text-career-text-dark' : 'bg-career-gray-light text-career-text-light'} font-semibold text-sm`}>
+            <AvatarFallback className="bg-slate-100 text-slate-700 font-semibold text-sm">
               {getUserInitials()}
             </AvatarFallback>
           </Avatar>
           <div>
-            <h2 className={`text-base font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-0.5`}>
+            <h2 className="text-base font-semibold text-slate-900 mb-0.5">
               {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
             </h2>
-            <p className={`text-xs ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <p className="text-xs text-slate-600">
               Career Professional
             </p>
           </div>
         </div>
       </div>
 
-      <Separator className={`mb-4 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`} />
+      <Separator className="mb-4" />
 
       {/* Main Navigation Menu */}
       <nav className="flex-1">
         <div className="space-y-1 mb-4">
-          <h3 className={`text-xs font-semibold ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} uppercase tracking-wider mb-2`}>
+          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
             Profile Sections
           </h3>
           {navigationItems.map((item) => {
@@ -105,10 +103,8 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
                 }}
                 className={`w-full justify-start h-10 px-3 ${
                   isActive
-                    ? 'bg-career-accent text-white shadow-neumorphic-inset-dark hover:bg-career-accent'
-                    : theme === 'dark'
-                      ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                      : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
+                    ? 'bg-purple-600 text-white hover:bg-purple-700'
+                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
                 } transition-all duration-200`}
               >
                 <Icon className="w-4 h-4 mr-2" />
@@ -118,11 +114,11 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           })}
         </div>
 
-        <Separator className={`mb-4 ${theme === 'dark' ? 'bg-career-gray-dark' : 'bg-career-gray-light'}`} />
+        <Separator className="mb-4" />
 
         {/* Profile Management Section */}
         <div className="space-y-1 mb-4">
-          <h3 className={`text-xs font-semibold ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} uppercase tracking-wider mb-2`}>
+          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
             Tools & Optimization
           </h3>
           <Button
@@ -130,10 +126,8 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             onClick={() => navigate('/profile-optimization')}
             className={`w-full justify-start h-10 px-3 ${
               isRouteActive('/profile-optimization')
-                ? 'bg-career-accent text-white shadow-neumorphic-inset-dark hover:bg-career-accent'
-                : theme === 'dark'
-                  ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                  : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
+                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
             } transition-all duration-200`}
           >
             <TrendingUp className="w-4 h-4 mr-2" />
@@ -144,10 +138,8 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             onClick={() => navigate('/profile-management')}
             className={`w-full justify-start h-10 px-3 ${
               isRouteActive('/profile-management')
-                ? 'bg-career-accent text-white shadow-neumorphic-inset-dark hover:bg-career-accent'
-                : theme === 'dark'
-                  ? 'hover:bg-career-gray-dark text-career-text-muted-dark hover:text-career-text-dark'
-                  : 'hover:bg-career-gray-light text-career-text-muted-light hover:text-career-text-light'
+                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
             } transition-all duration-200`}
           >
             <Settings className="w-4 h-4 mr-2" />
@@ -160,11 +152,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           <Button
             variant="ghost"
             onClick={handleSignOut}
-            className={`w-full justify-start h-10 px-3 group ${
-              theme === 'dark'
-                ? 'hover:bg-red-900/20 text-red-400 hover:text-red-300'
-                : 'hover:bg-red-50 text-red-600 hover:text-red-700'
-            } transition-all duration-200`}
+            className="w-full justify-start h-10 px-3 group hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-200"
           >
             <LogOut className="w-4 h-4 mr-2 group-hover:text-red-500" />
             <span className="font-medium text-sm">Sign Out</span>

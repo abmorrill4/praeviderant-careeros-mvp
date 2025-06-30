@@ -1,13 +1,11 @@
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/contexts/ThemeContext";
 import HeroSection from "@/components/sections/HeroSection";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const { theme } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,11 +47,7 @@ const Index = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      theme === 'dark' 
-        ? 'bg-gradient-to-br from-slate-900 to-slate-800 text-white' 
-        : 'bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900'
-    }`}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 transition-colors duration-300">
       <div className="container mx-auto px-4">
         <HeroSection onAuthSuccess={handleAuthSuccess} />
       </div>

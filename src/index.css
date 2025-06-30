@@ -31,42 +31,13 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
 
-    /* Career-specific colors */
+    /* Career-specific colors - light mode only */
     --career-accent: 266 83% 58%;
     --career-accent-dark: 266 83% 48%;
-    --career-text-light: 222.2 84% 4.9%;
-    --career-text-dark: 210 40% 98%;
-    --career-text-muted-light: 215.4 16.3% 46.9%;
-    --career-text-muted-dark: 215.4 16.3% 65%;
-    --career-gray-light: 214.3 31.8% 91.4%;
-    --career-gray-dark: 217.2 32.6% 17.5%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --career-text: 222.2 84% 4.9%;
+    --career-text-muted: 215.4 16.3% 46.9%;
+    --career-gray: 214.3 31.8% 91.4%;
+    --career-panel: 0 0% 100%;
   }
 }
 
@@ -79,7 +50,7 @@
   }
 }
 
-/* Career-specific utility classes */
+/* Career-specific utility classes - light mode only */
 @layer utilities {
   .career-accent {
     color: hsl(var(--career-accent));
@@ -97,57 +68,40 @@
     background-color: hsl(var(--career-accent-dark));
   }
   
-  .text-career-text-light {
-    color: hsl(var(--career-text-light));
+  .text-career-text {
+    color: hsl(var(--career-text));
   }
   
-  .text-career-text-dark {
-    color: hsl(var(--career-text-dark));
+  .text-career-text-muted {
+    color: hsl(var(--career-text-muted));
   }
   
-  .text-career-text-muted-light {
-    color: hsl(var(--career-text-muted-light));
-  }
-  
-  .text-career-text-muted-dark {
-    color: hsl(var(--career-text-muted-dark));
-  }
-  
-  .bg-career-gray-light {
-    background-color: hsl(var(--career-gray-light));
-  }
-  
-  .bg-career-gray-dark {
-    background-color: hsl(var(--career-gray-dark));
+  .bg-career-gray {
+    background-color: hsl(var(--career-gray));
   }
 
-  /* Neumorphic button styles */
+  .bg-career-panel {
+    background-color: hsl(var(--career-panel));
+  }
+
+  /* Neumorphic button styles - light mode only */
   .neumorphic-button {
     position: relative;
     transition: all 0.3s ease;
-  }
-  
-  .neumorphic-button.light {
     box-shadow: 
       8px 8px 16px rgba(163, 177, 198, 0.6),
       -8px -8px 16px rgba(255, 255, 255, 0.8);
   }
   
-  .neumorphic-button.light:hover {
+  .neumorphic-button:hover {
     box-shadow: 
       4px 4px 8px rgba(163, 177, 198, 0.6),
       -4px -4px 8px rgba(255, 255, 255, 0.8);
   }
-  
-  .neumorphic-button.dark {
+
+  .neumorphic-panel {
     box-shadow: 
-      8px 8px 16px rgba(0, 0, 0, 0.4),
-      -8px -8px 16px rgba(255, 255, 255, 0.1);
-  }
-  
-  .neumorphic-button.dark:hover {
-    box-shadow: 
-      4px 4px 8px rgba(0, 0, 0, 0.4),
-      -4px -4px 8px rgba(255, 255, 255, 0.1);
+      8px 8px 16px rgba(163, 177, 198, 0.6),
+      -8px -8px 16px rgba(255, 255, 255, 0.8);
   }
 }

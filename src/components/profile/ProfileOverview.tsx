@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -19,7 +18,6 @@ export const ProfileOverview: React.FC<ProfileOverviewProps> = ({
   focusedCard,
   onCardFocus,
 }) => {
-  const { theme } = useTheme();
   const { data: workExperiences } = useLatestEntities<WorkExperience>('work_experience');
   const { data: education } = useLatestEntities<Education>('education');
   const profileScore = useEnhancedProfileScore();
@@ -31,40 +29,40 @@ export const ProfileOverview: React.FC<ProfileOverviewProps> = ({
     <div className="space-y-6">
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+        <Card className="bg-white shadow-lg border border-slate-200">
           <CardHeader className="pb-2">
-            <CardTitle className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <CardTitle className="text-sm font-medium text-slate-600">
               Total Experience
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <div className="text-2xl font-bold text-slate-900">
               {workExperiences?.length || 0} roles
             </div>
           </CardContent>
         </Card>
 
-        <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+        <Card className="bg-white shadow-lg border border-slate-200">
           <CardHeader className="pb-2">
-            <CardTitle className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <CardTitle className="text-sm font-medium text-slate-600">
               Education
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <div className="text-2xl font-bold text-slate-900">
               {education?.length || 0} degrees
             </div>
           </CardContent>
         </Card>
 
-        <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+        <Card className="bg-white shadow-lg border border-slate-200">
           <CardHeader className="pb-2">
-            <CardTitle className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <CardTitle className="text-sm font-medium text-slate-600">
               Profile Score
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold text-career-accent mb-2`}>
+            <div className="text-2xl font-bold text-purple-600 mb-2">
               {profileScore.overall}%
             </div>
             <Progress value={profileScore.overall} className="h-2" />
@@ -77,32 +75,32 @@ export const ProfileOverview: React.FC<ProfileOverviewProps> = ({
 
       {/* Current Role */}
       {currentRole && (
-        <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+        <Card className="bg-white shadow-lg border border-slate-200">
           <CardHeader>
-            <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <CardTitle className="text-lg text-slate-900">
               Current Role
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div>
-                <h3 className={`text-xl font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                <h3 className="text-xl font-semibold text-slate-900">
                   {currentRole.title}
                 </h3>
-                <p className={`text-lg ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <p className="text-lg text-slate-600">
                   {currentRole.company}
                 </p>
               </div>
               
               <div className="flex items-center gap-4 text-sm">
-                <div className={`flex items-center gap-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <div className="flex items-center gap-1 text-slate-600">
                   <Calendar className="w-4 h-4" />
                   <span>{currentRole.start_date} - {currentRole.end_date || 'Present'}</span>
                 </div>
               </div>
               
               {currentRole.description && (
-                <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} line-clamp-3`}>
+                <p className="text-sm text-slate-600 line-clamp-3">
                   {currentRole.description}
                 </p>
               )}
@@ -112,14 +110,14 @@ export const ProfileOverview: React.FC<ProfileOverviewProps> = ({
       )}
 
       {/* Recent Activity Placeholder */}
-      <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+      <Card className="bg-white shadow-lg border border-slate-200">
         <CardHeader>
-          <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <CardTitle className="text-lg text-slate-900">
             Recent Activity
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className={`text-center py-8 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+          <div className="text-center py-8 text-slate-600">
             <Award className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No recent activity to show</p>
             <p className="text-sm mt-1">Start building your career timeline</p>

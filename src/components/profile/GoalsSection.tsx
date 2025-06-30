@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Target, Plus, TrendingUp, Calendar } from 'lucide-react';
@@ -14,8 +13,6 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
   focusedCard,
   onCardFocus,
 }) => {
-  const { theme } = useTheme();
-
   const handleAction = (action: string) => {
     console.log(`Action: ${action}`);
   };
@@ -42,40 +39,40 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
     <div className="space-y-6">
       {/* Goals Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+        <Card className="bg-white shadow-lg border border-slate-200">
           <CardHeader className="pb-2">
-            <CardTitle className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <CardTitle className="text-sm font-medium text-slate-600">
               Active Goals
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <div className="text-2xl font-bold text-slate-900">
               {placeholderGoals.length}
             </div>
           </CardContent>
         </Card>
 
-        <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+        <Card className="bg-white shadow-lg border border-slate-200">
           <CardHeader className="pb-2">
-            <CardTitle className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <CardTitle className="text-sm font-medium text-slate-600">
               Avg Progress
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold text-career-accent`}>
+            <div className="text-2xl font-bold text-purple-600">
               48%
             </div>
           </CardContent>
         </Card>
 
-        <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'}`}>
+        <Card className="bg-white shadow-lg border border-slate-200">
           <CardHeader className="pb-2">
-            <CardTitle className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <CardTitle className="text-sm font-medium text-slate-600">
               This Quarter
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <div className="text-2xl font-bold text-slate-900">
               1 goal
             </div>
           </CardContent>
@@ -83,18 +80,18 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
       </div>
 
       {/* Add New Goal CTA */}
-      <Card className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} border-2 border-dashed ${theme === 'dark' ? 'border-career-gray-dark' : 'border-career-gray-light'}`}>
+      <Card className="bg-white shadow-lg border-2 border-dashed border-slate-300">
         <CardContent className="text-center py-8">
-          <Target className={`w-12 h-12 mx-auto mb-4 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} opacity-50`} />
-          <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2`}>
+          <Target className="w-12 h-12 mx-auto mb-4 text-slate-400 opacity-50" />
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">
             Set Your Career Goals
           </h3>
-          <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'} mb-4 max-w-md mx-auto`}>
+          <p className="text-sm text-slate-600 mb-4 max-w-md mx-auto">
             Define your professional objectives and track your progress towards achieving them.
           </p>
           <Button
             onClick={() => handleAction('Create First Goal')}
-            className="bg-career-accent hover:bg-career-accent-dark text-white"
+            className="bg-purple-600 hover:bg-purple-700 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Your First Goal
@@ -106,15 +103,15 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
       {placeholderGoals.map((goal) => (
         <Card 
           key={goal.id}
-          className={`${theme === 'dark' ? 'neumorphic-panel dark bg-career-panel-dark' : 'neumorphic-panel light bg-career-panel-light'} cursor-pointer hover:shadow-lg transition-shadow`}
+          className="bg-white shadow-lg border border-slate-200 cursor-pointer hover:shadow-xl transition-shadow"
           onClick={() => handleAction(`View Goal: ${goal.title}`)}
         >
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+              <CardTitle className="text-lg text-slate-900">
                 {goal.title}
               </CardTitle>
-              <div className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              <div className="text-sm text-slate-600">
                 {goal.progress}%
               </div>
             </div>
@@ -122,10 +119,10 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className={`${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <span className="text-slate-600">
                   Category: {goal.category}
                 </span>
-                <div className={`flex items-center gap-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                <div className="flex items-center gap-1 text-slate-600">
                   <Calendar className="w-4 h-4" />
                   <span>{goal.targetDate}</span>
                 </div>
@@ -133,7 +130,7 @@ export const GoalsSection: React.FC<GoalsSectionProps> = ({
               
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div 
-                  className="bg-career-accent h-2 rounded-full transition-all"
+                  className="bg-purple-600 h-2 rounded-full transition-all"
                   style={{ width: `${goal.progress}%` }}
                 />
               </div>
