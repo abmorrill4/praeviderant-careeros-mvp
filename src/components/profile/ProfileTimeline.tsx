@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ProfileOverview } from './ProfileOverview';
+import { EnhancedProfileOverview } from './EnhancedProfileOverview';
 import { ExperienceSection } from './ExperienceSection';
 import { EducationSection } from './EducationSection';
 import { SkillsSection } from './SkillsSection';
@@ -60,7 +60,7 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
                 hasSkills={profileCompleteness.hasSkills}
               />
             ) : (
-              <ProfileOverview focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+              <EnhancedProfileOverview focusedCard={focusedCard} onCardFocus={handleCardFocus} />
             )}
           </TabsContent>
           
