@@ -797,7 +797,6 @@ export type Database = {
           canonical_name: string
           confidence_score: number | null
           created_at: string
-          embedding_vector: string | null
           entity_type: string
           id: string
           metadata: Json | null
@@ -809,7 +808,6 @@ export type Database = {
           canonical_name: string
           confidence_score?: number | null
           created_at?: string
-          embedding_vector?: string | null
           entity_type: string
           id?: string
           metadata?: Json | null
@@ -821,7 +819,6 @@ export type Database = {
           canonical_name?: string
           confidence_score?: number | null
           created_at?: string
-          embedding_vector?: string | null
           entity_type?: string
           id?: string
           metadata?: Json | null
@@ -1126,7 +1123,6 @@ export type Database = {
           confidence_score: number | null
           created_at: string
           diff_type: string
-          embedding_vector: string | null
           id: string
           justification: string
           metadata: Json | null
@@ -1142,7 +1138,6 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string
           diff_type: string
-          embedding_vector?: string | null
           id?: string
           justification: string
           metadata?: Json | null
@@ -1158,7 +1153,6 @@ export type Database = {
           confidence_score?: number | null
           created_at?: string
           diff_type?: string
-          embedding_vector?: string | null
           id?: string
           justification?: string
           metadata?: Json | null
@@ -1569,10 +1563,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      binary_quantize: {
-        Args: { "": string } | { "": unknown }
-        Returns: unknown
-      }
       find_similar_entities: {
         Args: { p_entity_id: string; p_similarity_threshold?: number }
         Returns: {
@@ -1635,44 +1625,12 @@ export type Database = {
           avg_match_score: number
         }[]
       }
-      halfvec_avg: {
-        Args: { "": number[] }
-        Returns: unknown
-      }
-      halfvec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      halfvec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      halfvec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
       handle_user_deletion: {
         Args: { target_user_id: string }
         Returns: {
           table_name: string
           rows_deleted: number
         }[]
-      }
-      hnsw_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnsw_sparsevec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      hnswhandler: {
-        Args: { "": unknown }
-        Returns: unknown
       }
       is_admin: {
         Args: Record<PropertyKey, never>
@@ -1681,26 +1639,6 @@ export type Database = {
       is_admin_user: {
         Args: { user_id?: string }
         Returns: boolean
-      }
-      ivfflat_bit_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflat_halfvec_support: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      ivfflathandler: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      l2_norm: {
-        Args: { "": unknown } | { "": unknown }
-        Returns: number
-      }
-      l2_normalize: {
-        Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: string
       }
       merge_normalized_entities: {
         Args: {
@@ -1718,18 +1656,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      sparsevec_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      sparsevec_send: {
-        Args: { "": unknown }
-        Returns: string
-      }
-      sparsevec_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
-      }
       test_user_deletion_dry_run: {
         Args: { target_user_id: string }
         Returns: {
@@ -1746,30 +1672,6 @@ export type Database = {
           p_progress?: number
         }
         Returns: boolean
-      }
-      vector_avg: {
-        Args: { "": number[] }
-        Returns: string
-      }
-      vector_dims: {
-        Args: { "": string } | { "": unknown }
-        Returns: number
-      }
-      vector_norm: {
-        Args: { "": string }
-        Returns: number
-      }
-      vector_out: {
-        Args: { "": string }
-        Returns: unknown
-      }
-      vector_send: {
-        Args: { "": string }
-        Returns: string
-      }
-      vector_typmod_in: {
-        Args: { "": unknown[] }
-        Returns: number
       }
     }
     Enums: {
