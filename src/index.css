@@ -1,89 +1,72 @@
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
+    --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Career-specific colors */
+    --career-accent: 266 83% 58%;
+    --career-accent-dark: 266 83% 48%;
+    --career-text-light: 222.2 84% 4.9%;
+    --career-text-dark: 210 40% 98%;
+    --career-text-muted-light: 215.4 16.3% 46.9%;
+    --career-text-muted-dark: 215.4 16.3% 65%;
+    --career-gray-light: 214.3 31.8% 91.4%;
+    --career-gray-dark: 217.2 32.6% 17.5%;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --ring: 224.3 76.3% 94.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
@@ -91,47 +74,80 @@
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground;
   }
 }
 
-/* CareerOS Custom Styles */
-@layer components {
-  .neumorphic-panel {
-    @apply rounded-2xl transition-all duration-300;
+/* Career-specific utility classes */
+@layer utilities {
+  .career-accent {
+    color: hsl(var(--career-accent));
   }
   
-  .neumorphic-panel.dark {
-    @apply bg-career-panel-dark shadow-neumorphic-dark;
+  .career-accent-dark {
+    color: hsl(var(--career-accent-dark));
   }
   
-  .neumorphic-panel.light {
-    @apply bg-career-panel-light shadow-neumorphic-light;
+  .bg-career-accent {
+    background-color: hsl(var(--career-accent));
   }
   
+  .bg-career-accent-dark {
+    background-color: hsl(var(--career-accent-dark));
+  }
+  
+  .text-career-text-light {
+    color: hsl(var(--career-text-light));
+  }
+  
+  .text-career-text-dark {
+    color: hsl(var(--career-text-dark));
+  }
+  
+  .text-career-text-muted-light {
+    color: hsl(var(--career-text-muted-light));
+  }
+  
+  .text-career-text-muted-dark {
+    color: hsl(var(--career-text-muted-dark));
+  }
+  
+  .bg-career-gray-light {
+    background-color: hsl(var(--career-gray-light));
+  }
+  
+  .bg-career-gray-dark {
+    background-color: hsl(var(--career-gray-dark));
+  }
+
+  /* Neumorphic button styles */
   .neumorphic-button {
-    @apply rounded-xl transition-all duration-200;
-  }
-  
-  .neumorphic-button.dark {
-    @apply shadow-neumorphic-sm-dark hover:shadow-neumorphic-dark;
+    position: relative;
+    transition: all 0.3s ease;
   }
   
   .neumorphic-button.light {
-    @apply shadow-neumorphic-sm-light hover:shadow-neumorphic-light;
+    box-shadow: 
+      8px 8px 16px rgba(163, 177, 198, 0.6),
+      -8px -8px 16px rgba(255, 255, 255, 0.8);
   }
   
-  .neumorphic-input {
-    @apply rounded-xl border-0 transition-all duration-200;
+  .neumorphic-button.light:hover {
+    box-shadow: 
+      4px 4px 8px rgba(163, 177, 198, 0.6),
+      -4px -4px 8px rgba(255, 255, 255, 0.8);
   }
   
-  .neumorphic-input.dark {
-    @apply bg-career-gray-dark shadow-neumorphic-inset-dark focus:shadow-neumorphic-sm-dark;
+  .neumorphic-button.dark {
+    box-shadow: 
+      8px 8px 16px rgba(0, 0, 0, 0.4),
+      -8px -8px 16px rgba(255, 255, 255, 0.1);
   }
   
-  .neumorphic-input.light {
-    @apply bg-career-gray-light shadow-neumorphic-inset-light focus:shadow-neumorphic-sm-light;
+  .neumorphic-button.dark:hover {
+    box-shadow: 
+      4px 4px 8px rgba(0, 0, 0, 0.4),
+      -4px -4px 8px rgba(255, 255, 255, 0.1);
   }
 }

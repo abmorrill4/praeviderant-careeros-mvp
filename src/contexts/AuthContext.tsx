@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,7 +41,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTimeout(() => {
             handleUserProfile(session.user);
             // Redirect to profile timeline after successful authentication
-            window.location.href = '/profile-timeline';
+            if (window.location.pathname === '/' || window.location.pathname === '/auth') {
+              window.location.href = '/profile-timeline';
+            }
           }, 0);
         }
       }
