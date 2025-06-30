@@ -1638,6 +1638,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      current_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       find_similar_entities: {
         Args: { p_entity_id: string; p_similarity_threshold?: number }
         Returns: {
@@ -1707,12 +1711,27 @@ export type Database = {
           rows_deleted: number
         }[]
       }
+      handle_user_deletion_optimized: {
+        Args: { target_user_id: string }
+        Returns: {
+          table_name: string
+          rows_deleted: number
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
       is_admin_user: {
         Args: { user_id?: string }
+        Returns: boolean
+      }
+      is_admin_user_optimized: {
+        Args: { user_id?: string }
+        Returns: boolean
+      }
+      is_authenticated: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       merge_normalized_entities: {
