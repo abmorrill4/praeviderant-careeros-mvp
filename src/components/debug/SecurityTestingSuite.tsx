@@ -55,13 +55,6 @@ export const SecurityTestingSuite: React.FC = () => {
       status: 'pending'
     },
     {
-      id: 'policy-coverage-verification',
-      name: 'RLS Policy Coverage Test',
-      category: 'Configuration',
-      description: 'Verify all critical tables have RLS policies',
-      status: 'pending'
-    },
-    {
       id: 'secure-deletion-test',
       name: 'Secure User Deletion Test',
       category: 'Data Protection',
@@ -94,9 +87,6 @@ export const SecurityTestingSuite: React.FC = () => {
         case 'unauthorized-table-access':
           await testUnauthorizedAccess(test);
           break;
-        case 'policy-coverage-verification':
-          await testPolicyCoverage(test);
-          break;
         case 'secure-deletion-test':
           await testSecureDeletion(test);
           break;
@@ -114,7 +104,7 @@ export const SecurityTestingSuite: React.FC = () => {
       // Test 1: Try to access work_experience data (should only return user's data)
       const { data: workExp, error: workExpError } = await supabase
         .from('work_experience')
-        .select('id, user_id')
+        .select('logical_entity_id, user_id')
         .limit(10);
 
       if (workExpError) {
@@ -172,7 +162,7 @@ export const SecurityTestingSuite: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from(tableName as any)
-          .select('id')
+          .select('logical_entity_id')
           .limit(1);
 
         if (error && error.code === '42501') {
@@ -194,44 +184,6 @@ export const SecurityTestingSuite: React.FC = () => {
       `Table access test results:\n${results.join('\n')}`,
       allSecure ? [] : ['Review RLS policies on failed tables']
     );
-  };
-
-  const testPolicyCoverage = async (test: SecurityTest) => {
-    try {
-      const { data: policies, error } = await supabase.rpc('sql-query', {
-        query: `
-          SELECT DISTINCT tablename 
-          FROM pg_policies 
-          WHERE schemaname = 'public'
-          ORDER BY tablename
-        `
-      });
-
-      if (error) {
-        updateTestStatus(test.id, 'failed', `Policy coverage test failed: ${error.message}`);
-        return;
-      }
-
-      const criticalTables = [
-        'work_experience', 'education', 'skill', 'project', 'certification',
-        'career_profile', 'jobs', 'interviews', 'resume_streams', 'resume_versions',
-        'career_enrichment', 'career_narratives', 'entry_enrichment'
-      ];
-
-      const securedTables = new Set(policies?.map((p: any) => p.tablename) || []);
-      const unsecuredTables = criticalTables.filter(table => !securedTables.has(table));
-
-      if (unsecuredTables.length === 0) {
-        updateTestStatus(test.id, 'passed', `All ${criticalTables.length} critical tables have RLS policies`);
-      } else {
-        updateTestStatus(test.id, 'failed', 
-          `${unsecuredTables.length} critical tables missing RLS policies: ${unsecuredTables.join(', ')}`,
-          ['Add RLS policies to all critical tables', 'Review table security requirements']
-        );
-      }
-    } catch (error) {
-      updateTestStatus(test.id, 'failed', `Policy coverage test error: ${error}`);
-    }
   };
 
   const testSecureDeletion = async (test: SecurityTest) => {

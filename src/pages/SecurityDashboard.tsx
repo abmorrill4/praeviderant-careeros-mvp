@@ -5,15 +5,17 @@ import { SecurityMonitoringPanel } from '@/components/debug/SecurityMonitoringPa
 import { SecurityHardeningStatus } from '@/components/debug/SecurityHardeningStatus';
 import { SecurityTestingSuite } from '@/components/debug/SecurityTestingSuite';
 import { SchemaValidationPanel } from '@/components/debug/SchemaValidationPanel';
-import { DashboardPageLayout } from '@/components/dashboard/DashboardPageLayout';
+import DashboardPageLayout from '@/components/dashboard/DashboardPageLayout';
 
 const SecurityDashboard: React.FC = () => {
   return (
-    <DashboardPageLayout 
-      title="Security Dashboard" 
-      description="Comprehensive security monitoring and validation for CareerOS"
-    >
+    <DashboardPageLayout>
       <div className="space-y-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Security Dashboard</h1>
+          <p className="text-muted-foreground">Comprehensive security monitoring and validation for CareerOS</p>
+        </div>
+
         <Tabs defaultValue="monitoring" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="monitoring">Security Monitoring</TabsTrigger>
