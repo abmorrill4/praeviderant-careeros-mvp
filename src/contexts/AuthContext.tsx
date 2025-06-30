@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(() => {
             handleUserProfile(session.user);
+            // Redirect to profile timeline after successful authentication
+            window.location.href = '/profile-timeline';
           }, 0);
         }
       }
@@ -134,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clean up any existing auth state
       await supabase.auth.signOut();
       
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/profile-timeline`;
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -201,7 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Clean up any existing auth state
       await supabase.auth.signOut();
       
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/profile-timeline`;
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

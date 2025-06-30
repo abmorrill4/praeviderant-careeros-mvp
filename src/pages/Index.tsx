@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Navigation } from "@/components/Navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { 
   Brain, 
   FileText, 
@@ -13,11 +13,9 @@ import {
   ArrowRight,
   CheckCircle
 } from "lucide-react";
-import AuthForm from "@/components/auth/AuthForm";
 
 const Index = () => {
   const { user, loading } = useAuth();
-  const [showAuthForm, setShowAuthForm] = useState(false);
 
   useEffect(() => {
     console.log('Index: user state changed', { user: user?.email, loading });
@@ -45,11 +43,6 @@ const Index = () => {
       description: "Understand your role archetype, leadership potential, and technical depth with AI-driven assessments."
     }
   ];
-
-  const handleAuthSuccess = () => {
-    // User will be automatically redirected to dashboard by auth state change
-    setShowAuthForm(false);
-  };
 
   // Show loading state while auth is initializing
   if (loading) {
@@ -83,13 +76,13 @@ const Index = () => {
             </p>
           </div>
           
-          {/* Authentication Section */}
+          {/* CTA Section */}
           <div className="flex flex-col items-center space-y-6">
             {user ? (
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" asChild className="text-lg px-8">
-                  <Link to="/dashboard">
-                    Go to Dashboard
+                  <Link to="/profile-timeline">
+                    Go to Profile Timeline
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Link>
                 </Button>
@@ -100,41 +93,16 @@ const Index = () => {
                 </Button>
               </div>
             ) : (
-              <div className="w-full max-w-md space-y-4">
-                {!showAuthForm ? (
-                  <div className="space-y-4">
-                    <Button 
-                      size="lg" 
-                      onClick={() => setShowAuthForm(true)}
-                      className="w-full text-lg px-8 h-12"
-                    >
-                      Get Started
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                    <p className="text-sm text-slate-500">
-                      Already have an account? 
-                      <button 
-                        onClick={() => setShowAuthForm(true)}
-                        className="text-purple-600 hover:text-purple-700 underline ml-1"
-                      >
-                        Sign in here
-                      </button>
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      Or visit our <Link to="/auth" className="text-purple-600 hover:text-purple-700 underline">dedicated auth page</Link>
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <AuthForm onSuccess={handleAuthSuccess} />
-                    <button
-                      onClick={() => setShowAuthForm(false)}
-                      className="text-sm text-slate-500 hover:text-slate-700 underline w-full"
-                    >
-                      Back to main page
-                    </button>
-                  </div>
-                )}
+              <div className="space-y-4">
+                <Button size="lg" asChild className="text-lg px-8 h-12">
+                  <Link to="/auth">
+                    Get Started
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Link>
+                </Button>
+                <p className="text-sm text-slate-500">
+                  Sign up or sign in to access your career timeline
+                </p>
               </div>
             )}
           </div>
@@ -199,7 +167,7 @@ const Index = () => {
         </div>
 
         {/* Additional CTA for non-authenticated users */}
-        {!user && !showAuthForm && (
+        {!user && (
           <div className="mt-16 text-center">
             <Card className="max-w-2xl mx-auto bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
               <CardContent className="pt-8 pb-8">
@@ -209,13 +177,11 @@ const Index = () => {
                 <p className="text-slate-600 mb-6">
                   Join thousands of professionals who have already discovered their career potential with AI-powered insights.
                 </p>
-                <Button 
-                  size="lg" 
-                  onClick={() => setShowAuthForm(true)}
-                  className="text-lg px-8"
-                >
-                  Start Your Journey
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                <Button size="lg" asChild className="text-lg px-8">
+                  <Link to="/auth">
+                    Start Your Journey
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
