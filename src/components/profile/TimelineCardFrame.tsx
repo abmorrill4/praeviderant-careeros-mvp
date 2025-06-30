@@ -26,28 +26,17 @@ export const TimelineCardFrame: React.FC<TimelineCardFrameProps> = ({
 
   return (
     <Card 
-      className={`mb-6 cursor-pointer transition-all duration-300 ${
-        theme === 'dark' 
-          ? `neumorphic-panel dark bg-career-panel-dark ${isExpanded ? 'shadow-neumorphic-lg-dark' : 'shadow-neumorphic-dark hover:shadow-neumorphic-lg-dark'}`
-          : `neumorphic-panel light bg-career-panel-light ${isExpanded ? 'shadow-neumorphic-lg-light' : 'shadow-neumorphic-light hover:shadow-neumorphic-lg-light'}`
-      }`}
+      className={`mb-6 cursor-pointer transition-all duration-300 neumorphic-panel light bg-career-panel-light ${isExpanded ? 'shadow-neumorphic-lg-light' : 'shadow-neumorphic-light hover:shadow-neumorphic-lg-light'}`}
       onClick={onToggle}
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <CardTitle className="text-lg text-career-text-light">
               {title}
             </CardTitle>
             {badgeText && (
-              <Badge 
-                variant="secondary" 
-                className={`${
-                  theme === 'dark' 
-                    ? 'bg-career-gray-dark text-career-text-muted-dark' 
-                    : 'bg-career-gray-light text-career-text-muted-light'
-                }`}
-              >
+              <Badge className="bg-career-gray-light text-career-text-muted-light">
                 {badgeText}
               </Badge>
             )}
@@ -55,9 +44,9 @@ export const TimelineCardFrame: React.FC<TimelineCardFrameProps> = ({
           
           <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
             {isExpanded ? (
-              <ChevronDown className={`w-5 h-5 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`} />
+              <ChevronDown className="w-5 h-5 text-career-text-muted-light" />
             ) : (
-              <ChevronRight className={`w-5 h-5 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`} />
+              <ChevronRight className="w-5 h-5 text-career-text-muted-light" />
             )}
           </div>
         </div>

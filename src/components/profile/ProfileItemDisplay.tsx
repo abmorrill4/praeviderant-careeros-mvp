@@ -33,9 +33,7 @@ export const ProfileItemDisplay = <T extends VersionedEntity>({
     <div
       className={`p-3 rounded-lg border transition-all ${
         isPendingAIExtraction(item)
-          ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20'
-          : theme === 'dark'
-          ? 'border-career-text-dark/10 bg-career-background-dark/50'
+          ? 'border-yellow-400 bg-yellow-50'
           : 'border-career-text-light/10 bg-career-background-light/50'
       }`}
     >
@@ -82,7 +80,7 @@ export const ProfileItemDisplay = <T extends VersionedEntity>({
               size="sm"
               variant="outline"
               onClick={() => onAccept(item)}
-              className="text-green-600 border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20"
+              className="text-green-600 border-green-300 hover:bg-green-50"
             >
               <Check className="w-3 h-3 mr-1" />
               Accept
@@ -92,7 +90,7 @@ export const ProfileItemDisplay = <T extends VersionedEntity>({
             size="sm"
             variant="outline"
             onClick={handleEditClick}
-            className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            className="text-blue-600 border-blue-300 hover:bg-blue-50"
           >
             <Edit className="w-3 h-3 mr-1" />
             Edit

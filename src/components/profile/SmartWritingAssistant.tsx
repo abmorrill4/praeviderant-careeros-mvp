@@ -130,16 +130,16 @@ Focus on actionable, specific feedback that helps create compelling resume conte
   };
 
   return (
-    <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+    <Card className="bg-career-panel-light border-career-text-light/20">
       <CardHeader>
-        <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center gap-2`}>
+        <CardTitle className="text-lg text-career-text-light flex items-center gap-2">
           <Wand2 className="w-5 h-5" />
           Smart Writing Assistant
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} block mb-2`}>
+          <label className="text-sm font-medium text-career-text-light block mb-2">
             Your Text
           </label>
           <Textarea
@@ -147,7 +147,7 @@ Focus on actionable, specific feedback that helps create compelling resume conte
             onChange={(e) => setText(e.target.value)}
             placeholder={`Enter your ${context.replace('_', ' ')} description here...`}
             rows={4}
-            className={theme === 'dark' ? 'bg-career-gray-dark border-career-gray-dark text-career-text-dark' : 'bg-white border-career-gray-light text-career-text-light'}
+            className="bg-white border-career-gray-light text-career-text-light"
           />
         </div>
 
@@ -172,9 +172,9 @@ Focus on actionable, specific feedback that helps create compelling resume conte
         {feedback && (
           <div className="space-y-4 mt-6">
             {/* Score */}
-            <div className={`p-4 rounded-lg border ${theme === 'dark' ? 'border-career-gray-dark bg-career-background-dark/50' : 'border-career-gray-light bg-career-background-light/50'}`}>
+            <div className="p-4 rounded-lg border border-career-gray-light bg-career-background-light/50">
               <div className="flex items-center justify-between mb-2">
-                <span className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                <span className="font-medium text-career-text-light">
                   Writing Score
                 </span>
                 <div className="flex items-center gap-2">
@@ -189,13 +189,13 @@ Focus on actionable, specific feedback that helps create compelling resume conte
             {/* Strengths */}
             {feedback.improvements.length > 0 && (
               <div>
-                <h4 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 flex items-center gap-2`}>
+                <h4 className="font-medium text-career-text-light mb-2 flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
                   What's Working Well
                 </h4>
                 <div className="space-y-1">
                   {feedback.improvements.map((improvement, index) => (
-                    <div key={index} className={`text-sm p-2 rounded ${theme === 'dark' ? 'bg-green-900/20 text-green-300' : 'bg-green-50 text-green-700'}`}>
+                    <div key={index} className="text-sm p-2 rounded bg-green-50 text-green-700">
                       {improvement}
                     </div>
                   ))}
@@ -206,13 +206,13 @@ Focus on actionable, specific feedback that helps create compelling resume conte
             {/* Suggestions */}
             {feedback.suggestions.length > 0 && (
               <div>
-                <h4 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} mb-2 flex items-center gap-2`}>
+                <h4 className="font-medium text-career-text-light mb-2 flex items-center gap-2">
                   <Lightbulb className="w-4 h-4 text-yellow-600" />
                   Suggestions for Improvement
                 </h4>
                 <div className="space-y-1">
                   {feedback.suggestions.map((suggestion, index) => (
-                    <div key={index} className={`text-sm p-2 rounded ${theme === 'dark' ? 'bg-yellow-900/20 text-yellow-300' : 'bg-yellow-50 text-yellow-700'}`}>
+                    <div key={index} className="text-sm p-2 rounded bg-yellow-50 text-yellow-700">
                       {suggestion}
                     </div>
                   ))}
@@ -224,7 +224,7 @@ Focus on actionable, specific feedback that helps create compelling resume conte
             {feedback.strengthened_version && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center gap-2`}>
+                  <h4 className="font-medium text-career-text-light flex items-center gap-2">
                     <Wand2 className="w-4 h-4 text-blue-600" />
                     AI-Improved Version
                   </h4>
@@ -237,8 +237,8 @@ Focus on actionable, specific feedback that helps create compelling resume conte
                     Apply This Version
                   </Button>
                 </div>
-                <div className={`p-3 rounded-lg border ${theme === 'dark' ? 'border-blue-500/30 bg-blue-900/20' : 'border-blue-300 bg-blue-50'}`}>
-                  <p className={`text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                <div className="p-3 rounded-lg border border-blue-300 bg-blue-50">
+                  <p className="text-sm text-career-text-light">
                     {feedback.strengthened_version}
                   </p>
                 </div>

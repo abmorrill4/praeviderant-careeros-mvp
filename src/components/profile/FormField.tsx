@@ -26,7 +26,7 @@ export const FormField: React.FC<FormFieldProps> = ({
 
   return (
     <div className="space-y-1">
-      <label className={`text-sm font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+      <label className="text-sm font-medium text-career-text-light">
         {field.label}
       </label>
       <FieldRenderer

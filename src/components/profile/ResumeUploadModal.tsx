@@ -160,24 +160,14 @@ export const ResumeUploadModal: React.FC<ResumeUploadModalProps> = ({ children }
           <Button 
             variant="outline" 
             size="sm"
-            className={`${
-              theme === 'dark' 
-                ? 'border-career-gray-dark hover:bg-career-gray-dark text-career-text-dark' 
-                : 'border-career-gray-light hover:bg-career-gray-light text-career-text-light'
-            }`}
+            className="border-career-gray-light hover:bg-career-gray-light text-career-text-light"
           >
             <Upload className="w-4 h-4 mr-2" />
             Upload Resume
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent 
-        className={`max-w-4xl max-h-[90vh] overflow-y-auto ${
-          theme === 'dark' 
-            ? 'bg-career-panel-dark border-career-gray-dark' 
-            : 'bg-career-panel-light border-career-gray-light'
-        }`}
-      >
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-career-panel-light border-career-gray-light">
         <div className="space-y-6">
           <ResumeDropzone
             onFileSelect={handleFileSelect}

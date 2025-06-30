@@ -26,9 +26,9 @@ export const ProfileScoreInsights: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Overall Score Card */}
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+      <Card className="bg-career-panel-light border-career-text-light/20">
         <CardHeader>
-          <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center gap-2`}>
+          <CardTitle className="text-lg text-career-text-light flex items-center gap-2">
             <TrendingUp className="w-5 h-5" />
             Enhanced Profile Score
           </CardTitle>
@@ -40,7 +40,7 @@ export const ProfileScoreInsights: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               {getScoreIcon(profileScore.overall)}
-              <span className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              <span className="text-sm text-career-text-muted-light">
                 {profileScore.overall >= 80 ? 'Excellent' : profileScore.overall >= 60 ? 'Good' : 'Needs Improvement'}
               </span>
             </div>
@@ -50,9 +50,9 @@ export const ProfileScoreInsights: React.FC = () => {
       </Card>
 
       {/* Detailed Section Breakdown */}
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+      <Card className="bg-career-panel-light border-career-text-light/20">
         <CardHeader>
-          <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <CardTitle className="text-lg text-career-text-light">
             Section Analysis
           </CardTitle>
         </CardHeader>
@@ -60,7 +60,7 @@ export const ProfileScoreInsights: React.FC = () => {
           {/* Work Experience Details */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+              <span className="font-medium text-career-text-light">
                 Work Experience
               </span>
               <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export const ProfileScoreInsights: React.FC = () => {
           {/* Skills Details */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+              <span className="font-medium text-career-text-light">
                 Skills
               </span>
               <div className="flex items-center gap-2">
@@ -125,9 +125,9 @@ export const ProfileScoreInsights: React.FC = () => {
 
       {/* Recommendations */}
       {profileScore.recommendations.length > 0 && (
-        <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+        <Card className="bg-career-panel-light border-career-text-light/20">
           <CardHeader>
-            <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center gap-2`}>
+            <CardTitle className="text-lg text-career-text-light flex items-center gap-2">
               <Lightbulb className="w-5 h-5" />
               Recommendations
             </CardTitle>
@@ -135,8 +135,8 @@ export const ProfileScoreInsights: React.FC = () => {
           <CardContent>
             <div className="space-y-3">
               {profileScore.recommendations.map((recommendation, index) => (
-                <div key={index} className={`p-3 rounded-lg border-l-4 border-blue-500 ${theme === 'dark' ? 'bg-blue-900/20' : 'bg-blue-50'}`}>
-                  <p className={`text-sm ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                <div key={index} className="p-3 rounded-lg border-l-4 border-blue-500 bg-blue-50">
+                  <p className="text-sm text-career-text-light">
                     {recommendation}
                   </p>
                 </div>
@@ -148,9 +148,9 @@ export const ProfileScoreInsights: React.FC = () => {
 
       {/* Best Practice Gaps */}
       {profileScore.bestPracticeGaps.length > 0 && (
-        <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+        <Card className="bg-career-panel-light border-career-text-light/20">
           <CardHeader>
-            <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'} flex items-center gap-2`}>
+            <CardTitle className="text-lg text-career-text-light flex items-center gap-2">
               <AlertCircle className="w-5 h-5" />
               Areas for Improvement
             </CardTitle>
@@ -160,7 +160,7 @@ export const ProfileScoreInsights: React.FC = () => {
               {profileScore.bestPracticeGaps.map((gap, index) => (
                 <div key={index} className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                  <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                  <p className="text-sm text-career-text-muted-light">
                     {gap}
                   </p>
                 </div>

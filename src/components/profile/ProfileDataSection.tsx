@@ -53,9 +53,9 @@ export const ProfileDataSection = <T extends VersionedEntity>({
 
   return (
     <TooltipProvider>
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+      <Card className="bg-career-panel-light border-career-text-light/20">
         <CardHeader className="pb-3">
-          <CardTitle className={`flex items-center gap-2 text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <CardTitle className="flex items-center gap-2 text-lg text-career-text-light">
             {icon}
             {title}
             <Badge variant="secondary" className="ml-auto">
@@ -65,7 +65,7 @@ export const ProfileDataSection = <T extends VersionedEntity>({
         </CardHeader>
         <CardContent className="space-y-3">
           {items.length === 0 ? (
-            <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <p className="text-sm text-career-text-muted-light">
               No {title.toLowerCase()} added yet
             </p>
           ) : (

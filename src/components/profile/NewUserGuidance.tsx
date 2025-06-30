@@ -96,14 +96,14 @@ export const NewUserGuidance: React.FC<NewUserGuidanceProps> = ({
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <Card className={`${theme === 'dark' ? 'bg-gradient-to-r from-career-panel-dark to-blue-900/20 border-career-text-dark/20' : 'bg-gradient-to-r from-career-panel-light to-blue-50 border-career-text-light/20'}`}>
+      <Card className="bg-gradient-to-r from-career-panel-light to-blue-50 border-career-text-light/20">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className={`text-xl ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+              <CardTitle className="text-xl text-career-text-light">
                 Welcome to Your Career Timeline! 🚀
               </CardTitle>
-              <p className={`mt-2 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              <p className="mt-2 text-career-text-muted-light">
                 Let's build your professional profile to unlock personalized career insights and opportunities.
               </p>
             </div>
@@ -111,7 +111,7 @@ export const NewUserGuidance: React.FC<NewUserGuidanceProps> = ({
               <div className={`text-2xl font-bold ${completionPercentage >= 50 ? 'text-green-600' : 'text-yellow-600'}`}>
                 {completionPercentage.toFixed(0)}%
               </div>
-              <p className={`text-sm ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+              <p className="text-sm text-career-text-muted-light">
                 Complete
               </p>
             </div>
@@ -121,9 +121,9 @@ export const NewUserGuidance: React.FC<NewUserGuidanceProps> = ({
       </Card>
 
       {/* Quick Actions */}
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+      <Card className="bg-career-panel-light border-career-text-light/20">
         <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <CardTitle className="flex items-center gap-2 text-career-text-light">
             <Lightbulb className="w-5 h-5" />
             Quick Start Actions
           </CardTitle>
@@ -137,15 +137,15 @@ export const NewUserGuidance: React.FC<NewUserGuidanceProps> = ({
                   key={action.id}
                   className={`p-4 rounded-lg border transition-all duration-200 ${
                     action.completed 
-                      ? `${theme === 'dark' ? 'bg-green-900/20 border-green-700' : 'bg-green-50 border-green-200'}`
-                      : `${theme === 'dark' ? 'border-career-gray-dark hover:border-career-accent' : 'border-career-gray-light hover:border-career-accent'} hover:shadow-md`
+                      ? 'bg-green-50 border-green-200'
+                      : 'border-career-gray-light hover:border-career-accent hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`p-2 rounded-lg ${
                       action.completed 
                         ? 'bg-green-600 text-white' 
-                        : `${theme === 'dark' ? 'bg-career-accent/20 text-career-accent' : 'bg-career-accent/10 text-career-accent'}`
+                        : 'bg-career-accent/10 text-career-accent'
                     }`}>
                       {action.completed ? (
                         <CheckCircle className="w-5 h-5" />
@@ -155,7 +155,7 @@ export const NewUserGuidance: React.FC<NewUserGuidanceProps> = ({
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                        <h3 className="font-medium text-career-text-light">
                           {action.title}
                         </h3>
                         {action.completed && (
@@ -169,7 +169,7 @@ export const NewUserGuidance: React.FC<NewUserGuidanceProps> = ({
                           </Badge>
                         )}
                       </div>
-                      <p className={`text-sm mb-3 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                      <p className="text-sm mb-3 text-career-text-muted-light">
                         {action.description}
                       </p>
                       {!action.completed && (
@@ -199,9 +199,9 @@ export const NewUserGuidance: React.FC<NewUserGuidanceProps> = ({
       </Card>
 
       {/* Recommendations */}
-      <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+      <Card className="bg-career-panel-light border-career-text-light/20">
         <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+          <CardTitle className="flex items-center gap-2 text-career-text-light">
             <FileText className="w-5 h-5" />
             Pro Tips for Getting Started
           </CardTitle>
@@ -214,10 +214,10 @@ export const NewUserGuidance: React.FC<NewUserGuidanceProps> = ({
                   rec.priority === 'high' ? 'bg-red-500' : 'bg-yellow-500'
                 }`} />
                 <div>
-                  <h4 className={`font-medium ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+                  <h4 className="font-medium text-career-text-light">
                     {rec.title}
                   </h4>
-                  <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+                  <p className="text-sm mt-1 text-career-text-muted-light">
                     {rec.description}
                   </p>
                 </div>
@@ -229,17 +229,17 @@ export const NewUserGuidance: React.FC<NewUserGuidanceProps> = ({
 
       {/* Next Steps */}
       {completionPercentage > 0 && completionPercentage < 100 && (
-        <Card className={`${theme === 'dark' ? 'bg-career-panel-dark border-career-text-dark/20' : 'bg-career-panel-light border-career-text-light/20'}`}>
+        <Card className="bg-career-panel-light border-career-text-light/20">
           <CardHeader>
-            <CardTitle className={`text-lg ${theme === 'dark' ? 'text-career-text-dark' : 'text-career-text-light'}`}>
+            <CardTitle className="text-lg text-career-text-light">
               You're Making Progress! 🎯
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`mb-4 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <p className="mb-4 text-career-text-muted-light">
               Great start! Complete the remaining sections to unlock advanced features like:
             </p>
-            <ul className={`space-y-2 ${theme === 'dark' ? 'text-career-text-muted-dark' : 'text-career-text-muted-light'}`}>
+            <ul className="space-y-2 text-career-text-muted-light">
               <li className="flex items-center gap-2">
                 <Circle className="w-2 h-2 fill-current" />
                 AI-powered resume optimization suggestions
