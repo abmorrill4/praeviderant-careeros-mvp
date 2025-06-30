@@ -1230,13 +1230,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "resume_entity_links_normalized_entity_id_fkey"
-            columns: ["normalized_entity_id"]
-            isOneToOne: false
-            referencedRelation: "unresolved_entities_stats"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "resume_entity_links_parsed_entity_id_fkey"
             columns: ["parsed_entity_id"]
             isOneToOne: false
@@ -1573,22 +1566,7 @@ export type Database = {
       }
     }
     Views: {
-      unresolved_entities_stats: {
-        Row: {
-          aliases: string[] | null
-          avg_match_score: number | null
-          canonical_name: string | null
-          confidence_score: number | null
-          created_at: string | null
-          entity_type: string | null
-          id: string | null
-          reference_count: number | null
-          referencing_users: string[] | null
-          review_status: string | null
-          updated_at: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       binary_quantize: {
@@ -1639,6 +1617,22 @@ export type Database = {
           has_narratives: boolean
           is_complete: boolean
           last_updated: string
+        }[]
+      }
+      get_unresolved_entities_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          entity_type: string
+          canonical_name: string
+          aliases: string[]
+          confidence_score: number
+          review_status: string
+          created_at: string
+          updated_at: string
+          reference_count: number
+          referencing_users: string[]
+          avg_match_score: number
         }[]
       }
       halfvec_avg: {

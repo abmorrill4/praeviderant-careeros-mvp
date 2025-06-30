@@ -1,11 +1,10 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { UnresolvedEntity, SimilarEntity } from '@/types/entity-graph';
 
-// Hook to get unresolved entities
+// Hook to get unresolved entities using the new secure function
 export function useUnresolvedEntities() {
   const { user } = useAuth();
   
@@ -14,10 +13,8 @@ export function useUnresolvedEntities() {
     queryFn: async (): Promise<UnresolvedEntity[]> => {
       if (!user) return [];
       
-      const { data, error } = await supabase
-        .from('unresolved_entities_stats')
-        .select('*')
-        .order('confidence_score', { ascending: true });
+      // Use the new secure function instead of the view
+      const { data, error } = await supabase.rpc('get_unresolved_entities_stats');
 
       if (error) {
         console.error('Error fetching unresolved entities:', error);
@@ -51,7 +48,7 @@ export function useSimilarEntities(entityId?: string) {
     queryFn: async (): Promise<SimilarEntity[]> => {
       if (!entityId || !user) return [];
       
-      const { data, error } = await supabase.rpc('find_similar_entities', {
+      const { data, error } = await supabase.rpc('find_similar_entities_safe', {
         p_entity_id: entityId,
         p_similarity_threshold: 0.7
       });
@@ -90,7 +87,7 @@ export function useMergeEntities() {
     }) => {
       if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase.rpc('merge_normalized_entities', {
+      const { data, error } = await supabase.rpc('merge_normalized_entities_safe', {
         p_source_entity_id: sourceEntityId,
         p_target_entity_id: targetEntityId,
         p_admin_user_id: user.id
