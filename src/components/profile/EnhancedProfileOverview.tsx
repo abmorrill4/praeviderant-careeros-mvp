@@ -177,33 +177,33 @@ export const EnhancedProfileOverview: React.FC<EnhancedProfileOverviewProps> = (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Work Experience</span>
-                  <span className="text-sm font-medium">{profileScore.experience}%</span>
+                  <span className="text-sm font-medium">{profileScore.sections.experience.score}%</span>
                 </div>
-                <Progress value={profileScore.experience} className="h-2" />
+                <Progress value={profileScore.sections.experience.score} className="h-2" />
               </div>
               
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Skills</span>
-                  <span className="text-sm font-medium">{profileScore.skills}%</span>
+                  <span className="text-sm font-medium">{profileScore.sections.skills.score}%</span>
                 </div>
-                <Progress value={profileScore.skills} className="h-2" />
+                <Progress value={profileScore.sections.skills.score} className="h-2" />
               </div>
               
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">Education</span>
-                  <span className="text-sm font-medium">{profileScore.education}%</span>
+                  <span className="text-sm font-medium">{profileScore.sections.education.score}%</span>
                 </div>
-                <Progress value={profileScore.education} className="h-2" />
+                <Progress value={profileScore.sections.education.score} className="h-2" />
               </div>
               
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">Projects</span>
-                  <span className="text-sm font-medium">{profileScore.projects}%</span>
+                  <span className="text-sm text-slate-600">Interviews</span>
+                  <span className="text-sm font-medium">{profileScore.sections.interviews.score}%</span>
                 </div>
-                <Progress value={profileScore.projects} className="h-2" />
+                <Progress value={profileScore.sections.interviews.score} className="h-2" />
               </div>
             </div>
           </div>

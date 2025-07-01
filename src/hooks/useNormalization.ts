@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,7 +39,8 @@ export function useNormalizedEntities(entityType?: string) {
         ...row,
         aliases: row.aliases || [],
         metadata: row.metadata as Record<string, any>,
-        embedding_vector: row.embedding_vector ? (row.embedding_vector as unknown as number[]) : undefined,
+        // Note: embedding_vector is not available in current schema
+        embedding_vector: undefined,
         review_status: (row.review_status as 'approved' | 'pending' | 'flagged') || 'approved'
       }));
     },
