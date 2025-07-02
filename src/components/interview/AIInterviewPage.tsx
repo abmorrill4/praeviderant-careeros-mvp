@@ -1,8 +1,10 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mic } from "lucide-react";
 import SimpleVoiceInterview from "./SimpleVoiceInterview";
+import { SmartInterviewFlow } from "./SmartInterviewFlow";
 
 const AIInterviewPage = () => {
   const { user } = useAuth();
@@ -20,7 +22,18 @@ const AIInterviewPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <SimpleVoiceInterview />
+          <Tabs defaultValue="smart" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="smart">Smart Interview</TabsTrigger>
+              <TabsTrigger value="voice">Voice Interview</TabsTrigger>
+            </TabsList>
+            <TabsContent value="smart" className="mt-4">
+              <SmartInterviewFlow interviewType="general" />
+            </TabsContent>
+            <TabsContent value="voice" className="mt-4">
+              <SimpleVoiceInterview />
+            </TabsContent>
+          </Tabs>
         </div>
 
         <div className="space-y-4">

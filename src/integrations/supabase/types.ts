@@ -483,46 +483,147 @@ export type Database = {
           },
         ]
       }
+      interview_contexts: {
+        Row: {
+          confidence_score: number | null
+          context_type: string
+          created_at: string
+          extracted_data: Json
+          id: string
+          processing_status: string | null
+          session_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          context_type: string
+          created_at?: string
+          extracted_data?: Json
+          id?: string
+          processing_status?: string | null
+          session_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          context_type?: string
+          created_at?: string
+          extracted_data?: Json
+          id?: string
+          processing_status?: string | null
+          session_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_contexts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_questions: {
+        Row: {
+          category: string
+          complexity_level: number | null
+          created_at: string
+          expected_data_points: string[] | null
+          follow_up_triggers: string[] | null
+          id: string
+          is_active: boolean | null
+          question_text: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          complexity_level?: number | null
+          created_at?: string
+          expected_data_points?: string[] | null
+          follow_up_triggers?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          question_text: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          complexity_level?: number | null
+          created_at?: string
+          expected_data_points?: string[] | null
+          follow_up_triggers?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          question_text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       interview_sessions: {
         Row: {
           audio_file_url: string | null
+          completion_percentage: number | null
+          context_data: Json | null
           created_at: string
           current_phase: string | null
           current_question_id: string | null
           ended_at: string | null
           id: string
+          interview_type: string | null
+          next_recommended_phase: string | null
           phase_data: Json | null
+          progression_score: number | null
           session_id: string | null
+          session_insights: Json | null
           started_at: string | null
           status: string
+          total_questions_asked: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           audio_file_url?: string | null
+          completion_percentage?: number | null
+          context_data?: Json | null
           created_at?: string
           current_phase?: string | null
           current_question_id?: string | null
           ended_at?: string | null
           id?: string
+          interview_type?: string | null
+          next_recommended_phase?: string | null
           phase_data?: Json | null
+          progression_score?: number | null
           session_id?: string | null
+          session_insights?: Json | null
           started_at?: string | null
           status?: string
+          total_questions_asked?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           audio_file_url?: string | null
+          completion_percentage?: number | null
+          context_data?: Json | null
           created_at?: string
           current_phase?: string | null
           current_question_id?: string | null
           ended_at?: string | null
           id?: string
+          interview_type?: string | null
+          next_recommended_phase?: string | null
           phase_data?: Json | null
+          progression_score?: number | null
           session_id?: string | null
+          session_insights?: Json | null
           started_at?: string | null
           status?: string
+          total_questions_asked?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -533,36 +634,48 @@ export type Database = {
           ai_followup: string | null
           content: string
           created_at: string
+          extracted_entities: Json | null
           id: string
+          processing_metadata: Json | null
           question_id: string | null
+          sentiment_score: number | null
           session_id: string
           speaker: string
           structured_response: Json | null
           timestamp_ms: number | null
+          topic_tags: string[] | null
           user_answer: string | null
         }
         Insert: {
           ai_followup?: string | null
           content: string
           created_at?: string
+          extracted_entities?: Json | null
           id?: string
+          processing_metadata?: Json | null
           question_id?: string | null
+          sentiment_score?: number | null
           session_id: string
           speaker: string
           structured_response?: Json | null
           timestamp_ms?: number | null
+          topic_tags?: string[] | null
           user_answer?: string | null
         }
         Update: {
           ai_followup?: string | null
           content?: string
           created_at?: string
+          extracted_entities?: Json | null
           id?: string
+          processing_metadata?: Json | null
           question_id?: string | null
+          sentiment_score?: number | null
           session_id?: string
           speaker?: string
           structured_response?: Json | null
           timestamp_ms?: number | null
+          topic_tags?: string[] | null
           user_answer?: string | null
         }
         Relationships: [
@@ -1495,6 +1608,44 @@ export type Database = {
         }
         Relationships: []
       }
+      session_analytics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_type: string
+          metric_value: number
+          recorded_at: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          metric_value: number
+          recorded_at?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          metric_value?: number
+          recorded_at?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_analytics_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skill: {
         Row: {
           category: string | null
@@ -1671,6 +1822,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_session_completion: {
+        Args: { p_session_id: string }
+        Returns: number
+      }
       check_rate_limit: {
         Args: {
           p_identifier: string
@@ -1729,6 +1884,10 @@ export type Database = {
           is_complete: boolean
           last_updated: string
         }[]
+      }
+      get_session_insights: {
+        Args: { p_session_id: string }
+        Returns: Json
       }
       get_unresolved_entities_stats: {
         Args: Record<PropertyKey, never>
