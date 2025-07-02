@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EnhancedProfileOverview } from './EnhancedProfileOverview';
+import { SimplifiedProfileOverview } from './SimplifiedProfileOverview';
 import { ExperienceSection } from './ExperienceSection';
 import { EducationSection } from './EducationSection';
 import { SkillsSection } from './SkillsSection';
@@ -34,7 +34,7 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
       <div className="bg-white border-b border-slate-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold text-slate-900">
-            Career Timeline
+            Career Profile
           </h1>
           <ResumeUploadModal />
         </div>
@@ -49,44 +49,54 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
         </Tabs>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+      <div className="flex-1 overflow-y-auto">
         <Tabs value={activeSection} onValueChange={(value) => onSectionChange(value as TimelineSection)}>
           <TabsContent value="overview" className="mt-0">
             {showNewUserGuidance ? (
-              <NewUserGuidance
-                hasResumeData={profileCompleteness.hasResumeData}
-                hasExperience={profileCompleteness.hasExperience}
-                hasEducation={profileCompleteness.hasEducation}
-                hasSkills={profileCompleteness.hasSkills}
-              />
+              <div className="p-6 bg-slate-50">
+                <NewUserGuidance
+                  hasResumeData={profileCompleteness.hasResumeData}
+                  hasExperience={profileCompleteness.hasExperience}
+                  hasEducation={profileCompleteness.hasEducation}
+                  hasSkills={profileCompleteness.hasSkills}
+                />
+              </div>
             ) : (
-              <EnhancedProfileOverview focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+              <SimplifiedProfileOverview />
             )}
           </TabsContent>
           
           <TabsContent value="experience" className="mt-0">
-            <ExperienceSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+            <div className="p-6 bg-slate-50">
+              <ExperienceSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+            </div>
           </TabsContent>
           
           <TabsContent value="education" className="mt-0">
-            <EducationSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+            <div className="p-6 bg-slate-50">
+              <EducationSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+            </div>
           </TabsContent>
           
           <TabsContent value="skills" className="mt-0">
-            <SkillsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+            <div className="p-6 bg-slate-50">
+              <SkillsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+            </div>
           </TabsContent>
         </Tabs>
 
         {/* Additional Sections Notice */}
-        <div className="mt-6 p-4 border rounded-lg bg-white border-slate-200">
-          <h3 className="font-medium mb-2 text-slate-900">
-            Complete Resume Analysis
-          </h3>
-          <p className="text-sm text-slate-600">
-            Your uploaded resumes are analyzed for all sections including Projects, Certifications, Awards, 
-            Publications, Volunteer Work, Languages, Professional Associations, and References. 
-            Use the resume upload feature to extract and organize all your career data.
-          </p>
+        <div className="p-6 bg-slate-50">
+          <div className="mt-6 p-4 border rounded-lg bg-white border-slate-200">
+            <h3 className="font-medium mb-2 text-slate-900">
+              Complete Resume Analysis
+            </h3>
+            <p className="text-sm text-slate-600">
+              Your uploaded resumes are analyzed for all sections including Projects, Certifications, Awards, 
+              Publications, Volunteer Work, Languages, Professional Associations, and References. 
+              Use the resume upload feature to extract and organize all your career data.
+            </p>
+          </div>
         </div>
       </div>
     </div>

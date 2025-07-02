@@ -70,8 +70,12 @@ export function calculateExperienceYears(experiences: Array<{ start_date?: strin
     return 0;
   }
 
-  return experiences.reduce((total, exp, index) => {
-    console.log(`Processing experience ${index + 1}:`, {
+  let totalYears = 0;
+
+  for (let i = 0; i < experiences.length; i++) {
+    const exp = experiences[i];
+    
+    console.log(`Processing experience ${i + 1}:`, {
       title: exp.title,
       company: exp.company,
       start_date: exp.start_date,
@@ -79,8 +83,8 @@ export function calculateExperienceYears(experiences: Array<{ start_date?: strin
     });
 
     if (!exp.start_date) {
-      console.warn(`Experience ${index + 1} missing start_date:`, exp.title);
-      return total;
+      console.warn(`Experience ${i + 1} missing start_date:`, exp.title);
+      continue;
     }
     
     try {
@@ -89,16 +93,23 @@ export function calculateExperienceYears(experiences: Array<{ start_date?: strin
       
       if (!start) {
         console.warn(`Invalid start date for experience: ${exp.title} at ${exp.company}`, exp.start_date);
-        return total;
+        continue;
       }
       
       if (!end) {
         console.warn(`Invalid end date for experience: ${exp.title} at ${exp.company}`, exp.end_date);
-        return total;
+        continue;
       }
       
       // Calculate years difference more accurately
       const timeDiff = end.getTime() - start.getTime();
+      
+      // Handle negative time differences (invalid date ranges)
+      if (timeDiff < 0) {
+        console.warn(`Invalid date range for ${exp.title}: start after end`);
+        continue;
+      }
+      
       const yearsDiff = timeDiff / (1000 * 60 * 60 * 24 * 365.25); // Use 365.25 to account for leap years
       
       console.log(`Experience duration for ${exp.title}:`, {
@@ -108,20 +119,37 @@ export function calculateExperienceYears(experiences: Array<{ start_date?: strin
       });
       
       const validYears = Math.max(0, yearsDiff);
-      return total + validYears;
+      totalYears += validYears;
     } catch (error) {
       console.warn(`Error calculating experience duration for ${exp.title}:`, error);
-      return total;
+      continue;
     }
-  }, 0);
+  }
+  
+  console.log('Total calculated years:', totalYears);
+  return totalYears;
 }
 
 export function formatExperienceYears(years: number): string {
-  if (years >= 1) {
-    return `${Math.floor(years)}y`;
-  } else if (years > 0) {
-    return `${Math.round(years * 12)}m`;
+  // Handle edge cases
+  if (!years || isNaN(years) || years < 0) {
+    return '0';
   }
+  
+  if (years >= 1) {
+    const wholeYears = Math.floor(years);
+    const remainingMonths = Math.round((years - wholeYears) * 12);
+    
+    if (remainingMonths > 0) {
+      return `${wholeYears}y ${remainingMonths}m`;
+    } else {
+      return `${wholeYears}y`;
+    }
+  } else if (years > 0) {
+    const months = Math.round(years * 12);
+    return `${months}m`;
+  }
+  
   return '0';
 }
 
