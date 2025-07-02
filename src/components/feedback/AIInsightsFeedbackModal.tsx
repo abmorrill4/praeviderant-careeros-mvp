@@ -149,7 +149,7 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
           {/* Current Insight Preview */}
           <div className="p-4 rounded border bg-muted/50">
             <h4 className="font-medium text-sm mb-2">Current Insight</h4>
-            <div className="text-sm text-muted-foreground leading-relaxed">
+            <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
               {currentInsight}
             </div>
           </div>

@@ -68,7 +68,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({
                   <AIInsightsFeedbackButton
                     insightType="career_enrichment"
                     insightId={careerEnrichment.id}
-                    currentInsight={`${careerEnrichment.role_archetype} - ${careerEnrichment.persona_type}${careerEnrichment.role_archetype_explanation ? ': ' + careerEnrichment.role_archetype_explanation : ''}`}
+                    currentInsight={`Career Archetype: ${careerEnrichment.role_archetype} - ${careerEnrichment.persona_type}${careerEnrichment.role_archetype_explanation ? '\n\nExplanation: ' + careerEnrichment.role_archetype_explanation : ''}`}
                   />
                 )}
               </div>
@@ -156,7 +156,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({
                       <AIInsightsFeedbackButton
                         insightType="career_narrative"
                         insightId={narrative.id}
-                        currentInsight={narrative.narrative_text}
+                        currentInsight={`${narrative.narrative_type.replace('_', ' ').charAt(0).toUpperCase() + narrative.narrative_type.replace('_', ' ').slice(1)}: ${narrative.narrative_text}`}
                       />
                     )}
                   </div>
