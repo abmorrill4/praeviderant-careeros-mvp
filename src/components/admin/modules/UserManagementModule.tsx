@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Users, 
   UserPlus, 
@@ -20,53 +21,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useUserManagement } from '@/hooks/useUserManagement';
 
 export const UserManagementModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Mock user data - replace with real data
-  const userStats = {
-    totalUsers: 1247,
-    activeToday: 89,
-    newThisWeek: 23,
-    adminUsers: 5
-  };
-
-  const recentUsers = [
-    { 
-      id: '1', 
-      email: 'john.doe@example.com', 
-      name: 'John Doe', 
-      role: 'user', 
-      lastActive: '2 minutes ago',
-      status: 'active'
-    },
-    { 
-      id: '2', 
-      email: 'jane.smith@example.com', 
-      name: 'Jane Smith', 
-      role: 'admin', 
-      lastActive: '15 minutes ago',
-      status: 'active'
-    },
-    { 
-      id: '3', 
-      email: 'bob.wilson@example.com', 
-      name: 'Bob Wilson', 
-      role: 'user', 
-      lastActive: '1 hour ago',
-      status: 'inactive'
-    },
-    { 
-      id: '4', 
-      email: 'alice.brown@example.com', 
-      name: 'Alice Brown', 
-      role: 'moderator', 
-      lastActive: '3 hours ago',
-      status: 'active'
-    }
-  ];
+  const { userStats, recentUsers, loading, error } = useUserManagement();
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -87,7 +47,7 @@ export const UserManagementModule: React.FC = () => {
 
   const filteredUsers = recentUsers.filter(user => 
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (user.name && user.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -108,8 +68,19 @@ export const UserManagementModule: React.FC = () => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* User Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <LoadingSpinner />
+              <span className="ml-2 text-muted-foreground">Loading user data...</span>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-destructive">
+              Error loading user data: {error}
+            </div>
+          ) : (
+            <>
+              {/* User Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -171,13 +142,13 @@ export const UserManagementModule: React.FC = () => {
                 {recentUsers.slice(0, 3).map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
-                        <span className="text-xs font-bold text-white">
-                          {user.name.split(' ').map(n => n[0]).join('')}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
+                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                         <span className="text-xs font-bold text-white">
+                           {user.name ? user.name.split(' ').map(n => n[0]).join('') : user.email.charAt(0).toUpperCase()}
+                         </span>
+                       </div>
+                       <div>
+                         <p className="font-medium">{user.name || user.email.split('@')[0]}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
@@ -216,6 +187,8 @@ export const UserManagementModule: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6">
@@ -256,13 +229,13 @@ export const UserManagementModule: React.FC = () => {
                 {filteredUsers.map((user) => (
                   <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
-                        <span className="text-sm font-bold text-white">
-                          {user.name.split(' ').map(n => n[0]).join('')}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
+                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                         <span className="text-sm font-bold text-white">
+                           {user.name ? user.name.split(' ').map(n => n[0]).join('') : user.email.charAt(0).toUpperCase()}
+                         </span>
+                       </div>
+                       <div>
+                         <p className="font-medium">{user.name || user.email.split('@')[0]}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
