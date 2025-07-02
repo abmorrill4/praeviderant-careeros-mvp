@@ -19,6 +19,7 @@ import ResumeUploadV2 from "./pages/ResumeUploadV2";
 import EntityGraphAdmin from "./pages/EntityGraphAdmin";
 import InterviewPage from "./pages/InterviewPage";
 import ApplicationToolkitPage from "./pages/ApplicationToolkitPage";
+import AdminPortal from "./pages/AdminPortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/resume-upload-v2" element={<ResumeUploadV2 />} />
               <Route path="/resume-timeline" element={<ResumeTimelinePage />} />
               <Route path="/entity-graph-admin" element={<EntityGraphAdmin />} />
+              <Route path="/admin" element={<AdminPortal />} />
               <Route path="/interview" element={<InterviewPage />} />
               <Route path="/application-toolkit" element={<ApplicationToolkitPage />} />
               <Route path="*" element={<NotFound />} />
