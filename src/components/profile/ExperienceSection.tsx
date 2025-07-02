@@ -8,6 +8,7 @@ import { Plus, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { WorkExperience } from '@/types/versioned-entities';
 
+
 interface ExperienceSectionProps {
   focusedCard: string | null;
   onCardFocus: (cardId: string | null) => void;
@@ -17,10 +18,28 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
   focusedCard,
   onCardFocus,
 }) => {
-  const { data: workExperiences, isLoading } = useLatestEntities<WorkExperience>('work_experience');
+  const { data: rawWorkExperiences, isLoading } = useLatestEntities<WorkExperience>('work_experience');
   const createExperience = useCreateEntity<WorkExperience>('work_experience');
   const { handleAccept, handleEdit } = useEntityActions<WorkExperience>('work_experience');
   const [isCreating, setIsCreating] = useState(false);
+
+  // Sort work experience by most recent first (same logic as useUnifiedProfileData)
+  const workExperiences = React.useMemo(() => {
+    if (!rawWorkExperiences) return [];
+    
+    return [...rawWorkExperiences].sort((a, b) => {
+      // Current roles (no end date) come first
+      if (!a.end_date && b.end_date) return -1;
+      if (a.end_date && !b.end_date) return 1;
+      
+      // Then by start date, most recent first
+      if (a.start_date && b.start_date) {
+        return b.start_date.localeCompare(a.start_date);
+      }
+      
+      return 0;
+    });
+  }, [rawWorkExperiences]);
 
   const handleCreate = async () => {
     try {
