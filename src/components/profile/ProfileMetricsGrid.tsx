@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { TrendingUp, Award, Star, Target, Calendar, Code } from 'lucide-react';
+import { TrendingUp, Award, Code, Target } from 'lucide-react';
 import { formatExperienceYears } from '@/utils/dateUtils';
 import type { UnifiedProfileData } from '@/hooks/useUnifiedProfileData';
 

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Activity, Clock, Upload, User, Code } from 'lucide-react';
+import { Activity, Clock, User, Code } from 'lucide-react';
 import type { UnifiedProfileData } from '@/hooks/useUnifiedProfileData';
 
 interface RecentActivityCardProps {

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building, Calendar, MapPin } from 'lucide-react';
+import { Building, Calendar } from 'lucide-react';
 import { formatDateRange } from '@/utils/dateUtils';
 import type { WorkExperience } from '@/types/versioned-entities';
 

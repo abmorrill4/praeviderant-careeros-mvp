@@ -18,8 +18,8 @@ export const SimplifiedProfileOverview: React.FC = () => {
           <div className="grid gap-6">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="neo-card p-6 animate-pulse">
-                <div className="h-4 bg-gray-300 rounded w-1/4 mb-4"></div>
-                <div className="h-8 bg-gray-300 rounded w-1/2"></div>
+                <div className="h-4 bg-slate-200 rounded w-1/4 mb-4"></div>
+                <div className="h-8 bg-slate-200 rounded w-1/2"></div>
               </div>
             ))}
           </div>

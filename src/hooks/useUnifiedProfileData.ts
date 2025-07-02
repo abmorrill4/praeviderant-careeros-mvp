@@ -112,9 +112,23 @@ export function useUnifiedProfileData(): UnifiedProfileData {
   
   const isLoading = loadingWork || loadingEducation || loadingSkills || loadingProjects || loadingCerts || loadingEnrichment;
   
+  // Sort work experience by most recent first
+  const sortedWorkExperience = [...workExperience].sort((a, b) => {
+    // Current roles (no end date) come first
+    if (!a.end_date && b.end_date) return -1;
+    if (a.end_date && !b.end_date) return 1;
+    
+    // Then by start date, most recent first
+    if (a.start_date && b.start_date) {
+      return b.start_date.localeCompare(a.start_date);
+    }
+    
+    return 0;
+  });
+  
   // Calculate metrics
   const totalExperienceYears = calculateExperienceYears(workExperience);
-  const currentRole = workExperience?.[0]; // Assuming sorted by most recent
+  const currentRole = sortedWorkExperience[0]; // Most recent after sorting
   
   const metrics = {
     totalExperienceYears,
@@ -145,7 +159,7 @@ export function useUnifiedProfileData(): UnifiedProfileData {
   console.log('UnifiedProfileData metrics:', {
     totalExperienceYears,
     workExperienceCount: workExperience.length,
-    rawExperiences: workExperience.slice(0, 3).map(exp => ({
+    sortedExperiences: sortedWorkExperience.slice(0, 3).map(exp => ({
       title: exp.title,
       company: exp.company,
       start_date: exp.start_date,
@@ -154,7 +168,7 @@ export function useUnifiedProfileData(): UnifiedProfileData {
   });
   
   return {
-    workExperience,
+    workExperience: sortedWorkExperience,
     education,
     skills,
     projects,
