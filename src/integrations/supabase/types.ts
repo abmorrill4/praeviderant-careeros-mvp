@@ -1826,6 +1826,10 @@ export type Database = {
         Args: { p_session_id: string }
         Returns: number
       }
+      check_profile_completeness: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       check_rate_limit: {
         Args: {
           p_identifier: string
