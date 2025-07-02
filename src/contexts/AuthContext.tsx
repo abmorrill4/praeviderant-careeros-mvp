@@ -41,7 +41,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTimeout(() => {
             handleUserProfile(session.user);
             // Redirect to profile timeline after successful authentication
-            if (window.location.pathname === '/' || window.location.pathname === '/auth') {
+            // But don't redirect if user is accessing admin portal
+            const currentPath = window.location.pathname;
+            if (currentPath !== '/admin' && (currentPath === '/' || currentPath === '/auth')) {
               window.location.href = '/profile-timeline';
             }
           }, 0);
