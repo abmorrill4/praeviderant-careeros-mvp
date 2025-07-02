@@ -108,23 +108,15 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
         </DialogHeader>
 
         <div className="space-y-5">
-          {/* Current Insight Preview */}
-          <div className="neo-inset p-4 rounded-lg bg-background/50">
-            <h4 className="font-medium text-sm text-foreground/90 mb-3">Current Insight</h4>
-            <div className="text-sm text-muted-foreground leading-relaxed">
-              {currentInsight}
-            </div>
-          </div>
-
           {/* Feedback Type Selection */}
           <div>
-            <Label className="text-sm font-medium text-foreground/90 mb-3 block text-left">
+            <Label className="text-sm font-medium text-foreground/90 mb-2 block text-left">
               Feedback Type
             </Label>
             <RadioGroup
               value={feedbackType}
               onValueChange={(value: 'correction' | 'context' | 'enhancement') => setFeedbackType(value)}
-              className="flex gap-3"
+              className="flex gap-2"
             >
               {(['correction', 'context', 'enhancement'] as const).map((type) => {
                 const info = getFeedbackTypeInfo(type);
@@ -133,12 +125,12 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
                 return (
                   <div 
                     key={type} 
-                    className={`flex-1 ${isSelected ? 'neo-inset' : 'neo-card'} p-3 rounded-lg transition-all duration-200`}
+                    className={`flex-1 ${isSelected ? 'neo-inset' : 'neo-card'} p-2 rounded-lg`}
                   >
                     <RadioGroupItem value={type} id={type} className="sr-only" />
                     <Label htmlFor={type} className="cursor-pointer block text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <Icon className={`w-4 h-4 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <div className="flex flex-col items-center gap-1">
+                        <Icon className={`w-3 h-3 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                         <span className={`text-xs font-medium ${isSelected ? 'text-primary' : 'text-foreground/70'}`}>
                           {info.title}
                         </span>
@@ -148,6 +140,14 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
                 );
               })}
             </RadioGroup>
+          </div>
+
+          {/* Current Insight Preview */}
+          <div className="neo-inset p-4 rounded-lg bg-background/50">
+            <h4 className="font-medium text-sm text-foreground/90 mb-3">Current Insight</h4>
+            <div className="text-sm text-muted-foreground leading-relaxed">
+              {currentInsight}
+            </div>
           </div>
 
           {/* Feedback Text */}
@@ -177,13 +177,12 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3 pt-3">
-            <Button variant="outline" onClick={onClose} className="neo-card">
+            <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!feedbackText.trim() || isSubmitting}
-              className="neo-gradient"
             >
               {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
             </Button>
