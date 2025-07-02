@@ -1,23 +1,13 @@
 import * as React from "react";
 import { format, parse, isValid } from "date-fns";
-import { CalendarIcon, Check, X } from "lucide-react";
+import { CalendarIcon, Check, X, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface FlexibleDatePickerProps {
   value?: string;
@@ -26,6 +16,8 @@ interface FlexibleDatePickerProps {
   className?: string;
 }
 
+type DateLevel = 'decades' | 'years' | 'months' | 'days';
+
 export function FlexibleDatePicker({
   value = "",
   onChange,
@@ -33,71 +25,83 @@ export function FlexibleDatePicker({
   className,
 }: FlexibleDatePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [granularity, setGranularity] = React.useState<"year" | "month" | "day">("day");
-  const [selectedYear, setSelectedYear] = React.useState<string>("");
-  const [selectedMonth, setSelectedMonth] = React.useState<string>("");
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
+  const [currentLevel, setCurrentLevel] = React.useState<DateLevel>('decades');
+  const [selectedDecade, setSelectedDecade] = React.useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = React.useState<number | null>(null);
+  const [selectedMonth, setSelectedMonth] = React.useState<number | null>(null);
+  const [selectedDay, setSelectedDay] = React.useState<number | null>(null);
 
-  // Parse the current value when component mounts or value changes
+  const currentYear = new Date().getFullYear();
+  const currentDecade = Math.floor(currentYear / 10) * 10;
+
+  // Parse existing value when component mounts
   React.useEffect(() => {
     if (!value) {
-      setSelectedYear("");
-      setSelectedMonth("");
-      setSelectedDate(undefined);
+      resetSelection();
       return;
     }
 
     // Try to parse different formats
     if (/^\d{4}$/.test(value)) {
       // Year only (e.g., "2020")
-      setGranularity("year");
-      setSelectedYear(value);
-      setSelectedMonth("");
-      setSelectedDate(undefined);
-    } else if (/^\d{4}-\d{2}$/.test(value)) {
-      // Year-Month (e.g., "2020-01")
-      setGranularity("month");
-      const [year, month] = value.split("-");
+      const year = parseInt(value);
+      setSelectedDecade(Math.floor(year / 10) * 10);
       setSelectedYear(year);
-      setSelectedMonth(month);
-      setSelectedDate(undefined);
+      setSelectedMonth(null);
+      setSelectedDay(null);
+      setCurrentLevel('years');
     } else if (/^\w+ \d{4}$/.test(value)) {
       // Month Year (e.g., "January 2020")
-      setGranularity("month");
       const date = parse(value, "MMMM yyyy", new Date());
       if (isValid(date)) {
-        setSelectedYear(format(date, "yyyy"));
-        setSelectedMonth(format(date, "MM"));
-        setSelectedDate(undefined);
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        setSelectedDecade(Math.floor(year / 10) * 10);
+        setSelectedYear(year);
+        setSelectedMonth(month);
+        setSelectedDay(null);
+        setCurrentLevel('months');
       }
     } else {
       // Try full date formats
       let parsedDate: Date | undefined;
       
-      // Try ISO format first
       if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
         parsedDate = parse(value, "yyyy-MM-dd", new Date());
       }
       
       if (parsedDate && isValid(parsedDate)) {
-        setGranularity("day");
-        setSelectedYear(format(parsedDate, "yyyy"));
-        setSelectedMonth(format(parsedDate, "MM"));
-        setSelectedDate(parsedDate);
+        const year = parsedDate.getFullYear();
+        const month = parsedDate.getMonth();
+        const day = parsedDate.getDate();
+        setSelectedDecade(Math.floor(year / 10) * 10);
+        setSelectedYear(year);
+        setSelectedMonth(month);
+        setSelectedDay(day);
+        setCurrentLevel('days');
       }
     }
   }, [value]);
 
-  const handleApply = () => {
+  const resetSelection = () => {
+    setSelectedDecade(null);
+    setSelectedYear(null);
+    setSelectedMonth(null);
+    setSelectedDay(null);
+    setCurrentLevel('decades');
+  };
+
+  const handleSelect = () => {
     let result = "";
     
-    if (granularity === "year" && selectedYear) {
-      result = selectedYear;
-    } else if (granularity === "month" && selectedYear && selectedMonth) {
-      const date = new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, 1);
+    if (selectedDay !== null && selectedMonth !== null && selectedYear !== null) {
+      const date = new Date(selectedYear, selectedMonth, selectedDay);
+      result = format(date, "yyyy-MM-dd");
+    } else if (selectedMonth !== null && selectedYear !== null) {
+      const date = new Date(selectedYear, selectedMonth, 1);
       result = format(date, "MMMM yyyy");
-    } else if (granularity === "day" && selectedDate) {
-      result = format(selectedDate, "yyyy-MM-dd");
+    } else if (selectedYear !== null) {
+      result = selectedYear.toString();
     }
     
     onChange(result);
@@ -106,22 +110,189 @@ export function FlexibleDatePicker({
 
   const handleClear = () => {
     onChange("");
-    setSelectedYear("");
-    setSelectedMonth("");
-    setSelectedDate(undefined);
+    resetSelection();
     setIsOpen(false);
   };
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
-  const months = Array.from({ length: 12 }, (_, i) => ({
-    value: String(i + 1).padStart(2, "0"),
-    label: format(new Date(2000, i, 1), "MMMM"),
-  }));
+  const handleBack = () => {
+    switch (currentLevel) {
+      case 'years':
+        setCurrentLevel('decades');
+        setSelectedDecade(null);
+        break;
+      case 'months':
+        setCurrentLevel('years');
+        setSelectedMonth(null);
+        break;
+      case 'days':
+        setCurrentLevel('months');
+        setSelectedDay(null);
+        break;
+    }
+  };
 
   const formatDisplayValue = () => {
     if (!value) return placeholder;
     return value;
+  };
+
+  const renderDecades = () => {
+    const decades = [];
+    for (let decade = 1970; decade <= currentDecade + 10; decade += 10) {
+      decades.push(decade);
+    }
+
+    return (
+      <div className="grid grid-cols-4 gap-2 p-2">
+        {decades.map((decade) => (
+          <Button
+            key={decade}
+            variant={selectedDecade === decade ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setSelectedDecade(decade);
+              setCurrentLevel('years');
+            }}
+            className="h-12"
+          >
+            {decade}s
+          </Button>
+        ))}
+      </div>
+    );
+  };
+
+  const renderYears = () => {
+    if (selectedDecade === null) return null;
+
+    const years = [];
+    for (let year = selectedDecade; year < selectedDecade + 10; year++) {
+      years.push(year);
+    }
+
+    return (
+      <div className="grid grid-cols-5 gap-2 p-2">
+        {years.map((year) => (
+          <Button
+            key={year}
+            variant={selectedYear === year ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setSelectedYear(year);
+              setCurrentLevel('months');
+            }}
+            className="h-10"
+          >
+            {year}
+          </Button>
+        ))}
+      </div>
+    );
+  };
+
+  const renderMonths = () => {
+    if (selectedYear === null) return null;
+
+    const months = Array.from({ length: 12 }, (_, i) => ({
+      index: i,
+      name: format(new Date(2000, i, 1), "MMM"),
+      fullName: format(new Date(2000, i, 1), "MMMM"),
+    }));
+
+    return (
+      <div className="grid grid-cols-4 gap-2 p-2">
+        {months.map((month) => (
+          <Button
+            key={month.index}
+            variant={selectedMonth === month.index ? "default" : "outline"}
+            size="sm"
+            onClick={() => {
+              setSelectedMonth(month.index);
+              setCurrentLevel('days');
+            }}
+            className="h-10"
+          >
+            {month.name}
+          </Button>
+        ))}
+      </div>
+    );
+  };
+
+  const renderDays = () => {
+    if (selectedYear === null || selectedMonth === null) return null;
+
+    const firstDay = new Date(selectedYear, selectedMonth, 1);
+    const lastDay = new Date(selectedYear, selectedMonth + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(<div key={`empty-${i}`} className="h-8" />);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(
+        <Button
+          key={day}
+          variant={selectedDay === day ? "default" : "outline"}
+          size="sm"
+          onClick={() => {
+            setSelectedDay(day);
+          }}
+          className="h-8 w-8 p-0"
+        >
+          {day}
+        </Button>
+      );
+    }
+
+    return (
+      <div className="p-2">
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
+            <div key={day} className="h-8 flex items-center justify-center text-sm font-medium text-muted-foreground">
+              {day}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {days}
+        </div>
+      </div>
+    );
+  };
+
+  const getTitle = () => {
+    switch (currentLevel) {
+      case 'decades':
+        return 'Select Decade';
+      case 'years':
+        return `${selectedDecade}s`;
+      case 'months':
+        return selectedYear?.toString() || '';
+      case 'days':
+        return selectedMonth !== null && selectedYear !== null
+          ? format(new Date(selectedYear, selectedMonth, 1), "MMMM yyyy")
+          : '';
+    }
+  };
+
+  const canSelect = () => {
+    switch (currentLevel) {
+      case 'decades':
+        return false;
+      case 'years':
+        return selectedYear !== null;
+      case 'months':
+        return selectedMonth !== null;
+      case 'days':
+        return selectedDay !== null;
+    }
   };
 
   return (
@@ -140,97 +311,40 @@ export function FlexibleDatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <div className="p-4 space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Date precision</Label>
-            <Select value={granularity} onValueChange={(value: "year" | "month" | "day") => setGranularity(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="year">Year only</SelectItem>
-                <SelectItem value="month">Month and year</SelectItem>
-                <SelectItem value="day">Full date</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="min-w-[300px]">
+          <div className="flex items-center justify-between p-3 border-b">
+            <div className="flex items-center gap-2">
+              {currentLevel !== 'decades' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleBack}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              )}
+              <h3 className="font-medium">{getTitle()}</h3>
+            </div>
+            <div className="flex gap-1">
+              {canSelect() && (
+                <Button size="sm" onClick={handleSelect}>
+                  <Check className="mr-1 h-3 w-3" />
+                  Select
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={handleClear}>
+                <X className="mr-1 h-3 w-3" />
+                Clear
+              </Button>
+            </div>
           </div>
 
-          {granularity === "year" && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Year</Label>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent className="max-h-48">
-                  {years.map((year) => (
-                    <SelectItem key={year} value={String(year)}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {granularity === "month" && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Year</Label>
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Year" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-48">
-                    {years.map((year) => (
-                      <SelectItem key={year} value={String(year)}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Month</Label>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Month" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {months.map((month) => (
-                      <SelectItem key={month.value} value={month.value}>
-                        {month.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-
-          {granularity === "day" && (
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Date</Label>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className={cn("p-3 pointer-events-auto")}
-                fromYear={currentYear - 50}
-                toYear={currentYear + 10}
-              />
-            </div>
-          )}
-
-          <div className="flex gap-2 pt-2">
-            <Button size="sm" onClick={handleApply} className="flex-1">
-              <Check className="mr-1 h-3 w-3" />
-              Apply
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleClear}>
-              <X className="mr-1 h-3 w-3" />
-              Clear
-            </Button>
+          <div className="min-h-[200px]">
+            {currentLevel === 'decades' && renderDecades()}
+            {currentLevel === 'years' && renderYears()}
+            {currentLevel === 'months' && renderMonths()}
+            {currentLevel === 'days' && renderDays()}
           </div>
         </div>
       </PopoverContent>
