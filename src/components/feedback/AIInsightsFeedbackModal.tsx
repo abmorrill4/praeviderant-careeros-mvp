@@ -99,7 +99,7 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5" />
@@ -107,35 +107,35 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Current Insight Preview */}
-          <div className="neo-card-subtle p-4">
+          <div className="neo-card-subtle p-3">
             <h4 className="font-medium neo-text mb-2">Current Insight</h4>
-            <p className="text-sm neo-text-muted line-clamp-3">
+            <p className="text-sm neo-text-muted max-h-32 overflow-y-auto">
               {currentInsight}
             </p>
           </div>
 
           {/* Feedback Type Selection */}
           <div>
-            <Label className="text-base font-medium">What type of feedback are you providing?</Label>
+            <Label className="text-sm font-medium">What type of feedback are you providing?</Label>
             <RadioGroup
               value={feedbackType}
               onValueChange={(value: 'correction' | 'context' | 'enhancement') => setFeedbackType(value)}
-              className="mt-3"
+              className="mt-2"
             >
               {(['correction', 'context', 'enhancement'] as const).map((type) => {
                 const info = getFeedbackTypeInfo(type);
                 const Icon = info.icon;
                 return (
-                  <div key={type} className="flex items-start space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50">
-                    <RadioGroupItem value={type} id={type} className="mt-1" />
+                  <div key={type} className="flex items-center space-x-2 p-2 rounded border border-gray-200 hover:bg-gray-50">
+                    <RadioGroupItem value={type} id={type} />
                     <div className="flex-1">
-                      <Label htmlFor={type} className="flex items-center gap-2 font-medium cursor-pointer">
-                        <Icon className="w-4 h-4" />
+                      <Label htmlFor={type} className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                        <Icon className="w-3 h-3" />
                         {info.title}
                       </Label>
-                      <p className="text-sm text-gray-600 mt-1">{info.description}</p>
+                      <p className="text-xs text-gray-600">{info.description}</p>
                     </div>
                   </div>
                 );
@@ -145,7 +145,7 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
 
           {/* Feedback Text */}
           <div>
-            <Label htmlFor="feedback" className="text-base font-medium">
+            <Label htmlFor="feedback" className="text-sm font-medium">
               Your Feedback
             </Label>
             <Textarea
@@ -159,15 +159,15 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
               }
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
-              className="mt-2 min-h-[120px]"
+              className="mt-2 min-h-[100px]"
             />
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-xs text-gray-500 mt-1">
               Your feedback helps our AI learn and provide better insights for you and other users.
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
+          <div className="flex justify-end space-x-2 pt-3 border-t">
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
