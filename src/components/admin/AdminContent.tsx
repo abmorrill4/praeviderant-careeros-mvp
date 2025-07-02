@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Database, 
   GitMerge, 
@@ -27,6 +28,24 @@ export const AdminContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState('system');
   const adminMetrics = useAdminMetrics();
   const systemHealth = useSystemHealth();
+  
+  // Show authentication error if not logged in
+  if (adminMetrics.error && adminMetrics.error.includes('JWT')) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Card className="w-96">
+          <CardHeader>
+            <CardTitle className="text-center">Authentication Required</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground">
+              Please log in to access the admin dashboard.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -41,25 +60,53 @@ export const AdminContent: React.FC = () => {
               System administration and management tools
             </p>
           </div>
-          <Badge 
-            variant="secondary" 
-            className={
-              systemHealth.overallStatus === 'healthy' 
-                ? "bg-green-50 text-green-700 border-green-200"
-                : systemHealth.overallStatus === 'warning'
-                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                : "bg-red-50 text-red-700 border-red-200"
-            }
-          >
-            {systemHealth.loading 
-              ? 'Checking...' 
-              : systemHealth.overallStatus === 'healthy' 
-              ? 'System Operational'
-              : systemHealth.overallStatus === 'warning'
-              ? 'System Warning'
-              : 'System Error'
-            }
-          </Badge>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge 
+                  variant="secondary" 
+                  className={
+                    systemHealth.overallStatus === 'healthy' 
+                      ? "bg-green-50 text-green-700 border-green-200 cursor-help"
+                      : systemHealth.overallStatus === 'warning'
+                      ? "bg-yellow-50 text-yellow-700 border-yellow-200 cursor-help"
+                      : "bg-red-50 text-red-700 border-red-200 cursor-help"
+                  }
+                >
+                  {systemHealth.loading 
+                    ? 'Checking...' 
+                    : systemHealth.overallStatus === 'healthy' 
+                    ? 'System Operational'
+                    : systemHealth.overallStatus === 'warning'
+                    ? 'System Warning'
+                    : 'System Error'
+                  }
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-sm">
+                {systemHealth.loading ? (
+                  <p>Running health checks...</p>
+                ) : systemHealth.error ? (
+                  <p className="text-destructive">Error: {systemHealth.error}</p>
+                ) : (
+                  <div className="space-y-1">
+                    {systemHealth.healthChecks.map((check, index) => (
+                      <div key={index} className="flex justify-between items-center">
+                        <span className="text-sm">{check.name}:</span>
+                        <span className={`text-sm ml-2 ${
+                          check.status === 'healthy' ? 'text-green-600' : 
+                          check.status === 'warning' ? 'text-yellow-600' : 'text-red-600'
+                        }`}>
+                          {check.status} ({check.responseTime})
+                          {check.details && <span className="block text-xs opacity-75">{check.details}</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 

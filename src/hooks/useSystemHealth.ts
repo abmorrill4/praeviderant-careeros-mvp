@@ -36,14 +36,14 @@ export const useSystemHealth = (refreshInterval = 30000) => {
         name: 'Database',
         status: error ? 'error' : responseTime > 1000 ? 'warning' : 'healthy',
         responseTime: `${responseTime}ms`,
-        details: error?.message
+        details: error?.message || (responseTime > 1000 ? 'Slow response time' : undefined)
       });
     } catch (error) {
       checks.push({
         name: 'Database',
         status: 'error',
         responseTime: 'timeout',
-        details: 'Connection failed'
+        details: error instanceof Error ? error.message : 'Connection failed'
       });
     }
 
@@ -97,13 +97,14 @@ export const useSystemHealth = (refreshInterval = 30000) => {
         name: 'Edge Functions',
         status: error ? 'warning' : responseTime > 3000 ? 'warning' : 'healthy',
         responseTime: `${responseTime}ms`,
-        details: error?.message
+        details: error?.message || (responseTime > 3000 ? 'Slow response time' : undefined)
       });
     } catch (error) {
       checks.push({
         name: 'Edge Functions',
         status: 'error',
-        responseTime: 'timeout'
+        responseTime: 'timeout',
+        details: error instanceof Error ? error.message : 'Connection failed'
       });
     }
 

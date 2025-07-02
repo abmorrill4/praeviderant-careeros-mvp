@@ -40,7 +40,10 @@ export const useAdminMetrics = () => {
           .from('normalized_entities')
           .select('id, confidence_score, review_status');
 
-        if (entitiesError) throw entitiesError;
+        if (entitiesError) {
+          console.error('Error fetching entities:', entitiesError);
+          // Don't throw, just log and continue with 0 entities
+        }
 
         const totalEntities = entitiesData?.length || 0;
         const unresolvedEntities = entitiesData?.filter(
@@ -57,7 +60,10 @@ export const useAdminMetrics = () => {
           .from('profiles')
           .select('id, created_at');
 
-        if (usersError) throw usersError;
+        if (usersError) {
+          console.error('Error fetching users:', usersError);
+          // Don't throw, just log and continue with 0 users
+        }
 
         const totalUsers = usersData?.length || 0;
         
@@ -73,7 +79,10 @@ export const useAdminMetrics = () => {
           .from('resume_versions')
           .select('id, created_at, processing_status');
 
-        if (resumesError) throw resumesError;
+        if (resumesError) {
+          console.error('Error fetching resumes:', resumesError);
+          // Don't throw, just log and continue with 0 resumes
+        }
 
         const totalResumes = resumesData?.length || 0;
         
