@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ProfileSidebar } from '@/components/profile/ProfileSidebar';
 import { ProfileTimeline } from '@/components/profile/ProfileTimeline';
 
-export type TimelineSection = 'overview' | 'experience' | 'education' | 'skills';
+export type TimelineSection = 'overview' | 'experience' | 'education' | 'skills' | 'projects' | 'certifications';
 
 const ProfileTimelinePage: React.FC = () => {
   const { user, loading } = useAuth();
@@ -14,7 +14,7 @@ const ProfileTimelinePage: React.FC = () => {
   // Initialize state with URL parameter if present, otherwise default to 'overview'
   const getInitialSection = (): TimelineSection => {
     const sectionParam = searchParams.get('section') as TimelineSection;
-    if (sectionParam && ['overview', 'experience', 'education', 'skills'].includes(sectionParam)) {
+    if (sectionParam && ['overview', 'experience', 'education', 'skills', 'projects', 'certifications'].includes(sectionParam)) {
       return sectionParam;
     }
     return 'overview';

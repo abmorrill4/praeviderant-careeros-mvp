@@ -1,8 +1,11 @@
 
-import React from 'react';
-import { useLatestEntities } from '@/hooks/useVersionedEntities';
-import { TimelineCardFrame } from './TimelineCardFrame';
-import { EducationCardContent } from './content/EducationCardContent';
+import React, { useState } from 'react';
+import { useLatestEntities, useCreateEntity } from '@/hooks/useVersionedEntities';
+import { ProfileDataSection } from './ProfileDataSection';
+import { educationFields } from './entityFieldConfigs';
+import { useEntityActions } from '@/hooks/useEntityActions';
+import { Plus, GraduationCap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { Education } from '@/types/versioned-entities';
 
 interface EducationSectionProps {
@@ -14,44 +17,96 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
   focusedCard,
   onCardFocus,
 }) => {
-  const { data: educationItems, isLoading } = useLatestEntities<Education>('education');
+  const { data: education, isLoading } = useLatestEntities<Education>('education');
+  const createEducation = useCreateEntity<Education>('education');
+  const { handleAccept, handleEdit } = useEntityActions<Education>('education');
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleCardToggle = (cardId: string) => {
-    onCardFocus(focusedCard === cardId ? null : cardId);
+  const handleCreate = async () => {
+    try {
+      await createEducation.mutateAsync({
+        entityData: {
+          degree: 'New Degree',
+          institution: 'Institution Name',
+          user_id: '', // This will be set by the backend
+        },
+        source: 'USER_MANUAL'
+      });
+      setIsCreating(false);
+    } catch (error) {
+      console.error('Error creating education:', error);
+    }
   };
+
+  const renderEducation = (education: Education) => (
+    <div>
+      <h4 className="font-semibold text-career-text-light">{education.degree}</h4>
+      <p className="text-sm text-career-text-muted-light">{education.institution}</p>
+      {education.field_of_study && (
+        <p className="text-sm text-career-text-muted-light mt-1">
+          {education.field_of_study}
+        </p>
+      )}
+      {(education.start_date || education.end_date) && (
+        <p className="text-xs text-career-text-muted-light mt-2">
+          {education.start_date || 'Started'} - {education.end_date || 'Completed'}
+        </p>
+      )}
+      {education.gpa && (
+        <p className="text-xs text-career-text-muted-light mt-1">
+          GPA: {education.gpa}
+        </p>
+      )}
+    </div>
+  );
 
   if (isLoading) {
     return <div className="text-center py-8">Loading education...</div>;
   }
 
-  if (!educationItems || educationItems.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">No education added yet</p>
-        <button 
-          onClick={() => console.log('Action: Add first education')}
-          className="text-career-accent hover:underline"
-        >
-          Add your education
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      {educationItems.map((education) => (
-        <TimelineCardFrame
-          key={education.logical_entity_id}
-          id={education.logical_entity_id}
-          title={education.degree}
-          badgeText={education.institution}
-          isExpanded={focusedCard === education.logical_entity_id}
-          onToggle={() => handleCardToggle(education.logical_entity_id)}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-career-text-light">Education</h2>
+        <Button
+          onClick={() => setIsCreating(true)}
+          size="sm"
+          className="flex items-center gap-2"
         >
-          <EducationCardContent item={education} />
-        </TimelineCardFrame>
-      ))}
+          <Plus className="w-4 h-4" />
+          Add Education
+        </Button>
+      </div>
+
+      <ProfileDataSection
+        title="Education"
+        icon={<GraduationCap className="w-5 h-5" />}
+        items={education || []}
+        editFields={educationFields}
+        onAccept={handleAccept}
+        onEdit={handleEdit}
+        renderItem={renderEducation}
+      />
+
+      {isCreating && (
+        <div className="p-4 border rounded-lg bg-career-panel-light border-career-gray-light">
+          <p className="text-sm text-career-text-muted-light mb-4">
+            Create a new education entry
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={handleCreate} size="sm">
+              Create Education
+            </Button>
+            <Button 
+              onClick={() => setIsCreating(false)} 
+              variant="outline" 
+              size="sm"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

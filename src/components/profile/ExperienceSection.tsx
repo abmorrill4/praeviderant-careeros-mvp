@@ -1,8 +1,11 @@
 
-import React from 'react';
-import { useLatestEntities } from '@/hooks/useVersionedEntities';
-import { TimelineCardFrame } from './TimelineCardFrame';
-import { WorkExperienceCardContent } from './content/WorkExperienceCardContent';
+import React, { useState } from 'react';
+import { useLatestEntities, useCreateEntity } from '@/hooks/useVersionedEntities';
+import { ProfileDataSection } from './ProfileDataSection';
+import { workExperienceFields } from './entityFieldConfigs';
+import { useEntityActions } from '@/hooks/useEntityActions';
+import { Plus, Building } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { WorkExperience } from '@/types/versioned-entities';
 
 interface ExperienceSectionProps {
@@ -15,43 +18,90 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
   onCardFocus,
 }) => {
   const { data: workExperiences, isLoading } = useLatestEntities<WorkExperience>('work_experience');
+  const createExperience = useCreateEntity<WorkExperience>('work_experience');
+  const { handleAccept, handleEdit } = useEntityActions<WorkExperience>('work_experience');
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleCardToggle = (cardId: string) => {
-    onCardFocus(focusedCard === cardId ? null : cardId);
+  const handleCreate = async () => {
+    try {
+      await createExperience.mutateAsync({
+        entityData: {
+          title: 'New Position',
+          company: 'Company Name',
+          user_id: '', // This will be set by the backend
+        },
+        source: 'USER_MANUAL'
+      });
+      setIsCreating(false);
+    } catch (error) {
+      console.error('Error creating work experience:', error);
+    }
   };
+
+  const renderExperience = (experience: WorkExperience) => (
+    <div>
+      <h4 className="font-semibold text-career-text-light">{experience.title}</h4>
+      <p className="text-sm text-career-text-muted-light">{experience.company}</p>
+      {experience.description && (
+        <p className="text-sm text-career-text-muted-light mt-1 line-clamp-2">
+          {experience.description}
+        </p>
+      )}
+      {(experience.start_date || experience.end_date) && (
+        <p className="text-xs text-career-text-muted-light mt-2">
+          {experience.start_date || 'Started'} - {experience.end_date || 'Present'}
+        </p>
+      )}
+    </div>
+  );
 
   if (isLoading) {
     return <div className="text-center py-8">Loading work experience...</div>;
   }
 
-  if (!workExperiences || workExperiences.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">No work experience added yet</p>
-        <button 
-          onClick={() => console.log('Action: Add first work experience')}
-          className="text-career-accent hover:underline"
-        >
-          Add your first role
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div>
-      {workExperiences.map((experience) => (
-        <TimelineCardFrame
-          key={experience.logical_entity_id}
-          id={experience.logical_entity_id}
-          title={experience.title}
-          badgeText={experience.company}
-          isExpanded={focusedCard === experience.logical_entity_id}
-          onToggle={() => handleCardToggle(experience.logical_entity_id)}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-career-text-light">Work Experience</h2>
+        <Button
+          onClick={() => setIsCreating(true)}
+          size="sm"
+          className="flex items-center gap-2"
         >
-          <WorkExperienceCardContent item={experience} />
-        </TimelineCardFrame>
-      ))}
+          <Plus className="w-4 h-4" />
+          Add Experience
+        </Button>
+      </div>
+
+      <ProfileDataSection
+        title="Work Experience"
+        icon={<Building className="w-5 h-5" />}
+        items={workExperiences || []}
+        editFields={workExperienceFields}
+        onAccept={handleAccept}
+        onEdit={handleEdit}
+        renderItem={renderExperience}
+      />
+
+      {isCreating && (
+        <div className="p-4 border rounded-lg bg-career-panel-light border-career-gray-light">
+          <p className="text-sm text-career-text-muted-light mb-4">
+            Create a new work experience entry
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={handleCreate} size="sm">
+              Create Experience
+            </Button>
+            <Button 
+              onClick={() => setIsCreating(false)} 
+              variant="outline" 
+              size="sm"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

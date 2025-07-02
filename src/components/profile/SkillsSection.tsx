@@ -1,8 +1,11 @@
 
-import React from 'react';
-import { useLatestEntities } from '@/hooks/useVersionedEntities';
-import { TimelineCardFrame } from './TimelineCardFrame';
-import { SkillCardContent } from './content/SkillCardContent';
+import React, { useState } from 'react';
+import { useLatestEntities, useCreateEntity } from '@/hooks/useVersionedEntities';
+import { ProfileDataSection } from './ProfileDataSection';
+import { skillFields } from './entityFieldConfigs';
+import { useEntityActions } from '@/hooks/useEntityActions';
+import { Plus, Code } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { Skill } from '@/types/versioned-entities';
 
 interface SkillsSectionProps {
@@ -14,60 +17,95 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
   focusedCard,
   onCardFocus,
 }) => {
-  const { data: skills, isLoading, error } = useLatestEntities<Skill>('skill');
+  const { data: skills, isLoading } = useLatestEntities<Skill>('skill');
+  const createSkill = useCreateEntity<Skill>('skill');
+  const { handleAccept, handleEdit } = useEntityActions<Skill>('skill');
+  const [isCreating, setIsCreating] = useState(false);
 
-  // Add debugging
-  console.log('SkillsSection - Skills data:', skills);
-  console.log('SkillsSection - Is loading:', isLoading);
-  console.log('SkillsSection - Error:', error);
-
-  const handleCardToggle = (cardId: string) => {
-    onCardFocus(focusedCard === cardId ? null : cardId);
+  const handleCreate = async () => {
+    try {
+      await createSkill.mutateAsync({
+        entityData: {
+          name: 'New Skill',
+          category: 'Technical Skill',
+          user_id: '', // This will be set by the backend
+        },
+        source: 'USER_MANUAL'
+      });
+      setIsCreating(false);
+    } catch (error) {
+      console.error('Error creating skill:', error);
+    }
   };
+
+  const renderSkill = (skill: Skill) => (
+    <div>
+      <h4 className="font-semibold text-career-text-light">{skill.name}</h4>
+      {skill.category && (
+        <p className="text-sm text-career-text-muted-light">{skill.category}</p>
+      )}
+      <div className="flex items-center gap-4 mt-2">
+        {skill.proficiency_level && (
+          <span className="text-xs px-2 py-1 bg-career-gray-light rounded-full text-career-text-light">
+            {skill.proficiency_level}
+          </span>
+        )}
+        {skill.years_of_experience && (
+          <span className="text-xs text-career-text-muted-light">
+            {skill.years_of_experience} year{skill.years_of_experience !== 1 ? 's' : ''} experience
+          </span>
+        )}
+      </div>
+    </div>
+  );
 
   if (isLoading) {
     return <div className="text-center py-8">Loading skills...</div>;
   }
 
-  if (error) {
-    console.error('SkillsSection - Error loading skills:', error);
-    return <div className="text-center py-8 text-red-500">Error loading skills</div>;
-  }
-
-  if (!skills || skills.length === 0) {
-    console.log('SkillsSection - No skills found - this could indicate successful data deletion or empty profile');
-    return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">No skills added yet</p>
-        <button 
-          onClick={() => console.log('Action: Add first skill')}
-          className="text-career-accent hover:underline"
-        >
-          Add your skills
-        </button>
-      </div>
-    );
-  }
-
-  console.log(`SkillsSection - Rendering ${skills.length} skills`);
-
   return (
-    <div>
-      {skills.map((skill) => {
-        console.log('SkillsSection - Rendering skill:', skill);
-        return (
-          <TimelineCardFrame
-            key={skill.logical_entity_id}
-            id={skill.logical_entity_id}
-            title={skill.name}
-            badgeText={skill.category || 'Skill'}
-            isExpanded={focusedCard === skill.logical_entity_id}
-            onToggle={() => handleCardToggle(skill.logical_entity_id)}
-          >
-            <SkillCardContent item={skill} />
-          </TimelineCardFrame>
-        );
-      })}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-career-text-light">Skills</h2>
+        <Button
+          onClick={() => setIsCreating(true)}
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Add Skill
+        </Button>
+      </div>
+
+      <ProfileDataSection
+        title="Skills"
+        icon={<Code className="w-5 h-5" />}
+        items={skills || []}
+        editFields={skillFields}
+        onAccept={handleAccept}
+        onEdit={handleEdit}
+        renderItem={renderSkill}
+      />
+
+      {isCreating && (
+        <div className="p-4 border rounded-lg bg-career-panel-light border-career-gray-light">
+          <p className="text-sm text-career-text-muted-light mb-4">
+            Create a new skill entry
+          </p>
+          <div className="flex gap-2">
+            <Button onClick={handleCreate} size="sm">
+              Create Skill
+            </Button>
+            <Button 
+              onClick={() => setIsCreating(false)} 
+              variant="outline" 
+              size="sm"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

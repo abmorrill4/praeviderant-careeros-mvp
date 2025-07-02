@@ -5,6 +5,8 @@ import { SimplifiedProfileOverview } from './SimplifiedProfileOverview';
 import { ExperienceSection } from './ExperienceSection';
 import { EducationSection } from './EducationSection';
 import { SkillsSection } from './SkillsSection';
+import { ProjectsSection } from './ProjectsSection';
+import { CertificationsSection } from './CertificationsSection';
 import { ResumeUploadModal } from './ResumeUploadModal';
 import { NewUserGuidance } from './NewUserGuidance';
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
@@ -40,11 +42,13 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
         </div>
         
         <Tabs value={activeSection} onValueChange={(value) => onSectionChange(value as TimelineSection)}>
-          <TabsList className="grid w-full grid-cols-4 bg-slate-100">
+          <TabsList className="grid w-full grid-cols-6 bg-slate-100">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="experience">Experience</TabsTrigger>
             <TabsTrigger value="education">Education</TabsTrigger>
             <TabsTrigger value="skills">Skills</TabsTrigger>
+            <TabsTrigger value="projects">Projects</TabsTrigger>
+            <TabsTrigger value="certifications">Certifications</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -81,6 +85,18 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
           <TabsContent value="skills" className="mt-0">
             <div className="p-6 bg-slate-50">
               <SkillsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="projects" className="mt-0">
+            <div className="p-6 bg-slate-50">
+              <ProjectsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="certifications" className="mt-0">
+            <div className="p-6 bg-slate-50">
+              <CertificationsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
             </div>
           </TabsContent>
         </Tabs>
