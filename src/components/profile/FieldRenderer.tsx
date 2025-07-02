@@ -5,11 +5,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
+import { FlexibleDatePicker } from '@/components/ui/flexible-date-picker';
 
 interface EditField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'number' | 'array';
+  type: 'text' | 'textarea' | 'select' | 'number' | 'array' | 'flexible-date';
   options?: string[];
   placeholder?: string;
 }
@@ -98,6 +99,15 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
             }}
           />
         </div>
+      );
+
+    case 'flexible-date':
+      return (
+        <FlexibleDatePicker
+          value={value || ''}
+          onChange={onChange}
+          placeholder={field.placeholder}
+        />
       );
 
     default:

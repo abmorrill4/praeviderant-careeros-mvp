@@ -6,7 +6,7 @@ import { FieldRenderer } from './FieldRenderer';
 interface EditField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'number' | 'array';
+  type: 'text' | 'textarea' | 'select' | 'number' | 'array' | 'flexible-date';
   options?: string[];
   placeholder?: string;
 }

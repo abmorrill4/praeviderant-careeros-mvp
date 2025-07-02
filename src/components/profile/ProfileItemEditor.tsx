@@ -8,7 +8,7 @@ import type { VersionedEntity, EntityData, EntityType } from '@/types/versioned-
 interface EditField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'number' | 'array';
+  type: 'text' | 'textarea' | 'select' | 'number' | 'array' | 'flexible-date';
   options?: string[];
   placeholder?: string;
 }

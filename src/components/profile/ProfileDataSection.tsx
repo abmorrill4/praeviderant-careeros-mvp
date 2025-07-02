@@ -11,7 +11,7 @@ import type { VersionedEntity, EntityData } from '@/types/versioned-entities';
 interface EditField {
   key: string;
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'number' | 'array';
+  type: 'text' | 'textarea' | 'select' | 'number' | 'array' | 'flexible-date';
   options?: string[];
   placeholder?: string;
 }
