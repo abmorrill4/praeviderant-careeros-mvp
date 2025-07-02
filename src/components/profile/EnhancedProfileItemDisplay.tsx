@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useTheme } from '@/contexts/ThemeContext';
 import { Check, Edit, Brain, Sparkles, TrendingUp, Award, Star } from 'lucide-react';
 import { useEntityEnrichment } from '@/hooks/useEntryEnrichment';
+import { AIInsightsFeedbackButton } from '@/components/feedback/AIInsightsFeedbackButton';
 import type { VersionedEntity } from '@/types/versioned-entities';
 
 interface EnhancedProfileItemDisplayProps<T extends VersionedEntity> {
@@ -39,9 +40,21 @@ export const EnhancedProfileItemDisplay = <T extends VersionedEntity>({
     return (
       <Card className="mt-3 bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
         <CardHeader className="pb-2">
-          <CardTitle className="text-xs flex items-center gap-1 text-purple-700">
-            <Brain className="w-3 h-3" />
-            AI Insights
+          <CardTitle className="text-xs flex items-center justify-between text-purple-700">
+            <div className="flex items-center gap-1">
+              <Brain className="w-3 h-3" />
+              AI Insights
+            </div>
+            {enrichmentData.id && (
+              <AIInsightsFeedbackButton
+                insightType="entry_enrichment"
+                insightId={enrichmentData.id}
+                currentInsight={`${enrichmentData.experience_level || ''} ${enrichmentData.market_relevance || ''} ${enrichmentData.career_progression || ''} ${enrichmentData.insights?.[0] || ''} ${enrichmentData.recommendations?.[0] || ''}`.trim()}
+                variant="ghost"
+                size="sm"
+                className="text-purple-600 hover:text-purple-800"
+              />
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">

@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_insights_feedback: {
+        Row: {
+          created_at: string
+          feedback_text: string
+          feedback_type: string
+          id: string
+          insight_id: string
+          insight_type: string
+          processed_at: string | null
+          status: string
+          updated_at: string
+          user_context: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback_text: string
+          feedback_type: string
+          id?: string
+          insight_id: string
+          insight_type: string
+          processed_at?: string | null
+          status?: string
+          updated_at?: string
+          user_context?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback_text?: string
+          feedback_type?: string
+          id?: string
+          insight_id?: string
+          insight_type?: string
+          processed_at?: string | null
+          status?: string
+          updated_at?: string
+          user_context?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       auth_rate_limits: {
         Row: {
           action_type: string

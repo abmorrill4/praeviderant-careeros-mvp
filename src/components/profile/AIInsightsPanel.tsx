@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { Brain, User, Target, TrendingUp, Award } from 'lucide-react';
+import { AIInsightsFeedbackButton } from '@/components/feedback/AIInsightsFeedbackButton';
 
 interface AIInsightsPanelProps {
   careerEnrichment?: {
+    id?: string;
     persona_type: string;
     role_archetype: string;
     leadership_score: number;
@@ -16,6 +18,7 @@ interface AIInsightsPanelProps {
     role_archetype_explanation?: string;
   };
   narratives: Array<{
+    id?: string;
     narrative_type: string;
     narrative_text: string;
     narrative_explanation?: string;
@@ -56,9 +59,18 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({
         {careerEnrichment && (
           <div className="space-y-4">
             <div className="neo-card-subtle p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <User className="w-4 h-4 neo-text-accent" />
-                <span className="font-medium neo-text">Career Archetype</span>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 neo-text-accent" />
+                  <span className="font-medium neo-text">Career Archetype</span>
+                </div>
+                {careerEnrichment.id && (
+                  <AIInsightsFeedbackButton
+                    insightType="career_enrichment"
+                    insightId={careerEnrichment.id}
+                    currentInsight={`${careerEnrichment.role_archetype} - ${careerEnrichment.persona_type}${careerEnrichment.role_archetype_explanation ? ': ' + careerEnrichment.role_archetype_explanation : ''}`}
+                  />
+                )}
               </div>
               <p className="text-sm neo-text font-medium mb-1">
                 {careerEnrichment.role_archetype}
@@ -133,11 +145,20 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({
             <div className="space-y-3">
               {narratives.slice(0, 2).map((narrative, index) => (
                 <div key={index} className="neo-card-subtle p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Award className="w-4 h-4 neo-text-accent" />
-                    <span className="text-sm font-medium neo-text capitalize">
-                      {narrative.narrative_type.replace('_', ' ')}
-                    </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Award className="w-4 h-4 neo-text-accent" />
+                      <span className="text-sm font-medium neo-text capitalize">
+                        {narrative.narrative_type.replace('_', ' ')}
+                      </span>
+                    </div>
+                    {narrative.id && (
+                      <AIInsightsFeedbackButton
+                        insightType="career_narrative"
+                        insightId={narrative.id}
+                        currentInsight={narrative.narrative_text}
+                      />
+                    )}
                   </div>
                   <p className="text-sm neo-text-muted">
                     {narrative.narrative_text}

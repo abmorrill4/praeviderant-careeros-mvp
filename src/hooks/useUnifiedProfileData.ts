@@ -17,6 +17,7 @@ export interface UnifiedProfileData {
   
   // AI enrichment data
   careerEnrichment?: {
+    id: string;
     persona_type: string;
     role_archetype: string;
     leadership_score: number;
@@ -30,6 +31,7 @@ export interface UnifiedProfileData {
   };
   
   careerNarratives: Array<{
+    id: string;
     narrative_type: string;
     narrative_text: string;
     narrative_explanation?: string;
