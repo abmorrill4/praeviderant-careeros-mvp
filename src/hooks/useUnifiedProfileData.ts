@@ -126,6 +126,22 @@ export function useUnifiedProfileData(): UnifiedProfileData {
     currentRole
   };
   
+  // Transform entry enrichments to match expected interface
+  const transformedEntryEnrichments = (enrichmentData?.entryEnrichments || []).map(enrichment => ({
+    parsed_entity_id: enrichment.parsed_entity_id,
+    experience_level: enrichment.experience_level,
+    market_relevance: enrichment.market_relevance,
+    skills_identified: Array.isArray(enrichment.skills_identified) 
+      ? enrichment.skills_identified 
+      : [],
+    recommendations: Array.isArray(enrichment.recommendations) 
+      ? enrichment.recommendations 
+      : [],
+    insights: Array.isArray(enrichment.insights) 
+      ? enrichment.insights 
+      : []
+  }));
+  
   console.log('UnifiedProfileData metrics:', {
     totalExperienceYears,
     workExperienceCount: workExperience.length,
@@ -145,7 +161,7 @@ export function useUnifiedProfileData(): UnifiedProfileData {
     certifications,
     careerEnrichment: enrichmentData?.careerEnrichment || undefined,
     careerNarratives: enrichmentData?.careerNarratives || [],
-    entryEnrichments: enrichmentData?.entryEnrichments || [],
+    entryEnrichments: transformedEntryEnrichments,
     metrics,
     isLoading
   };
