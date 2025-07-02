@@ -113,6 +113,7 @@ export const ProfileTab: React.FC = () => {
           editFields={workExperienceFields}
           onAccept={workActions.handleAccept}
           onEdit={workActions.handleEdit}
+          entityType="work_experience"
           renderItem={(item) => 
             showEnhancedView ? (
               <EnhancedWorkExperienceRenderer 
@@ -150,6 +151,7 @@ export const ProfileTab: React.FC = () => {
           editFields={educationFields}
           onAccept={educationActions.handleAccept}
           onEdit={educationActions.handleEdit}
+          entityType="education"
           renderItem={(item) => 
             showEnhancedView ? (
               <EnhancedEducationRenderer 
@@ -185,6 +187,7 @@ export const ProfileTab: React.FC = () => {
           editFields={skillFields}
           onAccept={skillActions.handleAccept}
           onEdit={skillActions.handleEdit}
+          entityType="skill"
           renderItem={(item) => 
             showEnhancedView ? (
               <EnhancedSkillRenderer 
@@ -217,6 +220,7 @@ export const ProfileTab: React.FC = () => {
           editFields={projectFields}
           onAccept={projectActions.handleAccept}
           onEdit={projectActions.handleEdit}
+          entityType="project"
           renderItem={(item) => 
             showEnhancedView ? (
               <EnhancedProjectRenderer 
@@ -250,6 +254,7 @@ export const ProfileTab: React.FC = () => {
           editFields={certificationFields}
           onAccept={certificationActions.handleAccept}
           onEdit={certificationActions.handleEdit}
+          entityType="certification"
           renderItem={(item) => 
             showEnhancedView ? (
               <EnhancedCertificationRenderer 

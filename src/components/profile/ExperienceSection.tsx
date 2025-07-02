@@ -100,6 +100,7 @@ export const ExperienceSection: React.FC<ExperienceSectionProps> = ({
         onAccept={handleAccept}
         onEdit={handleEdit}
         renderItem={renderExperience}
+        entityType="work_experience"
       />
 
       {isCreating && (

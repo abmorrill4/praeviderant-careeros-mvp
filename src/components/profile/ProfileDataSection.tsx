@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useTheme } from '@/contexts/ThemeContext';
-import { ProfileItemDisplay } from './ProfileItemDisplay';
+import { EnhancedProfileItemDisplay } from './EnhancedProfileItemDisplay';
 import { ProfileItemEditor } from './ProfileItemEditor';
+import { useProfileEnrichmentMapping } from '@/hooks/useProfileEnrichmentMapping';
 import type { VersionedEntity, EntityData } from '@/types/versioned-entities';
 
 interface EditField {
@@ -24,6 +25,7 @@ interface ProfileDataSectionProps<T extends VersionedEntity> {
   onAccept: (item: VersionedEntity) => void;
   onEdit: (item: T, updates: Partial<EntityData<T>>) => void;
   renderItem: (item: T) => React.ReactNode;
+  entityType: string; // Add entity type for enrichment mapping
 }
 
 export const ProfileDataSection = <T extends VersionedEntity>({
@@ -33,10 +35,14 @@ export const ProfileDataSection = <T extends VersionedEntity>({
   editFields,
   onAccept,
   onEdit,
-  renderItem
+  renderItem,
+  entityType
 }: ProfileDataSectionProps<T>) => {
   const { theme } = useTheme();
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  
+  // Get enrichment mapping for all items
+  const { data: enrichmentMapping = {} } = useProfileEnrichmentMapping(items, entityType);
 
   const handleEditClick = (item: T) => {
     setEditingItemId(`${item.logical_entity_id}-${item.version}`);
@@ -84,11 +90,12 @@ export const ProfileDataSection = <T extends VersionedEntity>({
                       onCancel={handleEditCancel}
                     />
                   ) : (
-                    <ProfileItemDisplay
+                    <EnhancedProfileItemDisplay
                       item={item}
                       onAccept={onAccept}
                       onEdit={handleEditClick}
                       renderItem={renderItem}
+                      enrichmentEntityId={enrichmentMapping[item.logical_entity_id]}
                     />
                   )}
                 </div>

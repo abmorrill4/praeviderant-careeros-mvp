@@ -84,6 +84,7 @@ export const CertificationsSection: React.FC<CertificationsSectionProps> = ({
         onAccept={handleAccept}
         onEdit={handleEdit}
         renderItem={renderCertification}
+        entityType="certification"
       />
 
       {isCreating && (

@@ -85,6 +85,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({
         onAccept={handleAccept}
         onEdit={handleEdit}
         renderItem={renderSkill}
+        entityType="skill"
       />
 
       {isCreating && (

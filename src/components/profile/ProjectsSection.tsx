@@ -98,6 +98,7 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
         onAccept={handleAccept}
         onEdit={handleEdit}
         renderItem={renderProject}
+        entityType="project"
       />
 
       {isCreating && (

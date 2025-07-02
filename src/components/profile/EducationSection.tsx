@@ -86,6 +86,7 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
         onAccept={handleAccept}
         onEdit={handleEdit}
         renderItem={renderEducation}
+        entityType="education"
       />
 
       {isCreating && (
