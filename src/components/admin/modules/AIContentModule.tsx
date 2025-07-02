@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -16,17 +16,66 @@ import {
 } from 'lucide-react';
 import { PromptTemplateManager } from '@/components/admin/PromptTemplateManager';
 import { usePromptTemplateMetrics } from '@/hooks/usePromptTemplateMetrics';
+import { supabase } from '@/integrations/supabase/client';
 
 export const AIContentModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('prompts');
   const promptMetrics = usePromptTemplateMetrics();
 
-  // Real model stats based on actual usage patterns
-  const modelStats = [
-    { name: 'GPT-4o-mini', usage: '75%', requests: 934, avgTime: '1.8s' },
-    { name: 'GPT-4o', usage: '20%', requests: 249, avgTime: '3.2s' },
-    { name: 'GPT-4', usage: '5%', requests: 64, avgTime: '4.1s' }
-  ];
+  // Get actual model usage from job logs and prompt usage
+  const [modelStats, setModelStats] = useState([
+    { name: 'GPT-4o-mini', usage: '0%', requests: 0, avgTime: '0s' },
+    { name: 'GPT-4o', usage: '0%', requests: 0, avgTime: '0s' },
+    { name: 'GPT-4', usage: '0%', requests: 0, avgTime: '0s' }
+  ]);
+
+  useEffect(() => {
+    const fetchModelStats = async () => {
+      try {
+        const { data: promptUsage } = await supabase
+          .from('job_prompt_usage')
+          .select('prompt_category, created_at');
+        
+        if (promptUsage) {
+          const totalRequests = promptUsage.length;
+          const gpt4oMiniRequests = promptUsage.filter(p => 
+            p.prompt_category?.includes('mini') || p.prompt_category?.includes('gpt-4o-mini')
+          ).length;
+          const gpt4oRequests = promptUsage.filter(p => 
+            p.prompt_category?.includes('gpt-4o') && !p.prompt_category?.includes('mini')
+          ).length;
+          const gpt4Requests = promptUsage.filter(p => 
+            p.prompt_category?.includes('gpt-4') && !p.prompt_category?.includes('gpt-4o')
+          ).length;
+          
+          setModelStats([
+            { 
+              name: 'GPT-4o-mini', 
+              usage: totalRequests > 0 ? `${Math.round((gpt4oMiniRequests / totalRequests) * 100)}%` : '0%', 
+              requests: gpt4oMiniRequests, 
+              avgTime: '1.8s' 
+            },
+            { 
+              name: 'GPT-4o', 
+              usage: totalRequests > 0 ? `${Math.round((gpt4oRequests / totalRequests) * 100)}%` : '0%', 
+              requests: gpt4oRequests, 
+              avgTime: '3.2s' 
+            },
+            { 
+              name: 'GPT-4', 
+              usage: totalRequests > 0 ? `${Math.round((gpt4Requests / totalRequests) * 100)}%` : '0%', 
+              requests: gpt4Requests, 
+              avgTime: '4.1s' 
+            }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching model stats:', error);
+      }
+    };
+
+    fetchModelStats();
+  }, []);
 
   return (
     <div className="space-y-6">

@@ -116,8 +116,13 @@ export const useAdminMetrics = () => {
         ).length || 0;
         const errorRate = totalResumes > 0 ? (failedResumes / totalResumes) * 100 : 0;
 
-        // Get merges from today (simplified calculation)
-        const mergedToday = Math.floor(Math.random() * 50); // TODO: Implement actual merge tracking
+        // Get actual merges from today
+        const { data: mergeData } = await supabase
+          .from('merge_decisions')
+          .select('id, created_at')
+          .gte('created_at', today.toISOString());
+        
+        const mergedToday = mergeData?.length || 0;
 
         setMetrics({
           totalEntities,

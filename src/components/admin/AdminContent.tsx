@@ -48,7 +48,7 @@ export const AdminContent: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="min-h-full flex flex-col">
       <div className="bg-background border-b p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -170,7 +170,7 @@ export const AdminContent: React.FC = () => {
         )}
       </div>
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 pb-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="system">System</TabsTrigger>
