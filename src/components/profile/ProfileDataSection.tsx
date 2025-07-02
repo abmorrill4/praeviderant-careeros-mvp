@@ -3,9 +3,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { useTheme } from '@/contexts/ThemeContext';
 import { EnhancedProfileItemDisplay } from './EnhancedProfileItemDisplay';
-import { ProfileItemEditor } from './ProfileItemEditor';
+import { EnhancedInlineEditor } from './EnhancedInlineEditor';
 import { useProfileEnrichmentMapping } from '@/hooks/useProfileEnrichmentMapping';
 import type { VersionedEntity, EntityData } from '@/types/versioned-entities';
 
@@ -38,7 +37,6 @@ export const ProfileDataSection = <T extends VersionedEntity>({
   renderItem,
   entityType
 }: ProfileDataSectionProps<T>) => {
-  const { theme } = useTheme();
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   
   // Get enrichment mapping for all items
@@ -48,9 +46,14 @@ export const ProfileDataSection = <T extends VersionedEntity>({
     setEditingItemId(`${item.logical_entity_id}-${item.version}`);
   };
 
-  const handleEditSave = (item: T, updates: Partial<EntityData<T>>) => {
-    onEdit(item, updates);
-    setEditingItemId(null);
+  const handleEditSave = async (updates: Partial<EntityData<T>>) => {
+    const currentItem = items.find(item => 
+      editingItemId === `${item.logical_entity_id}-${item.version}`
+    );
+    if (currentItem) {
+      await onEdit(currentItem, updates);
+      setEditingItemId(null);
+    }
   };
 
   const handleEditCancel = () => {
@@ -82,12 +85,12 @@ export const ProfileDataSection = <T extends VersionedEntity>({
               return (
                 <div key={itemKey}>
                   {isEditing ? (
-                    <ProfileItemEditor
+                    <EnhancedInlineEditor
                       item={item}
-                      editFields={editFields}
-                      title={title}
-                      onEdit={handleEditSave}
+                      fields={editFields}
+                      onSave={handleEditSave}
                       onCancel={handleEditCancel}
+                      isVisible={true}
                     />
                   ) : (
                     <EnhancedProfileItemDisplay
