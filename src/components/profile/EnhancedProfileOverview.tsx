@@ -30,12 +30,29 @@ export const EnhancedProfileOverview: React.FC<EnhancedProfileOverviewProps> = (
   const totalExperience = workExperiences?.length || 0;
   const totalSkills = skills?.length || 0;
 
-  // Calculate experience duration
+  // Calculate experience duration with proper date handling
   const experienceYears = workExperiences?.reduce((total, exp) => {
     if (!exp.start_date) return total;
-    const start = new Date(exp.start_date);
-    const end = exp.end_date ? new Date(exp.end_date) : new Date();
-    return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 365);
+    
+    try {
+      const start = new Date(exp.start_date);
+      const end = exp.end_date ? new Date(exp.end_date) : new Date();
+      
+      // Check if dates are valid
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        console.warn(`Invalid date for experience: ${exp.title} at ${exp.company}`);
+        return total;
+      }
+      
+      // Calculate years difference more accurately
+      const timeDiff = end.getTime() - start.getTime();
+      const yearsDiff = timeDiff / (1000 * 60 * 60 * 24 * 365.25); // Use 365.25 to account for leap years
+      
+      return total + Math.max(0, yearsDiff); // Ensure we don't add negative years
+    } catch (error) {
+      console.warn(`Error calculating experience duration for ${exp.title}:`, error);
+      return total;
+    }
   }, 0) || 0;
 
   return (
@@ -47,7 +64,8 @@ export const EnhancedProfileOverview: React.FC<EnhancedProfileOverviewProps> = (
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-bold mb-1">
-                  {Math.round(experienceYears)}y
+                  {experienceYears >= 1 ? `${Math.floor(experienceYears)}y` : 
+                   experienceYears > 0 ? `${Math.round(experienceYears * 12)}m` : '0'}
                 </div>
                 <div className="text-purple-100 text-sm">
                   Experience
