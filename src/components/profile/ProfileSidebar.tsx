@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, Briefcase, GraduationCap, Star, Settings, LogOut, TrendingUp } from 'lucide-react';
+import { User, Briefcase, GraduationCap, Star, Settings, LogOut, TrendingUp, MessageCircle } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileSidebarProps {
@@ -121,6 +121,18 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
           <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
             Tools & Optimization
           </h3>
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/interview')}
+            className={`w-full justify-start h-10 px-3 ${
+              isRouteActive('/interview')
+                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+            } transition-all duration-200`}
+          >
+            <MessageCircle className="w-4 h-4 mr-2" />
+            <span className="font-medium text-sm">AI Interview</span>
+          </Button>
           <Button
             variant="ghost"
             onClick={() => navigate('/profile-optimization')}
