@@ -99,7 +99,7 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md neo-card border-0 shadow-lg">
+      <DialogContent className="max-w-2xl neo-card border-0 shadow-lg">
         <DialogHeader className="pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <MessageSquare className="w-5 h-5 text-primary" />
@@ -107,27 +107,24 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Current Insight Preview */}
           <div className="neo-inset p-4 rounded-lg bg-background/50">
-            <h4 className="font-medium text-sm text-foreground/90 mb-2">Current Insight</h4>
-            <div className="text-sm text-muted-foreground leading-relaxed max-h-24 overflow-hidden relative">
+            <h4 className="font-medium text-sm text-foreground/90 mb-3">Current Insight</h4>
+            <div className="text-sm text-muted-foreground leading-relaxed">
               {currentInsight}
-              {currentInsight.length > 200 && (
-                <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background/80 to-transparent" />
-              )}
             </div>
           </div>
 
           {/* Feedback Type Selection */}
           <div>
-            <Label className="text-sm font-medium text-foreground/90 mb-3 block">
+            <Label className="text-sm font-medium text-foreground/90 mb-3 block text-left">
               Feedback Type
             </Label>
             <RadioGroup
               value={feedbackType}
               onValueChange={(value: 'correction' | 'context' | 'enhancement') => setFeedbackType(value)}
-              className="flex gap-2"
+              className="flex gap-3"
             >
               {(['correction', 'context', 'enhancement'] as const).map((type) => {
                 const info = getFeedbackTypeInfo(type);
@@ -136,11 +133,11 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
                 return (
                   <div 
                     key={type} 
-                    className={`flex-1 relative ${isSelected ? 'neo-inset' : 'neo-card hover:neo-pressed'} p-3 rounded-lg cursor-pointer transition-all duration-200`}
+                    className={`flex-1 ${isSelected ? 'neo-inset' : 'neo-card'} p-3 rounded-lg transition-all duration-200`}
                   >
                     <RadioGroupItem value={type} id={type} className="sr-only" />
                     <Label htmlFor={type} className="cursor-pointer block text-center">
-                      <div className="flex flex-col items-center gap-1">
+                      <div className="flex flex-col items-center gap-2">
                         <Icon className={`w-4 h-4 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                         <span className={`text-xs font-medium ${isSelected ? 'text-primary' : 'text-foreground/70'}`}>
                           {info.title}
@@ -155,7 +152,7 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
 
           {/* Feedback Text */}
           <div>
-            <Label htmlFor="feedback" className="text-sm font-medium text-foreground/90 mb-2 block">
+            <Label htmlFor="feedback" className="text-sm font-medium text-foreground/90 mb-3 block text-left">
               Your Feedback
             </Label>
             <div className="neo-inset rounded-lg overflow-hidden">
@@ -170,23 +167,23 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
                 }
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
-                className="min-h-[80px] border-0 bg-transparent focus:ring-0 resize-none text-sm"
+                className="min-h-[100px] border-0 bg-transparent focus:ring-0 resize-none text-sm"
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-2 text-left">
               Your feedback helps improve AI insights for everyone.
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} className="neo-card hover:neo-pressed">
+          <div className="flex justify-end gap-3 pt-3">
+            <Button variant="outline" onClick={onClose} className="neo-card">
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!feedbackText.trim() || isSubmitting}
-              className="neo-gradient hover:scale-105 transition-transform"
+              className="neo-gradient"
             >
               {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
             </Button>
