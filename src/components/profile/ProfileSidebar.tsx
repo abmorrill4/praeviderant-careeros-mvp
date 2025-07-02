@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, Briefcase, GraduationCap, Star, Settings, LogOut, TrendingUp, MessageCircle } from 'lucide-react';
+import { User, Briefcase, GraduationCap, Star, Settings, LogOut, TrendingUp, MessageCircle, Shield } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileSidebarProps {
@@ -27,6 +28,24 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check admin status
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) return;
+      
+      try {
+        const { data } = await supabase.rpc('is_admin_user');
+        setIsAdmin(data || false);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user]);
 
   const handleSignOut = async () => {
     try {
@@ -158,6 +177,31 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             <span className="font-medium text-sm">Profile Management</span>
           </Button>
         </div>
+
+        {/* Admin Section - Only show for admin users */}
+        {isAdmin && (
+          <>
+            <Separator className="mb-4" />
+            <div className="space-y-1 mb-4">
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                Administration
+              </h3>
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/admin')}
+                className={`w-full justify-start h-10 px-3 ${
+                  isRouteActive('/admin')
+                    ? 'bg-purple-600 text-white hover:bg-purple-700'
+                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                } transition-all duration-200`}
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                <span className="font-medium text-sm">Admin Portal</span>
+              </Button>
+            </div>
+          </>
+        )}
+
 
         {/* Sign Out */}
         <div className="space-y-1">

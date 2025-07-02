@@ -27,7 +27,14 @@ import {
   ArrowLeft,
   Crown
 } from 'lucide-react';
-import type { AdminModule } from '@/pages/AdminPortal';
+
+
+export type AdminModule = 
+  | 'system' 
+  | 'data' 
+  | 'security' 
+  | 'ai-content' 
+  | 'users';
 
 interface AdminPortalLayoutProps {
   children: React.ReactNode;

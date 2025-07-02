@@ -1,0 +1,163 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Database, 
+  GitMerge, 
+  Settings, 
+  BarChart3,
+  Users,
+  Activity,
+  Filter,
+  Shield,
+  Bot
+} from 'lucide-react';
+import EntityGraphAdminUI from '@/components/admin/EntityGraphAdminUI';
+import { TimelineAdminPanel } from '@/components/admin/TimelineAdminPanel';
+import { SystemManagementModule } from '@/components/admin/modules/SystemManagementModule';
+import { SecurityComplianceModule } from '@/components/admin/modules/SecurityComplianceModule';
+import { AIContentModule } from '@/components/admin/modules/AIContentModule';
+import { UserManagementModule } from '@/components/admin/modules/UserManagementModule';
+
+export const AdminContent: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('system');
+
+  // Mock data statistics - replace with real data
+  const dataStats = {
+    totalEntities: 15420,
+    unresolvedEntities: 234,
+    mergedToday: 45,
+    dataQualityScore: 94.2
+  };
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="bg-background border-b p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Shield className="w-6 h-6" />
+              Admin Portal
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              System administration and management tools
+            </p>
+          </div>
+          <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+            System Operational
+          </Badge>
+        </div>
+      </div>
+
+      {/* Data Overview Stats */}
+      <div className="p-6 border-b bg-muted/20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Entities</CardTitle>
+              <Database className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{dataStats.totalEntities.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Across all types</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Unresolved</CardTitle>
+              <Filter className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">{dataStats.unresolvedEntities}</div>
+              <p className="text-xs text-muted-foreground">Need attention</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Merged Today</CardTitle>
+              <GitMerge className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{dataStats.mergedToday}</div>
+              <p className="text-xs text-muted-foreground">Automatic + manual</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Quality Score</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{dataStats.dataQualityScore}%</div>
+              <p className="text-xs text-muted-foreground">Overall data quality</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <div className="flex-1 p-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="system">System</TabsTrigger>
+            <TabsTrigger value="data">Data</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="ai">AI & Content</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="system" className="mt-6">
+            <SystemManagementModule />
+          </TabsContent>
+
+          <TabsContent value="data" className="mt-6">
+            <div className="space-y-6">
+              <Tabs defaultValue="entities">
+                <TabsList>
+                  <TabsTrigger value="entities">Entity Graph</TabsTrigger>
+                  <TabsTrigger value="timeline">Processing Timeline</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="entities" className="mt-4">
+                  <EntityGraphAdminUI />
+                </TabsContent>
+
+                <TabsContent value="timeline" className="mt-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Activity className="w-5 h-5" />
+                        Resume Processing Timeline
+                      </CardTitle>
+                      <CardDescription>
+                        Monitor and manage resume processing workflows
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <TimelineAdminPanel isAdmin={true} />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="security" className="mt-6">
+            <SecurityComplianceModule />
+          </TabsContent>
+
+          <TabsContent value="ai" className="mt-6">
+            <AIContentModule />
+          </TabsContent>
+
+          <TabsContent value="users" className="mt-6">
+            <UserManagementModule />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};

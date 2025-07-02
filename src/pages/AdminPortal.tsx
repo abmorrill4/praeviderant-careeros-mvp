@@ -1,28 +1,18 @@
 import React, { useState } from 'react';
-import { AdminPortalLayout } from '@/components/admin/AdminPortalLayout';
-import { SystemManagementModule } from '@/components/admin/modules/SystemManagementModule';
-import { DataManagementModule } from '@/components/admin/modules/DataManagementModule';
-import { SecurityComplianceModule } from '@/components/admin/modules/SecurityComplianceModule';
-import { AIContentModule } from '@/components/admin/modules/AIContentModule';
-import { UserManagementModule } from '@/components/admin/modules/UserManagementModule';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { Navigate } from 'react-router-dom';
+import { ProfileLayout } from '@/components/layout/ProfileLayout';
+import { AdminContent } from '@/components/admin/AdminContent';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Shield, AlertTriangle } from 'lucide-react';
-
-export type AdminModule = 
-  | 'system' 
-  | 'data' 
-  | 'security' 
-  | 'ai-content' 
-  | 'users';
+import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 const AdminPortal: React.FC = () => {
   const { user } = useAuth();
   const { isAdmin, loading, error } = useAdminCheck();
-  const [activeModule, setActiveModule] = useState<AdminModule>('system');
+  const [activeSection, setActiveSection] = useState<TimelineSection>('overview');
 
   // Redirect to auth if not logged in
   if (!user) {
@@ -76,30 +66,11 @@ const AdminPortal: React.FC = () => {
     );
   }
 
-  const renderActiveModule = () => {
-    switch (activeModule) {
-      case 'system':
-        return <SystemManagementModule />;
-      case 'data':
-        return <DataManagementModule />;
-      case 'security':
-        return <SecurityComplianceModule />;
-      case 'ai-content':
-        return <AIContentModule />;
-      case 'users':
-        return <UserManagementModule />;
-      default:
-        return <SystemManagementModule />;
-    }
-  };
-
+  // Admin users get access to the admin content
   return (
-    <AdminPortalLayout
-      activeModule={activeModule}
-      onModuleChange={setActiveModule}
-    >
-      {renderActiveModule()}
-    </AdminPortalLayout>
+    <ProfileLayout activeSection={activeSection} onSectionChange={setActiveSection}>
+      <AdminContent />
+    </ProfileLayout>
   );
 };
 
