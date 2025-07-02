@@ -2,8 +2,60 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLatestEntities } from '@/hooks/useVersionedEntities';
-import { calculateExperienceYears, parseDate, formatExperienceYears } from '@/utils/dateUtils';
+import { calculateExperienceYears, formatExperienceYears } from '@/utils/dateUtils';
+import { differenceInMonths, parseISO } from 'date-fns';
 import type { WorkExperience } from '@/types/versioned-entities';
+
+// Helper function to parse flexible date formats (matching the internal logic from dateUtils)
+function parseFlexibleDate(dateString: string): Date | null {
+  if (!dateString) return null;
+  
+  try {
+    // Try ISO format first
+    if (dateString.includes('-') && dateString.length >= 7) {
+      return parseISO(dateString);
+    }
+    
+    // Handle "Month Year" format like "January 2020"
+    const monthYearMatch = dateString.match(/^(\w+)\s+(\d{4})$/);
+    if (monthYearMatch) {
+      const [, month, year] = monthYearMatch;
+      const monthIndex = getMonthIndex(month);
+      if (monthIndex !== -1) {
+        return new Date(parseInt(year), monthIndex, 1);
+      }
+    }
+    
+    // Handle "Year" format like "2020"
+    const yearMatch = dateString.match(/^(\d{4})$/);
+    if (yearMatch) {
+      return new Date(parseInt(yearMatch[1]), 0, 1);
+    }
+    
+    // Handle "MM/YYYY" format
+    const mmYearMatch = dateString.match(/^(\d{1,2})\/(\d{4})$/);
+    if (mmYearMatch) {
+      const [, month, year] = mmYearMatch;
+      return new Date(parseInt(year), parseInt(month) - 1, 1);
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn('Failed to parse date:', dateString, error);
+    return null;
+  }
+}
+
+function getMonthIndex(monthName: string): number {
+  const months = [
+    'january', 'february', 'march', 'april', 'may', 'june',
+    'july', 'august', 'september', 'october', 'november', 'december'
+  ];
+  
+  return months.findIndex(month => 
+    month.startsWith(monthName.toLowerCase().substring(0, 3))
+  );
+}
 
 export const ExperienceDebugInfo: React.FC = () => {
   const { data: workExperiences } = useLatestEntities<WorkExperience>('work_experience');
@@ -34,13 +86,14 @@ export const ExperienceDebugInfo: React.FC = () => {
         
         <div className="space-y-2">
           {workExperiences.map((exp, index) => {
-            const startDate = parseDate(exp.start_date || '');
-            const endDate = exp.end_date ? parseDate(exp.end_date) : new Date();
+            const startDate = parseFlexibleDate(exp.start_date || '');
+            const endDate = exp.end_date ? parseFlexibleDate(exp.end_date) : new Date();
             
             let duration = 0;
+            let durationMonths = 0;
             if (startDate && endDate) {
-              const timeDiff = endDate.getTime() - startDate.getTime();
-              duration = timeDiff / (1000 * 60 * 60 * 24 * 365.25);
+              durationMonths = differenceInMonths(endDate, startDate);
+              duration = durationMonths / 12;
             }
             
             return (
@@ -53,7 +106,7 @@ export const ExperienceDebugInfo: React.FC = () => {
                   Parsed dates: {startDate?.toLocaleDateString() || 'Invalid'} → {endDate?.toLocaleDateString() || 'Invalid'}
                 </div>
                 <div className="text-blue-600 font-medium">
-                  Duration: {duration > 0 ? formatExperienceYears(duration) : 'Could not calculate'}
+                  Duration: {duration > 0 ? `${Math.round(duration * 10) / 10} years (${durationMonths} months)` : 'Could not calculate'}
                 </div>
               </div>
             );
