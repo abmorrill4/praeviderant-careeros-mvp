@@ -2,70 +2,17 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Calendar, Building } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { useLatestEntities } from '@/hooks/useVersionedEntities';
+import { processCareerMilestones, calculateCareerStats } from '@/utils/careerUtils';
 import type { WorkExperience } from '@/types/versioned-entities';
-
-interface CareerMilestone {
-  id: string;
-  title: string;
-  company: string;
-  startDate: string;
-  endDate?: string;
-  duration: number; // in months
-  level: number; // career progression level
-}
-
-const SENIORITY_LEVELS: Record<string, number> = {
-  'intern': 1,
-  'junior': 2,
-  'associate': 3,
-  'mid': 4,
-  'senior': 5,
-  'lead': 6,
-  'principal': 7,
-  'director': 8,
-  'vp': 9,
-  'executive': 10
-};
 
 export const CareerProgressionChart: React.FC = () => {
   const { data: workExperiences } = useLatestEntities<WorkExperience>('work_experience');
 
   // Process work experiences into career milestones
-  const careerMilestones: CareerMilestone[] = (workExperiences || [])
-    .filter(exp => exp.start_date)
-    .map(exp => {
-      const startDate = new Date(exp.start_date!);
-      const endDate = exp.end_date ? new Date(exp.end_date) : new Date();
-      const duration = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
-      
-      // Determine seniority level from title
-      const titleLower = exp.title.toLowerCase();
-      let level = 3; // default mid-level
-      
-      for (const [keyword, levelValue] of Object.entries(SENIORITY_LEVELS)) {
-        if (titleLower.includes(keyword)) {
-          level = levelValue;
-          break;
-        }
-      }
-      
-      return {
-        id: exp.logical_entity_id,
-        title: exp.title,
-        company: exp.company,
-        startDate: exp.start_date!,
-        endDate: exp.end_date,
-        duration,
-        level
-      };
-    })
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-
-  const totalExperience = careerMilestones.reduce((sum, milestone) => sum + milestone.duration, 0);
-  const careerSpan = careerMilestones.length > 0 ? 
-    Math.round((new Date().getTime() - new Date(careerMilestones[0].startDate).getTime()) / (1000 * 60 * 60 * 24 * 30)) : 0;
+  const careerMilestones = processCareerMilestones(workExperiences || []);
+  const stats = calculateCareerStats(careerMilestones);
 
   if (careerMilestones.length === 0) {
     return (
@@ -86,9 +33,6 @@ export const CareerProgressionChart: React.FC = () => {
     );
   }
 
-  const maxLevel = Math.max(...careerMilestones.map(m => m.level));
-  const currentLevel = careerMilestones[careerMilestones.length - 1]?.level || 0;
-
   return (
     <Card className="bg-white shadow-lg border border-slate-200">
       <CardHeader>
@@ -103,7 +47,7 @@ export const CareerProgressionChart: React.FC = () => {
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-3 bg-blue-50 rounded-lg">
               <div className="text-xl font-bold text-blue-600 mb-1">
-                {Math.round(totalExperience / 12)}y {totalExperience % 12}m
+                {Math.round(stats.totalExperience / 12)}y {stats.totalExperience % 12}m
               </div>
               <div className="text-xs text-blue-700">Total Experience</div>
             </div>
@@ -117,7 +61,7 @@ export const CareerProgressionChart: React.FC = () => {
             
             <div className="text-center p-3 bg-purple-50 rounded-lg">
               <div className="text-xl font-bold text-purple-600 mb-1">
-                Level {currentLevel}
+                Level {stats.currentLevel}
               </div>
               <div className="text-xs text-purple-700">Current Level</div>
             </div>
@@ -127,7 +71,7 @@ export const CareerProgressionChart: React.FC = () => {
           <div className="relative bg-slate-50 rounded-lg p-4 overflow-x-auto">
             <div className="flex items-end justify-between min-w-full" style={{ minWidth: `${careerMilestones.length * 120}px` }}>
               {careerMilestones.map((milestone, index) => {
-                const height = (milestone.level / maxLevel) * 120;
+                const height = (milestone.level / stats.maxLevel) * 120;
                 const isLatest = index === careerMilestones.length - 1;
                 
                 return (
@@ -176,9 +120,9 @@ export const CareerProgressionChart: React.FC = () => {
             
             {/* Y-axis labels */}
             <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-slate-500 pr-2">
-              {Array.from({ length: maxLevel }, (_, i) => (
+              {Array.from({ length: stats.maxLevel }, (_, i) => (
                 <div key={i} className="text-right">
-                  L{maxLevel - i}
+                  L{stats.maxLevel - i}
                 </div>
               ))}
             </div>
@@ -191,12 +135,9 @@ export const CareerProgressionChart: React.FC = () => {
               <div>
                 <h3 className="font-medium text-slate-900 mb-2">Career Growth Insights</h3>
                 <div className="space-y-1 text-sm text-slate-700">
-                  <div>• Career span: {Math.round(careerSpan / 12)} years {careerSpan % 12} months</div>
-                  <div>• Average position duration: {Math.round(totalExperience / careerMilestones.length)} months</div>
-                  <div>• Career progression: {careerMilestones.length > 1 ? 
-                    (currentLevel > careerMilestones[0].level ? 'Upward trajectory' : 'Stable progression') : 
-                    'Building experience'
-                  }</div>
+                  <div>• Career span: {Math.round(stats.careerSpan / 12)} years {stats.careerSpan % 12} months</div>
+                  <div>• Average position duration: {stats.averagePositionDuration} months</div>
+                  <div>• Career progression: {stats.careerProgression}</div>
                 </div>
               </div>
             </div>
