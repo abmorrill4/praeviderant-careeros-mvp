@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+        console.log('🔄 Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -43,8 +43,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Redirect to profile timeline after successful authentication
             // But don't redirect if user is accessing admin portal
             const currentPath = window.location.pathname;
+            console.log('🔄 Current path during auth redirect check:', currentPath);
             if (currentPath !== '/admin' && (currentPath === '/' || currentPath === '/auth')) {
+              console.log('🔄 Redirecting to profile timeline');
               window.location.href = '/profile-timeline';
+            } else {
+              console.log('🔄 Not redirecting, staying on current path');
             }
           }, 0);
         }

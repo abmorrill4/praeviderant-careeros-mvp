@@ -2,20 +2,23 @@
 import { useAuth } from "@/contexts/AuthContext";
 import HeroSection from "@/components/sections/HeroSection";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    console.log('Index: user state changed', { user: user?.email, loading });
+    console.log('Index: user state changed', { user: user?.email, loading, currentPath: location.pathname });
     
-    // Redirect authenticated users to profile timeline
-    if (user && !loading) {
+    // Only redirect authenticated users to profile timeline if they're actually on the Index page
+    // Don't redirect if they're trying to access other routes like /admin
+    if (user && !loading && location.pathname === '/') {
+      console.log('Index: Redirecting authenticated user from / to /profile-timeline');
       navigate('/profile-timeline');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, location.pathname]);
 
   // Show loading state while auth is initializing
   if (loading) {
@@ -29,8 +32,8 @@ const Index = () => {
     );
   }
 
-  // Don't render the landing page if user is authenticated (they'll be redirected)
-  if (user) {
+  // Don't render the landing page if user is authenticated and on the index route
+  if (user && location.pathname === '/') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">

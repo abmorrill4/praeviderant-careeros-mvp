@@ -22,17 +22,21 @@ export const useAdminCheck = () => {
         setLoading(true);
         setError(null);
 
+        console.log('🔍 Checking admin status for user:', user.email);
         const { data, error: rpcError } = await supabase.rpc('is_admin_user');
         
+        console.log('🔍 Admin check result:', { data, error: rpcError });
+        
         if (rpcError) {
-          console.error('Error checking admin status:', rpcError);
+          console.error('❌ Error checking admin status:', rpcError);
           setError('Failed to verify admin status');
           setIsAdmin(false);
         } else {
+          console.log('✅ Admin status:', data || false);
           setIsAdmin(data || false);
         }
       } catch (err) {
-        console.error('Admin check error:', err);
+        console.error('❌ Admin check error:', err);
         setError('Failed to verify admin status');
         setIsAdmin(false);
       } finally {
