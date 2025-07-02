@@ -99,18 +99,18 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl neo-card border-0 shadow-lg">
-        <DialogHeader className="pb-4">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <MessageSquare className="w-5 h-5 text-primary" />
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
             Improve AI Insights
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Feedback Type Selection */}
           <div>
-            <Label className="text-sm font-medium text-foreground/90 mb-2 block text-left">
+            <Label className="text-sm font-medium mb-2 block">
               Feedback Type
             </Label>
             <RadioGroup
@@ -125,13 +125,17 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
                 return (
                   <div 
                     key={type} 
-                    className={`flex-1 ${isSelected ? 'neo-inset' : 'neo-card'} p-2 rounded-lg`}
+                    className={`flex-1 p-2 rounded border ${
+                      isSelected 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-border bg-background'
+                    }`}
                   >
                     <RadioGroupItem value={type} id={type} className="sr-only" />
                     <Label htmlFor={type} className="cursor-pointer block text-center">
                       <div className="flex flex-col items-center gap-1">
                         <Icon className={`w-3 h-3 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                        <span className={`text-xs font-medium ${isSelected ? 'text-primary' : 'text-foreground/70'}`}>
+                        <span className={`text-xs font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
                           {info.title}
                         </span>
                       </div>
@@ -143,8 +147,8 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
           </div>
 
           {/* Current Insight Preview */}
-          <div className="neo-inset p-4 rounded-lg bg-background/50">
-            <h4 className="font-medium text-sm text-foreground/90 mb-3">Current Insight</h4>
+          <div className="p-4 rounded border bg-muted/50">
+            <h4 className="font-medium text-sm mb-2">Current Insight</h4>
             <div className="text-sm text-muted-foreground leading-relaxed">
               {currentInsight}
             </div>
@@ -152,31 +156,29 @@ export const AIInsightsFeedbackModal: React.FC<AIInsightsFeedbackModalProps> = (
 
           {/* Feedback Text */}
           <div>
-            <Label htmlFor="feedback" className="text-sm font-medium text-foreground/90 mb-3 block text-left">
+            <Label htmlFor="feedback" className="text-sm font-medium mb-2 block">
               Your Feedback
             </Label>
-            <div className="neo-inset rounded-lg overflow-hidden">
-              <Textarea
-                id="feedback"
-                placeholder={
-                  feedbackType === 'correction'
-                    ? "Describe what's incorrect and provide accurate information..."
-                    : feedbackType === 'context'
-                    ? "Share additional context to improve this insight..."
-                    : "Suggest enhancements or missing elements..."
-                }
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                className="min-h-[100px] border-0 bg-transparent focus:ring-0 resize-none text-sm"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2 text-left">
+            <Textarea
+              id="feedback"
+              placeholder={
+                feedbackType === 'correction'
+                  ? "Describe what's incorrect and provide accurate information..."
+                  : feedbackType === 'context'
+                  ? "Share additional context to improve this insight..."
+                  : "Suggest enhancements or missing elements..."
+              }
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              className="min-h-[100px]"
+            />
+            <p className="text-xs text-muted-foreground mt-2">
               Your feedback helps improve AI insights for everyone.
             </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-3">
+          <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
