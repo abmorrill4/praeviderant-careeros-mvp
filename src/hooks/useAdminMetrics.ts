@@ -55,24 +55,42 @@ export const useAdminMetrics = () => {
           ? ((totalEntities - unresolvedEntities) / totalEntities) * 100 
           : 0;
 
-        // Fetch user metrics
-        const { data: usersData, error: usersError } = await supabase
-          .from('profiles')
-          .select('id, created_at');
-
-        if (usersError) {
-          console.error('Error fetching users:', usersError);
-          // Don't throw, just log and continue with 0 users
-        }
-
-        const totalUsers = usersData?.length || 0;
+        // Count users from versioned entities (more accurate than empty profiles table)
+        const { data: workExperienceUsers } = await supabase
+          .from('work_experience')
+          .select('user_id, created_at')
+          .eq('is_active', true);
         
-        // Active users in last 30 days (simplified - you might want to add last_seen tracking)
+        const { data: educationUsers } = await supabase
+          .from('education')
+          .select('user_id, created_at')
+          .eq('is_active', true);
+        
+        const { data: skillUsers } = await supabase
+          .from('skill')
+          .select('user_id, created_at')
+          .eq('is_active', true);
+        
+        // Combine all user IDs from versioned entities
+        const allUserIds = new Set([
+          ...(workExperienceUsers?.map(we => we.user_id) || []),
+          ...(educationUsers?.map(edu => edu.user_id) || []),
+          ...(skillUsers?.map(skill => skill.user_id) || [])
+        ]);
+        
+        const totalUsers = allUserIds.size;
+        
+        // Calculate active users (those who added data in the last 30 days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const activeUsers = usersData?.filter(
-          user => new Date(user.created_at) > thirtyDaysAgo
-        ).length || 0;
+        
+        const recentUserIds = new Set([
+          ...(workExperienceUsers?.filter(we => new Date(we.created_at) > thirtyDaysAgo).map(we => we.user_id) || []),
+          ...(educationUsers?.filter(edu => new Date(edu.created_at) > thirtyDaysAgo).map(edu => edu.user_id) || []),
+          ...(skillUsers?.filter(skill => new Date(skill.created_at) > thirtyDaysAgo).map(skill => skill.user_id) || [])
+        ]);
+        
+        const activeUsers = recentUserIds.size;
 
         // Fetch resume metrics
         const { data: resumesData, error: resumesError } = await supabase
