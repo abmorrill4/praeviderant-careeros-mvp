@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Activity, 
   Server, 
@@ -15,27 +16,13 @@ import {
 } from 'lucide-react';
 import { SystemStatusMonitor } from '@/components/debug/SystemStatusMonitor';
 import { PerformanceMetrics } from '@/components/debug/PerformanceMetrics';
+import { useSystemHealth } from '@/hooks/useSystemHealth';
+import { useAdminMetrics } from '@/hooks/useAdminMetrics';
 
 export const SystemManagementModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
-
-  // Mock system metrics - replace with real data
-  const systemMetrics = {
-    uptime: '99.9%',
-    responseTime: '125ms',
-    throughput: '1,247 req/min',
-    errorRate: '0.03%',
-    memoryUsage: '68%',
-    cpuUsage: '42%'
-  };
-
-  const healthChecks = [
-    { name: 'Database', status: 'healthy', responseTime: '45ms' },
-    { name: 'Authentication', status: 'healthy', responseTime: '32ms' },
-    { name: 'File Storage', status: 'healthy', responseTime: '78ms' },
-    { name: 'Edge Functions', status: 'healthy', responseTime: '156ms' },
-    { name: 'Real-time', status: 'warning', responseTime: '234ms' },
-  ];
+  const systemHealth = useSystemHealth();
+  const adminMetrics = useAdminMetrics();
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -85,34 +72,52 @@ export const SystemManagementModule: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">System Uptime</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{systemMetrics.uptime}</div>
-                <p className="text-xs text-muted-foreground">Last 30 days</p>
+                {adminMetrics.loading ? (
+                  <LoadingSpinner />
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold text-green-600">{adminMetrics.totalUsers}</div>
+                    <p className="text-xs text-muted-foreground">Registered users</p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
+                <CardTitle className="text-sm font-medium">Active Users</CardTitle>
                 <Zap className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{systemMetrics.responseTime}</div>
-                <p className="text-xs text-muted-foreground">Last 24 hours</p>
+                {adminMetrics.loading ? (
+                  <LoadingSpinner />
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{adminMetrics.activeUsers}</div>
+                    <p className="text-xs text-muted-foreground">Last 30 days</p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Throughput</CardTitle>
+                <CardTitle className="text-sm font-medium">Error Rate</CardTitle>
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{systemMetrics.throughput}</div>
-                <p className="text-xs text-muted-foreground">Current rate</p>
+                {adminMetrics.loading ? (
+                  <LoadingSpinner />
+                ) : (
+                  <>
+                    <div className="text-2xl font-bold">{adminMetrics.errorRate}%</div>
+                    <p className="text-xs text-muted-foreground">Processing failures</p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -129,20 +134,34 @@ export const SystemManagementModule: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {healthChecks.map((check, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      {getStatusIcon(check.status)}
-                      <div>
-                        <p className="font-medium">{check.name}</p>
-                        <p className="text-sm text-muted-foreground">Response: {check.responseTime}</p>
+              {systemHealth.loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingSpinner />
+                  <span className="ml-2 text-muted-foreground">Checking system health...</span>
+                </div>
+              ) : systemHealth.error ? (
+                <div className="text-center py-8 text-destructive">
+                  Error: {systemHealth.error}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {systemHealth.healthChecks.map((check, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        {getStatusIcon(check.status)}
+                        <div>
+                          <p className="font-medium">{check.name}</p>
+                          <p className="text-sm text-muted-foreground">Response: {check.responseTime}</p>
+                          {check.details && (
+                            <p className="text-xs text-muted-foreground">{check.details}</p>
+                          )}
+                        </div>
                       </div>
+                      {getStatusBadge(check.status)}
                     </div>
-                    {getStatusBadge(check.status)}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 

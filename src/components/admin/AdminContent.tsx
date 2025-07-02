@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Database, 
   GitMerge, 
@@ -19,17 +20,13 @@ import { SystemManagementModule } from '@/components/admin/modules/SystemManagem
 import { SecurityComplianceModule } from '@/components/admin/modules/SecurityComplianceModule';
 import { AIContentModule } from '@/components/admin/modules/AIContentModule';
 import { UserManagementModule } from '@/components/admin/modules/UserManagementModule';
+import { useAdminMetrics } from '@/hooks/useAdminMetrics';
+import { useSystemHealth } from '@/hooks/useSystemHealth';
 
 export const AdminContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState('system');
-
-  // Mock data statistics - replace with real data
-  const dataStats = {
-    totalEntities: 15420,
-    unresolvedEntities: 234,
-    mergedToday: 45,
-    dataQualityScore: 94.2
-  };
+  const adminMetrics = useAdminMetrics();
+  const systemHealth = useSystemHealth();
 
   return (
     <div className="h-full flex flex-col">
@@ -44,59 +41,86 @@ export const AdminContent: React.FC = () => {
               System administration and management tools
             </p>
           </div>
-          <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
-            System Operational
+          <Badge 
+            variant="secondary" 
+            className={
+              systemHealth.overallStatus === 'healthy' 
+                ? "bg-green-50 text-green-700 border-green-200"
+                : systemHealth.overallStatus === 'warning'
+                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                : "bg-red-50 text-red-700 border-red-200"
+            }
+          >
+            {systemHealth.loading 
+              ? 'Checking...' 
+              : systemHealth.overallStatus === 'healthy' 
+              ? 'System Operational'
+              : systemHealth.overallStatus === 'warning'
+              ? 'System Warning'
+              : 'System Error'
+            }
           </Badge>
         </div>
       </div>
 
       {/* Data Overview Stats */}
       <div className="p-6 border-b bg-muted/20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Entities</CardTitle>
-              <Database className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dataStats.totalEntities.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">Across all types</p>
-            </CardContent>
-          </Card>
+        {adminMetrics.loading ? (
+          <div className="flex items-center justify-center py-8">
+            <LoadingSpinner />
+            <span className="ml-2 text-muted-foreground">Loading metrics...</span>
+          </div>
+        ) : adminMetrics.error ? (
+          <div className="text-center py-8 text-destructive">
+            Error loading metrics: {adminMetrics.error}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Entities</CardTitle>
+                <Database className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{adminMetrics.totalEntities.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">Across all types</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Unresolved</CardTitle>
-              <Filter className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{dataStats.unresolvedEntities}</div>
-              <p className="text-xs text-muted-foreground">Need attention</p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Unresolved</CardTitle>
+                <Filter className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">{adminMetrics.unresolvedEntities}</div>
+                <p className="text-xs text-muted-foreground">Need attention</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Merged Today</CardTitle>
-              <GitMerge className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{dataStats.mergedToday}</div>
-              <p className="text-xs text-muted-foreground">Automatic + manual</p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Merged Today</CardTitle>
+                <GitMerge className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{adminMetrics.mergedToday}</div>
+                <p className="text-xs text-muted-foreground">Automatic + manual</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Quality Score</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{dataStats.dataQualityScore}%</div>
-              <p className="text-xs text-muted-foreground">Overall data quality</p>
-            </CardContent>
-          </Card>
-        </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Quality Score</CardTitle>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{adminMetrics.dataQualityScore}%</div>
+                <p className="text-xs text-muted-foreground">Overall data quality</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 p-6">

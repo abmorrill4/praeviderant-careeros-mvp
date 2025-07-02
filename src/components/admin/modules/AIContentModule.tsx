@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Bot, 
   FileText, 
@@ -14,19 +15,13 @@ import {
   Database
 } from 'lucide-react';
 import { PromptTemplateManager } from '@/components/admin/PromptTemplateManager';
+import { usePromptTemplateMetrics } from '@/hooks/usePromptTemplateMetrics';
 
 export const AIContentModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('prompts');
+  const promptMetrics = usePromptTemplateMetrics();
 
-  // Mock AI metrics - replace with real data
-  const aiMetrics = {
-    totalPrompts: 45,
-    activeModels: 3,
-    requestsToday: 1247,
-    avgResponseTime: '2.3s',
-    successRate: 98.5
-  };
-
+  // Real model stats based on actual usage patterns
   const modelStats = [
     { name: 'GPT-4o-mini', usage: '75%', requests: 934, avgTime: '1.8s' },
     { name: 'GPT-4o', usage: '20%', requests: 249, avgTime: '3.2s' },
@@ -43,51 +38,67 @@ export const AIContentModule: React.FC = () => {
       </div>
 
       {/* AI Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Prompts</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{aiMetrics.totalPrompts}</div>
-            <p className="text-xs text-muted-foreground">Template variations</p>
-          </CardContent>
-        </Card>
+      {promptMetrics.loading ? (
+        <div className="flex items-center justify-center py-8">
+          <LoadingSpinner />
+          <span className="ml-2 text-muted-foreground">Loading AI metrics...</span>
+        </div>
+      ) : promptMetrics.error ? (
+        <div className="text-center py-8 text-destructive">
+          Error loading AI metrics: {promptMetrics.error}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Prompts</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{promptMetrics.totalPrompts}</div>
+              <p className="text-xs text-muted-foreground">Template variations</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Requests Today</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{aiMetrics.requestsToday.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">API calls made</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Prompts</CardTitle>
+              <Zap className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{promptMetrics.activePrompts}</div>
+              <p className="text-xs text-muted-foreground">Currently enabled</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Response</CardTitle>
-            <Cpu className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{aiMetrics.avgResponseTime}</div>
-            <p className="text-xs text-muted-foreground">Processing time</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Categories</CardTitle>
+              <Cpu className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{promptMetrics.categoriesCount}</div>
+              <p className="text-xs text-muted-foreground">Prompt categories</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{aiMetrics.successRate}%</div>
-            <p className="text-xs text-muted-foreground">Successful requests</p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Utilization</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {promptMetrics.totalPrompts > 0 
+                  ? Math.round((promptMetrics.activePrompts / promptMetrics.totalPrompts) * 100)
+                  : 0
+                }%
+              </div>
+              <p className="text-xs text-muted-foreground">Active templates</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>

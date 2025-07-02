@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Database, 
   GitMerge, 
@@ -15,17 +16,11 @@ import {
 } from 'lucide-react';
 import EntityGraphAdminUI from '@/components/admin/EntityGraphAdminUI';
 import { TimelineAdminPanel } from '@/components/admin/TimelineAdminPanel';
+import { useAdminMetrics } from '@/hooks/useAdminMetrics';
 
 export const DataManagementModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState('entities');
-
-  // Mock data statistics - replace with real data
-  const dataStats = {
-    totalEntities: 15420,
-    unresolvedEntities: 234,
-    mergedToday: 45,
-    dataQualityScore: 94.2
-  };
+  const adminMetrics = useAdminMetrics();
 
   return (
     <div className="space-y-6">
@@ -37,51 +32,62 @@ export const DataManagementModule: React.FC = () => {
       </div>
 
       {/* Data Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Entities</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dataStats.totalEntities.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Across all types</p>
-          </CardContent>
-        </Card>
+      {adminMetrics.loading ? (
+        <div className="flex items-center justify-center py-8">
+          <LoadingSpinner />
+          <span className="ml-2 text-muted-foreground">Loading data metrics...</span>
+        </div>
+      ) : adminMetrics.error ? (
+        <div className="text-center py-8 text-destructive">
+          Error loading data metrics: {adminMetrics.error}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Entities</CardTitle>
+              <Database className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{adminMetrics.totalEntities.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Across all types</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unresolved</CardTitle>
-            <Filter className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{dataStats.unresolvedEntities}</div>
-            <p className="text-xs text-muted-foreground">Need attention</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Unresolved</CardTitle>
+              <Filter className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">{adminMetrics.unresolvedEntities}</div>
+              <p className="text-xs text-muted-foreground">Need attention</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Merged Today</CardTitle>
-            <GitMerge className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{dataStats.mergedToday}</div>
-            <p className="text-xs text-muted-foreground">Automatic + manual</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Merged Today</CardTitle>
+              <GitMerge className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{adminMetrics.mergedToday}</div>
+              <p className="text-xs text-muted-foreground">Automatic + manual</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Quality Score</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{dataStats.dataQualityScore}%</div>
-            <p className="text-xs text-muted-foreground">Overall data quality</p>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Quality Score</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{adminMetrics.dataQualityScore}%</div>
+              <p className="text-xs text-muted-foreground">Overall data quality</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
