@@ -49,7 +49,14 @@ export const EnhancedProfileItemDisplay = <T extends VersionedEntity>({
               <AIInsightsFeedbackButton
                 insightType="entry_enrichment"
                 insightId={enrichmentData.id}
-                currentInsight={`${enrichmentData.experience_level || ''} ${enrichmentData.market_relevance || ''} ${enrichmentData.career_progression || ''} ${enrichmentData.insights?.[0] || ''} ${enrichmentData.recommendations?.[0] || ''}`.trim()}
+                currentInsight={[
+                  enrichmentData.experience_level && `Level: ${enrichmentData.experience_level}`,
+                  enrichmentData.market_relevance && `Market Relevance: ${enrichmentData.market_relevance}`,
+                  enrichmentData.career_progression && `Career Progression: ${enrichmentData.career_progression}`,
+                  enrichmentData.skills_identified && enrichmentData.skills_identified.length > 0 && `Skills Detected: ${enrichmentData.skills_identified.join(', ')}`,
+                  enrichmentData.insights && enrichmentData.insights.length > 0 && `💡 "${enrichmentData.insights[0]}"`,
+                  enrichmentData.recommendations && enrichmentData.recommendations.length > 0 && `🏆 ${enrichmentData.recommendations[0]}`
+                ].filter(Boolean).join('\n\n')}
                 variant="ghost"
                 size="sm"
                 className="text-purple-600 hover:text-purple-800"
