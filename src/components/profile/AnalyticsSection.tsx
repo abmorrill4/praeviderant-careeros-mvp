@@ -4,6 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Users, Clock, Target, Award, BarChart3 } from 'lucide-react';
+import { useLatestEntities } from '@/hooks/useVersionedEntities';
+import { useEnhancedProfileScore } from '@/hooks/useEnhancedProfileScore';
+import { calculateExperienceYears, formatExperienceYears } from '@/utils/dateUtils';
+import type { WorkExperience, Education, Skill } from '@/types/versioned-entities';
 
 interface AnalyticsSectionProps {
   focusedCard: string | null;
@@ -14,14 +18,21 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
   focusedCard,
   onCardFocus,
 }) => {
-  // Mock data - in a real app, this would come from your analytics service
+  // Fetch real data from the user's profile
+  const { data: workExperiences } = useLatestEntities<WorkExperience>('work_experience');
+  const { data: education } = useLatestEntities<Education>('education');
+  const { data: skills } = useLatestEntities<Skill>('skill');
+  const profileScore = useEnhancedProfileScore();
+
+  // Calculate real analytics data
+  const experienceYears = calculateExperienceYears(workExperiences || []);
+  const skillsCount = skills?.length || 0;
+  const educationCount = education?.length || 0;
+  const totalPositions = workExperiences?.length || 0;
+
+  // Mock data for features not yet implemented
   const analyticsData = {
-    profileViews: 156,
-    profileCompleteness: 75,
-    skillsCount: 12,
-    experienceYears: 5,
-    goalsCompleted: 3,
-    totalGoals: 5,
+    profileViews: 156, // This would come from analytics service
     recentActivity: [
       { action: 'Updated skills section', date: '2 days ago' },
       { action: 'Added new work experience', date: '1 week ago' },
@@ -39,24 +50,24 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
     },
     {
       title: 'Profile Completeness',
-      value: `${analyticsData.profileCompleteness}%`,
+      value: `${profileScore.overall}%`,
       icon: Target,
       description: 'Your profile completion score',
       trend: '+5%',
     },
     {
       title: 'Skills Tracked',
-      value: analyticsData.skillsCount,
+      value: skillsCount,
       icon: Award,
       description: 'Total skills in your profile',
-      trend: '+2',
+      trend: `+${skillsCount > 0 ? '2' : '0'}`,
     },
     {
       title: 'Experience',
-      value: `${analyticsData.experienceYears} years`,
+      value: formatExperienceYears(experienceYears),
       icon: Clock,
       description: 'Total professional experience',
-      trend: 'Stable',
+      trend: 'Growing',
     },
   ];
 
@@ -122,69 +133,77 @@ export const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
             <div className="space-y-4">
               <div className="flex justify-between text-sm">
                 <span>Overall Progress</span>
-                <span>{analyticsData.profileCompleteness}%</span>
+                <span>{profileScore.overall}%</span>
               </div>
-              <Progress value={analyticsData.profileCompleteness} className="h-2" />
+              <Progress value={profileScore.overall} className="h-2" />
               
               <div className="space-y-2 mt-4">
                 <div className="flex items-center justify-between text-sm">
                   <span>Experience Section</span>
-                  <Badge variant="secondary">Complete</Badge>
+                  <Badge variant={totalPositions > 0 ? "secondary" : "outline"}>
+                    {totalPositions > 0 ? "Complete" : "Pending"}
+                  </Badge>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span>Skills Section</span>
-                  <Badge variant="secondary">Complete</Badge>
+                  <Badge variant={skillsCount > 0 ? "secondary" : "outline"}>
+                    {skillsCount > 0 ? "Complete" : "Pending"}
+                  </Badge>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span>Education Section</span>
-                  <Badge variant="outline">In Progress</Badge>
+                  <Badge variant={educationCount > 0 ? "secondary" : "outline"}>
+                    {educationCount > 0 ? "Complete" : "Pending"}
+                  </Badge>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span>Goals Section</span>
-                  <Badge variant="outline">Pending</Badge>
+                  <Badge variant="outline">Coming Soon</Badge>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Goals Progress */}
+        {/* Career Summary */}
         <Card className="bg-career-panel border-career-text/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-career-text">
               <Target className="w-5 h-5" />
-              Career Goals
+              Career Summary
             </CardTitle>
             <CardDescription>
-              Track your career development goals
+              Your professional journey overview
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between text-sm">
-                <span>Goals Completed</span>
-                <span>{analyticsData.goalsCompleted} of {analyticsData.totalGoals}</span>
+                <span>Total Experience</span>
+                <span className="font-medium">{formatExperienceYears(experienceYears)}</span>
               </div>
-              <Progress value={(analyticsData.goalsCompleted / analyticsData.totalGoals) * 100} className="h-2" />
+              <div className="flex justify-between text-sm">
+                <span>Positions Held</span>
+                <span className="font-medium">{totalPositions}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Skills Mastered</span>
+                <span className="font-medium">{skillsCount}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Education Records</span>
+                <span className="font-medium">{educationCount}</span>
+              </div>
               
-              <div className="space-y-2 mt-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Learn React</span>
-                  <Badge variant="secondary">Complete</Badge>
+              {experienceYears > 0 && (
+                <div className="mt-4 p-3 bg-career-accent/10 rounded-lg">
+                  <p className="text-xs text-career-text-muted">
+                    <strong>Career Insight:</strong> You have {formatExperienceYears(experienceYears)} of professional experience 
+                    across {totalPositions} position{totalPositions !== 1 ? 's' : ''}, 
+                    demonstrating {skillsCount} key skills.
+                  </p>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span>Get AWS Certification</span>
-                  <Badge variant="secondary">Complete</Badge>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span>Leadership Training</span>
-                  <Badge variant="outline">In Progress</Badge>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span>Public Speaking</span>
-                  <Badge variant="outline">Pending</Badge>
-                </div>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>

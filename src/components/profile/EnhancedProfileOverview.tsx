@@ -8,6 +8,7 @@ import { CareerProgressionChart } from './CareerProgressionChart';
 import { ProfileStatsGrid } from './ProfileStatsGrid';
 import { CurrentRoleHighlight } from './CurrentRoleHighlight';
 import { ProfileCompletenessCard } from './ProfileCompletenessCard';
+import { ExperienceDebugInfo } from './ExperienceDebugInfo';
 import { calculateExperienceYears } from '@/utils/dateUtils';
 import type { WorkExperience, Education, Skill } from '@/types/versioned-entities';
 
@@ -29,11 +30,25 @@ export const EnhancedProfileOverview: React.FC<EnhancedProfileOverviewProps> = (
   const totalExperience = workExperiences?.length || 0;
   const totalSkills = skills?.length || 0;
 
-  // Calculate experience duration using the utility function
+  // Calculate experience duration using the enhanced utility function
   const experienceYears = calculateExperienceYears(workExperiences || []);
+
+  console.log('EnhancedProfileOverview - Experience calculation:', {
+    workExperiencesCount: workExperiences?.length,
+    calculatedYears: experienceYears,
+    rawExperiences: workExperiences?.map(exp => ({
+      title: exp.title,
+      company: exp.company,
+      start_date: exp.start_date,
+      end_date: exp.end_date
+    }))
+  });
 
   return (
     <div className="space-y-8">
+      {/* Debug Information - Remove this after testing */}
+      <ExperienceDebugInfo />
+
       {/* Enhanced Summary Stats */}
       <ProfileStatsGrid
         experienceYears={experienceYears}

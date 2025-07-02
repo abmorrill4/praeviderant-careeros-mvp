@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, Award, Star, Target } from 'lucide-react';
+import { formatExperienceYears } from '@/utils/dateUtils';
 
 interface ProfileStatsGridProps {
   experienceYears: number;
@@ -16,6 +17,13 @@ export const ProfileStatsGrid: React.FC<ProfileStatsGridProps> = ({
   totalSkills,
   profileScore,
 }) => {
+  console.log('ProfileStatsGrid rendering with:', {
+    experienceYears,
+    totalPositions,
+    totalSkills,
+    profileScore
+  });
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg hover:shadow-xl transition-shadow">
@@ -23,8 +31,7 @@ export const ProfileStatsGrid: React.FC<ProfileStatsGridProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <div className="text-2xl font-bold mb-1">
-                {experienceYears >= 1 ? `${Math.floor(experienceYears)}y` : 
-                 experienceYears > 0 ? `${Math.round(experienceYears * 12)}m` : '0'}
+                {formatExperienceYears(experienceYears)}
               </div>
               <div className="text-purple-100 text-sm">
                 Experience
