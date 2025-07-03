@@ -106,6 +106,13 @@ export const CleanNavigation: React.FC<CleanNavigationProps> = ({ children }) =>
   const currentItem = navigationItems.find(item => item.path === currentPath);
   const currentPhase = currentItem?.phase || 'build';
 
+  // Debug: Track re-renders
+  console.log('🔧 CleanNavigation render:', { 
+    currentPath, 
+    userEmail: user?.email, 
+    isAdmin: typeof isAdmin === 'boolean' ? isAdmin : 'loading'
+  });
+
   const getUserInitials = useCallback(() => {
     const email = user?.email || '';
     const name = email.split('@')[0];
@@ -179,6 +186,13 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
 }) => {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
+
+  // Debug: Track AppSidebar re-renders
+  console.log('🔧 AppSidebar render:', { 
+    userEmail: user?.email, 
+    isAdmin: typeof isAdmin === 'boolean' ? isAdmin : 'loading',
+    collapsed 
+  });
 
   return (
     <Sidebar className="border-r bg-white">

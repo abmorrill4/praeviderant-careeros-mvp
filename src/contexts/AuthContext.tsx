@@ -38,19 +38,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Handle post-authentication redirect only for auth page
+        // Handle post-authentication redirect only for auth page (without setTimeout)
         if (event === 'SIGNED_IN' && session?.user) {
-          setTimeout(() => {
-            const currentPath = window.location.pathname;
-            console.log('🔄 Current path during auth redirect check:', currentPath);
-            // Only redirect from auth page to prevent conflicts with Index page logic
-            if (currentPath === '/auth') {
-              console.log('🔄 Redirecting from auth page to profile timeline');
-              window.location.href = '/profile-timeline';
-            } else {
-              console.log('🔄 Not redirecting, staying on current path:', currentPath);
-            }
-          }, 100);
+          const currentPath = window.location.pathname;
+          console.log('🔄 Current path during auth redirect check:', currentPath);
+          // Only redirect from auth page to prevent conflicts with Index page logic
+          if (currentPath === '/auth') {
+            console.log('🔄 Redirecting from auth page to profile timeline');
+            window.location.href = '/profile-timeline';
+          } else {
+            console.log('🔄 Not redirecting, staying on current path:', currentPath);
+          }
         }
       }
     );
