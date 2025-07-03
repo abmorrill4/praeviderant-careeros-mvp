@@ -6,7 +6,8 @@ import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ProfileLayout } from '@/components/layout/ProfileLayout';
+import { CleanNavigation } from '@/components/navigation/CleanNavigation';
+import { BreadcrumbNavigation } from '@/components/navigation/BreadcrumbNavigation';
 import { Upload, Database, Settings, User } from 'lucide-react';
 import { ResumeUpload } from '@/components/resume-upload/ResumeUpload';
 import { DataManagementTab } from '@/components/profile-management/DataManagementTab';
@@ -42,15 +43,16 @@ const ProfileManagementPage: React.FC = () => {
   const showResumeReview = urlSection === 'data' && urlVersion && urlTab === 'review';
 
   return (
-    <ProfileLayout activeSection={activeSection} onSectionChange={setActiveSection}>
+    <CleanNavigation>
+      <BreadcrumbNavigation />
       <div className="h-full flex flex-col">
-        <div className="bg-career-panel-light border-career-gray-light border-b p-6">
+        <div className="bg-white border-b p-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-career-text-light mb-2">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
               {showResumeReview ? 'Resume Analysis Results' : 'Profile Management'}
             </h1>
           </div>
-          <p className="text-career-text-muted-light mb-4">
+          <p className="text-gray-600 mb-4">
             {showResumeReview 
               ? 'Review your extracted resume data and add it to your profile'
               : 'Manage your profile data, upload resumes, and access advanced tools'
@@ -59,7 +61,7 @@ const ProfileManagementPage: React.FC = () => {
           
           {!showResumeReview && (
             <Tabs value={activeManagementSection} onValueChange={(value) => setActiveManagementSection(value as ManagementSection)}>
-              <TabsList className="grid w-full grid-cols-4 bg-career-gray-light">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="profile">Profile Info</TabsTrigger>
                 <TabsTrigger value="uploads">Resume Upload</TabsTrigger>
                 <TabsTrigger value="data">Data Management</TabsTrigger>
@@ -69,7 +71,7 @@ const ProfileManagementPage: React.FC = () => {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {showResumeReview ? (
             <ParsedResumeEntities 
               versionId={urlVersion} 
@@ -82,9 +84,9 @@ const ProfileManagementPage: React.FC = () => {
           ) : (
             <Tabs value={activeManagementSection} onValueChange={(value) => setActiveManagementSection(value as ManagementSection)}>
               <TabsContent value="profile" className="mt-0">
-                <Card className="neumorphic-panel light bg-career-panel-light">
+                <Card className="bg-white shadow-sm">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-career-text-light">
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
                       <User className="w-5 h-5" />
                       Profile Information
                     </CardTitle>
@@ -92,13 +94,13 @@ const ProfileManagementPage: React.FC = () => {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <p className="text-career-text-light">
+                        <p className="text-gray-900">
                           <span className="font-medium">Email:</span> {user?.email}
                         </p>
-                        <p className="text-career-text-light">
+                        <p className="text-gray-900">
                           <span className="font-medium">User ID:</span> {user?.id}
                         </p>
-                        <p className="text-career-text-muted-light">
+                        <p className="text-gray-600">
                           Manage your profile settings and account preferences here.
                         </p>
                       </div>
@@ -117,22 +119,22 @@ const ProfileManagementPage: React.FC = () => {
 
               <TabsContent value="admin" className="mt-0">
                 <Card
-                  className="neumorphic-panel light bg-career-panel-light hover:shadow-neumorphic-hover-light transition-all duration-200 cursor-pointer"
+                  className="bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
                   onClick={handleNavigateToAdmin}
                 >
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-career-text-light">
-                      <Settings className="w-5 h-5 text-career-accent" />
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
+                      <Settings className="w-5 h-5 text-purple-600" />
                       Admin Tools
                     </CardTitle>
-                    <CardDescription className="text-career-text-muted-light">
+                    <CardDescription className="text-gray-600">
                       Advanced tools for managing your profile entities
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button
                       variant="outline"
-                      className="w-full border-career-gray-light hover:bg-career-gray-light"
+                      className="w-full"
                     >
                       Open Admin Tools
                     </Button>
@@ -143,7 +145,7 @@ const ProfileManagementPage: React.FC = () => {
           )}
         </div>
       </div>
-    </ProfileLayout>
+    </CleanNavigation>
   );
 };
 

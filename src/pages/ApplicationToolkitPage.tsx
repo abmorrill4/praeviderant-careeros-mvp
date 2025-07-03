@@ -6,6 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { FileText, Mail, Target, Briefcase } from 'lucide-react';
 import { EnhancedResumeGenerator } from '@/components/application-toolkit/EnhancedResumeGenerator';
+import { CleanNavigation } from '@/components/navigation/CleanNavigation';
+import { BreadcrumbNavigation } from '@/components/navigation/BreadcrumbNavigation';
 
 const ApplicationToolkitPage: React.FC = () => {
   const { user, loading } = useAuth();
@@ -57,18 +59,19 @@ const ApplicationToolkitPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <CleanNavigation>
+      <BreadcrumbNavigation />
       <div className="h-full flex flex-col">
-        <div className="bg-career-panel border-career-gray border-b p-6">
-          <h1 className="text-2xl font-bold text-career-text mb-2">
+        <div className="bg-white border-b p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Application Toolkit
           </h1>
-          <p className="text-career-text-muted">
+          <p className="text-gray-600">
             Tools to help you create tailored resumes and cover letters for your job applications
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
           {activeSection === 'overview' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {toolkitSections.map((section) => {
@@ -76,26 +79,26 @@ const ApplicationToolkitPage: React.FC = () => {
                 return (
                   <Card
                     key={section.title}
-                    className="neumorphic-panel bg-career-panel"
+                    className="bg-white shadow-sm hover:shadow-md transition-shadow"
                   >
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-career-text">
-                        <Icon className="w-5 h-5 text-career-accent" />
+                      <CardTitle className="flex items-center gap-2 text-gray-900">
+                        <Icon className="w-5 h-5 text-purple-600" />
                         {section.title}
                       </CardTitle>
-                      <CardDescription className="text-career-text-muted">
+                      <CardDescription className="text-gray-600">
                         {section.description}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       {section.comingSoon ? (
-                        <div className="text-center py-8 text-career-text-muted">
+                        <div className="text-center py-8 text-gray-500">
                           <p className="text-sm">Coming soon...</p>
                         </div>
                       ) : (
                         <Button
                           variant="outline"
-                          className="w-full border-career-gray hover:bg-career-gray"
+                          className="w-full"
                           onClick={() => setActiveSection(section.sectionId as any)}
                         >
                           Get Started
@@ -120,7 +123,7 @@ const ApplicationToolkitPage: React.FC = () => {
           ) : null}
         </div>
       </div>
-    </div>
+    </CleanNavigation>
   );
 };
 
