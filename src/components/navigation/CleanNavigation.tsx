@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -124,28 +124,30 @@ export const CleanNavigation: React.FC<CleanNavigationProps> = ({ children }) =>
     checkAdminStatus();
   }, [user]);
 
-  const getUserInitials = () => {
+  const getUserInitials = useCallback(() => {
     const email = user?.email || '';
     const name = email.split('@')[0];
     return name.slice(0, 2).toUpperCase();
-  };
+  }, [user?.email]);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     try {
       await signOut();
       navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
     }
-  };
+  }, [signOut, navigate]);
 
-  const isItemActive = (path: string) => currentPath === path;
+  const isItemActive = useCallback((path: string) => currentPath === path, [currentPath]);
 
-  const groupedItems = navigationItems.reduce((acc, item) => {
-    if (!acc[item.phase]) acc[item.phase] = [];
-    acc[item.phase].push(item);
-    return acc;
-  }, {} as Record<string, NavItem[]>);
+  const groupedItems = useMemo(() => {
+    return navigationItems.reduce((acc, item) => {
+      if (!acc[item.phase]) acc[item.phase] = [];
+      acc[item.phase].push(item);
+      return acc;
+    }, {} as Record<string, NavItem[]>);
+  }, []);
 
   return (
     <SidebarProvider>
