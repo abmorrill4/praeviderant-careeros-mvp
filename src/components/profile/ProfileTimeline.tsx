@@ -1,14 +1,4 @@
-
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SimplifiedProfileOverview } from './SimplifiedProfileOverview';
-import { ExperienceSection } from './ExperienceSection';
-import { EducationSection } from './EducationSection';
-import { SkillsSection } from './SkillsSection';
-import { ProjectsSection } from './ProjectsSection';
-import { CertificationsSection } from './CertificationsSection';
-import { ResumeUploadModal } from './ResumeUploadModal';
-import { NewUserGuidance } from './NewUserGuidance';
 import { useProfileCompleteness } from '@/hooks/useProfileCompleteness';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
@@ -24,6 +14,8 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
   const [focusedCard, setFocusedCard] = useState<string | null>(null);
   const profileCompleteness = useProfileCompleteness();
 
+  console.log('ProfileTimeline rendering:', { activeSection, profileCompleteness });
+
   const handleCardFocus = (cardId: string | null) => {
     setFocusedCard(cardId);
   };
@@ -31,88 +23,74 @@ export const ProfileTimeline: React.FC<ProfileTimelineProps> = ({
   // Show new user guidance if the user has very little or no data
   const showNewUserGuidance = profileCompleteness.isNewUser || profileCompleteness.completionPercentage < 25;
 
+  console.log('ProfileTimeline decision:', { 
+    showNewUserGuidance, 
+    isNewUser: profileCompleteness.isNewUser, 
+    completionPercentage: profileCompleteness.completionPercentage 
+  });
+
+  // Simple test render to ensure the component works
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-white">
       <div className="bg-white border-b border-slate-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold text-slate-900">
-            Career Profile
+            Career Profile (Test Render)
           </h1>
-          <ResumeUploadModal />
+          <div className="text-sm text-slate-500">Active: {activeSection}</div>
         </div>
         
-        <Tabs value={activeSection} onValueChange={(value) => onSectionChange(value as TimelineSection)}>
-          <TabsList className="grid w-full grid-cols-6 bg-slate-100">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="experience">Experience</TabsTrigger>
-            <TabsTrigger value="education">Education</TabsTrigger>
-            <TabsTrigger value="skills">Skills</TabsTrigger>
-            <TabsTrigger value="projects">Projects</TabsTrigger>
-            <TabsTrigger value="certifications">Certifications</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex gap-2 mb-4">
+          <button 
+            onClick={() => onSectionChange('overview')}
+            className={`px-4 py-2 rounded ${activeSection === 'overview' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            Overview
+          </button>
+          <button 
+            onClick={() => onSectionChange('experience')}
+            className={`px-4 py-2 rounded ${activeSection === 'experience' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            Experience
+          </button>
+          <button 
+            onClick={() => onSectionChange('education')}
+            className={`px-4 py-2 rounded ${activeSection === 'education' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            Education
+          </button>
+          <button 
+            onClick={() => onSectionChange('skills')}
+            className={`px-4 py-2 rounded ${activeSection === 'skills' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            Skills
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <Tabs value={activeSection} onValueChange={(value) => onSectionChange(value as TimelineSection)}>
-          <TabsContent value="overview" className="mt-0">
-            {showNewUserGuidance ? (
-              <div className="p-6 bg-slate-50">
-                <NewUserGuidance
-                  hasResumeData={profileCompleteness.hasResumeData}
-                  hasExperience={profileCompleteness.hasExperience}
-                  hasEducation={profileCompleteness.hasEducation}
-                  hasSkills={profileCompleteness.hasSkills}
-                />
-              </div>
-            ) : (
-              <SimplifiedProfileOverview />
-            )}
-          </TabsContent>
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="bg-slate-50 p-4 rounded">
+          <h2 className="text-lg font-semibold mb-2">Profile Timeline Component</h2>
+          <p>Active Section: {activeSection}</p>
+          <p>Profile Loading: {profileCompleteness.loading ? 'Yes' : 'No'}</p>
+          <p>Is New User: {profileCompleteness.isNewUser ? 'Yes' : 'No'}</p>
+          <p>Completion %: {profileCompleteness.completionPercentage}</p>
+          <p>Show Guidance: {showNewUserGuidance ? 'Yes' : 'No'}</p>
+          <p>Has Resume Data: {profileCompleteness.hasResumeData ? 'Yes' : 'No'}</p>
+          <p>Has Experience: {profileCompleteness.hasExperience ? 'Yes' : 'No'}</p>
+          <p>Has Education: {profileCompleteness.hasEducation ? 'Yes' : 'No'}</p>
+          <p>Has Skills: {profileCompleteness.hasSkills ? 'Yes' : 'No'}</p>
           
-          <TabsContent value="experience" className="mt-0">
-            <div className="p-6 bg-slate-50">
-              <ExperienceSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
+          {profileCompleteness.error && (
+            <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded">
+              <p className="text-red-700">Error: {profileCompleteness.error}</p>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="education" className="mt-0">
-            <div className="p-6 bg-slate-50">
-              <EducationSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="skills" className="mt-0">
-            <div className="p-6 bg-slate-50">
-              <SkillsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="projects" className="mt-0">
-            <div className="p-6 bg-slate-50">
-              <ProjectsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="certifications" className="mt-0">
-            <div className="p-6 bg-slate-50">
-              <CertificationsSection focusedCard={focusedCard} onCardFocus={handleCardFocus} />
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Additional Sections Notice */}
-        <div className="p-6 bg-slate-50">
-          <div className="mt-6 p-4 border rounded-lg bg-white border-slate-200">
-            <h3 className="font-medium mb-2 text-slate-900">
-              Complete Resume Analysis
-            </h3>
-            <p className="text-sm text-slate-600">
-              Your uploaded resumes are analyzed for all sections including Projects, Certifications, Awards, 
-              Publications, Volunteer Work, Languages, Professional Associations, and References. 
-              Use the resume upload feature to extract and organize all your career data.
-            </p>
-          </div>
+          )}
+        </div>
+        
+        <div className="mt-6 p-4 bg-blue-50 rounded">
+          <h3 className="font-semibold mb-2">Section Content for: {activeSection}</h3>
+          <p>This is where the {activeSection} content would be displayed.</p>
         </div>
       </div>
     </div>
