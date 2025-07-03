@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { supabase } from '@/integrations/supabase/client';
+import { useAdminCheck } from '@/hooks/useAdminCheck';
 import {
   Sidebar,
   SidebarContent,
@@ -101,28 +100,11 @@ export const CleanNavigation: React.FC<CleanNavigationProps> = ({ children }) =>
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin } = useAdminCheck();
 
   const currentPath = location.pathname;
   const currentItem = navigationItems.find(item => item.path === currentPath);
   const currentPhase = currentItem?.phase || 'build';
-
-  // Check admin status
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user) return;
-      
-      try {
-        const { data } = await supabase.rpc('is_admin_user');
-        setIsAdmin(data || false);
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-      }
-    };
-
-    checkAdminStatus();
-  }, [user]);
 
   const getUserInitials = useCallback(() => {
     const email = user?.email || '';
