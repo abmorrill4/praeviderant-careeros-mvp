@@ -176,6 +176,18 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
             <Settings className="w-4 h-4 mr-2" />
             <span className="font-medium text-sm">Profile Management</span>
           </Button>
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/application-toolkit')}
+            className={`w-full justify-start h-10 px-3 ${
+              isRouteActive('/application-toolkit')
+                ? 'bg-purple-600 text-white hover:bg-purple-700'
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+            } transition-all duration-200`}
+          >
+            <Briefcase className="w-4 h-4 mr-2" />
+            <span className="font-medium text-sm">Application Toolkit</span>
+          </Button>
         </div>
 
         {/* Admin Section - Only show for admin users */}

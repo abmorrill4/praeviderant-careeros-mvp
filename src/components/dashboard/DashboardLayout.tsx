@@ -38,14 +38,8 @@ interface DashboardLayoutProps {
 const menuItems = [
   { id: "profile", label: "Profile Data", icon: User },
   { id: "interview", label: "AI Interview", icon: Mic },
-  { id: "toolkit", label: "Application Toolkit", icon: Briefcase },
   { id: "resumes", label: "My Resumes", icon: FileText },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
-  { id: "team", label: "Team", icon: Users },
-  { id: "data-management", label: "Data Management", icon: Database, path: "/data-management" },
-  { id: "resume-upload", label: "Resume Upload", icon: Upload, path: "/resume-upload-v2" },
-  { id: "resume-timeline", label: "Processing Timeline", icon: Activity, path: "/resume-timeline" },
-  { id: "entity-graph-admin", label: "Entity Graph Admin", icon: Settings, path: "/entity-graph-admin" },
 ];
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
@@ -62,25 +56,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   };
 
   const handleMenuItemClick = (item: typeof menuItems[0]) => {
-    if (item.path) {
-      // Navigate to standalone page
-      navigate(item.path);
-    } else {
-      // For dashboard tabs, navigate to dashboard with the tab parameter
-      if (location.pathname !== '/dashboard') {
-        navigate('/dashboard');
-      }
-      onTabChange(item.id);
+    // For dashboard tabs, navigate to dashboard with the tab parameter
+    if (location.pathname !== '/dashboard') {
+      navigate('/dashboard');
     }
+    onTabChange(item.id);
   };
 
   const isItemActive = (item: typeof menuItems[0]) => {
-    if (item.path) {
-      return location.pathname === item.path;
-    } else {
-      // Check if we're on dashboard and the tab is active
-      return location.pathname === '/dashboard' && activeTab === item.id;
-    }
+    // Check if we're on dashboard and the tab is active
+    return location.pathname === '/dashboard' && activeTab === item.id;
   };
 
   return (
