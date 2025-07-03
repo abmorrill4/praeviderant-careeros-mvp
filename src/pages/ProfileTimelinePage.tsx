@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { ProfileSidebar } from '@/components/profile/ProfileSidebar';
+import { ProgressiveNavigation } from '@/components/navigation/ProgressiveNavigation';
+import { BreadcrumbNavigation } from '@/components/navigation/BreadcrumbNavigation';
 import { ProfileTimeline } from '@/components/profile/ProfileTimeline';
 
 export type TimelineSection = 'overview' | 'experience' | 'education' | 'skills' | 'projects' | 'certifications';
@@ -52,25 +53,13 @@ const ProfileTimelinePage: React.FC = () => {
   console.log('ProfileTimelinePage: Rendering for user:', user.email, 'activeSection:', activeSection);
 
   return (
-    <div className="min-h-screen bg-slate-50 transition-colors duration-300">
-      <div className="flex h-screen">
-        {/* Left Sidebar */}
-        <div className="w-64 flex-shrink-0">
-          <ProfileSidebar 
-            activeSection={activeSection}
-            onSectionChange={setActiveSection}
-          />
-        </div>
-        
-        {/* Right Content Area */}
-        <div className="flex-1 overflow-hidden">
-          <ProfileTimeline 
-            activeSection={activeSection}
-            onSectionChange={setActiveSection}
-          />
-        </div>
-      </div>
-    </div>
+    <ProgressiveNavigation>
+      <BreadcrumbNavigation />
+      <ProfileTimeline 
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+      />
+    </ProgressiveNavigation>
   );
 };
 
