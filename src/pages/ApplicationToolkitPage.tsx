@@ -2,14 +2,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ProfileLayout } from '@/components/layout/ProfileLayout';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
 import { FileText, Mail, Target, Briefcase } from 'lucide-react';
 import { EnhancedResumeGenerator } from '@/components/application-toolkit/EnhancedResumeGenerator';
-import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 const ApplicationToolkitPage: React.FC = () => {
+  const { user, loading } = useAuth();
   const [activeSection, setActiveSection] = useState<'overview' | 'resume-generator'>('overview');
-  const [profileSection, setProfileSection] = useState<TimelineSection>('overview');
 
   const toolkitSections = [
     {
@@ -39,8 +39,25 @@ const ApplicationToolkitPage: React.FC = () => {
     },
   ];
 
+  // Show loading state while auth is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to auth if no user
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
   return (
-    <ProfileLayout activeSection={profileSection} onSectionChange={setProfileSection}>
+    <div className="min-h-screen bg-slate-50">
       <div className="h-full flex flex-col">
         <div className="bg-career-panel border-career-gray border-b p-6">
           <h1 className="text-2xl font-bold text-career-text mb-2">
@@ -103,7 +120,7 @@ const ApplicationToolkitPage: React.FC = () => {
           ) : null}
         </div>
       </div>
-    </ProfileLayout>
+    </div>
   );
 };
 
