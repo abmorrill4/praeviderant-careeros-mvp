@@ -147,9 +147,6 @@ export function useEnrichSingleEntry() {
 
   return useMutation({
     mutationFn: async ({ entityId, forceRefresh = false }: { entityId: string; forceRefresh?: boolean }) => {
-      console.log('=== Frontend: Enriching Single Entry ===');
-      console.log('Entity ID:', entityId);
-      console.log('Force refresh:', forceRefresh);
       
       // Validate entityId
       if (!entityId || typeof entityId !== 'string' || entityId.trim() === '') {

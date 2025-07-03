@@ -46,7 +46,7 @@ export const FailureDetectionPanel: React.FC<FailureDetectionPanelProps> = ({
     queryFn: async (): Promise<FailureAnalysis> => {
       if (!user) return getDefaultAnalysis();
 
-      console.log('Starting comprehensive failure analysis...');
+      
 
       // Check for recent enrichment failures
       const { data: recentJobs, error: jobsError } = await supabase
@@ -140,7 +140,7 @@ export const FailureDetectionPanel: React.FC<FailureDetectionPanelProps> = ({
     setIsAnalyzing(true);
     try {
       // Trigger comprehensive analysis
-      console.log('Starting deep failure analysis...');
+      
       
       // Log analysis start
       await supabase

@@ -11,9 +11,6 @@ export function useBulkEntryEnrichment() {
 
   return useMutation({
     mutationFn: async (versionId: string) => {
-      console.log('=== Bulk Entry Enrichment ===');
-      console.log('Version ID:', versionId);
-      
       if (!versionId || !user) {
         throw new Error('Version ID and user are required');
       }
