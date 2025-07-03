@@ -248,7 +248,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => navigate('/admin')}
+                  onClick={() => {
+                    console.log('🔧 Admin navigation clicked - using navigate function');
+                    navigate('/admin');
+                  }}
                   className="w-full h-8 px-2 rounded-md text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium"
                 >
                   <Shield className="w-4 h-4 mr-2 text-gray-500" />
