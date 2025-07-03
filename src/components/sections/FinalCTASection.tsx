@@ -7,7 +7,7 @@ const FinalCTASection = () => {
   const [showAuthForm, setShowAuthForm] = useState(false);
 
   const handleAuthSuccess = () => {
-    // User will be automatically redirected to dashboard
+    // User will be automatically redirected to profile timeline
   };
 
   return (

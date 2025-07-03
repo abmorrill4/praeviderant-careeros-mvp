@@ -88,7 +88,7 @@ export const AdminPortalLayout: React.FC<AdminPortalLayoutProps> = ({
   };
 
   const handleBackToDashboard = () => {
-    navigate('/dashboard');
+    navigate('/profile-timeline');
   };
 
   return (
@@ -117,7 +117,7 @@ export const AdminPortalLayout: React.FC<AdminPortalLayoutProps> = ({
               className="w-full"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Back to Profile
             </Button>
           </SidebarHeader>
           

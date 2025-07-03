@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Navigation } from '@/components/Navigation';
+
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { LogIn, UserPlus, Mail, Lock, User } from 'lucide-react';
@@ -24,7 +24,7 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      navigate('/profile-timeline');
     }
   }, [user, navigate]);
 
@@ -50,7 +50,6 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <Navigation />
       
       <div className="container mx-auto px-4 py-16 flex items-center justify-center">
         <Card className="w-full max-w-md">

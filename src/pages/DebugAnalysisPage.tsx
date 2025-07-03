@@ -26,7 +26,7 @@ export default function DebugAnalysisPage() {
       // Check authentication first
       if (!user) {
         console.log('DebugAnalysisPage: User not authenticated');
-        setError('Please log in to access the debug dashboard');
+        setError('Please log in to access the debug analysis');
         setErrorType('auth');
         setLoading(false);
         return;
@@ -122,12 +122,12 @@ export default function DebugAnalysisPage() {
                 {errorType === 'no-data' && (
                   <div className="mt-3 flex gap-2">
                     <Button 
-                      onClick={() => navigate('/resume-upload')} 
+                      onClick={() => navigate('/profile-timeline')} 
                       variant="outline"
                       size="sm"
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      Upload Resume
+                      Go to Profile
                     </Button>
                     <Button 
                       onClick={() => navigate('/profile-management')} 
@@ -178,9 +178,9 @@ export default function DebugAnalysisPage() {
             <p className="text-gray-600 mb-6">
               Upload a resume to start analyzing your career data and access debugging tools.
             </p>
-            <Button onClick={() => navigate('/resume-upload')}>
+            <Button onClick={() => navigate('/profile-timeline')}>
               <Upload className="w-4 h-4 mr-2" />
-              Upload Your First Resume
+              Go to Profile Timeline
             </Button>
           </div>
         )}
