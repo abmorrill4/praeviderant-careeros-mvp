@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { Navigate } from 'react-router-dom';
-import { ProfileLayout } from '@/components/layout/ProfileLayout';
+import { CleanNavigation } from '@/components/navigation/CleanNavigation';
+import { BreadcrumbNavigation } from '@/components/navigation/BreadcrumbNavigation';
 import { AdminContent } from '@/components/admin/AdminContent';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Shield, AlertTriangle } from 'lucide-react';
-import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 const AdminPortal: React.FC = () => {
   const { user } = useAuth();
   const { isAdmin, loading, error } = useAdminCheck();
-  const [activeSection, setActiveSection] = useState<TimelineSection>('overview');
 
   // Redirect to auth if not logged in
   if (!user) {
@@ -68,9 +67,23 @@ const AdminPortal: React.FC = () => {
 
   // Admin users get access to the admin content
   return (
-    <ProfileLayout activeSection={activeSection} onSectionChange={setActiveSection}>
-      <AdminContent />
-    </ProfileLayout>
+    <CleanNavigation>
+      <BreadcrumbNavigation />
+      <div className="h-full flex flex-col">
+        <div className="bg-white border-b p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Admin Portal
+          </h1>
+          <p className="text-gray-600">
+            System administration and management tools
+          </p>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          <AdminContent />
+        </div>
+      </div>
+    </CleanNavigation>
   );
 };
 
