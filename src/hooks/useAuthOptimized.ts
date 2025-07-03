@@ -92,16 +92,8 @@ export const useAuthOptimized = (): AuthState & AuthActions => {
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(() => {
             checkProfileCompleteness();
-            
-            // Redirect logic using client-side navigation
-            const currentPath = window.location.pathname;
-            if (currentPath !== '/admin' && (currentPath === '/' || currentPath === '/auth')) {
-              console.log('🔄 Redirecting to profile timeline');
-              setTimeout(() => {
-                window.history.pushState({}, '', '/profile-timeline');
-                window.dispatchEvent(new PopStateEvent('popstate'));
-              }, 100);
-            }
+            // Note: Navigation is handled by individual pages using React Router
+            // Don't add redirect logic here to avoid conflicts
           }, 100);
         }
       }
