@@ -62,13 +62,6 @@ const navigationItems: NavItem[] = [
     phase: 'build'
   },
   {
-    id: 'profile-management',
-    label: 'Manage',
-    icon: Settings,
-    path: '/profile-management',
-    phase: 'optimize'
-  },
-  {
     id: 'application-toolkit',
     label: 'Apply',
     icon: FileText,
@@ -284,14 +277,24 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
               </p>
             </div>
           )}
-          <Button
-            onClick={handleSignOut}
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-          >
-            <LogOut className="w-3 h-3" />
-          </Button>
+          <div className="flex items-center space-x-1">
+            <Button
+              onClick={() => navigate('/profile-management')}
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+            >
+              <Settings className="w-3 h-3" />
+            </Button>
+            <Button
+              onClick={handleSignOut}
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+            >
+              <LogOut className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>
