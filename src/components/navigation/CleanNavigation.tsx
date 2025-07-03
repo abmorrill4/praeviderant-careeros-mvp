@@ -217,17 +217,17 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
 
   return (
     <Sidebar className="border-r bg-white">
-      <SidebarHeader className="p-6 border-b">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-            <User className="w-6 h-6 text-white" />
+      <SidebarHeader className="p-4 border-b">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <User className="w-4 h-4 text-white" />
           </div>
           {!collapsed && (
             <div>
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-base font-bold text-gray-900">
                 Praeviderant
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-xs text-gray-500">
                 Career Intelligence
               </p>
             </div>
@@ -235,71 +235,71 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-4">
+      <SidebarContent className="p-3">
         {/* Current Phase Indicator */}
         {!collapsed && (
-          <div className={`mb-6 p-4 rounded-xl ${phaseConfig[currentPhase as keyof typeof phaseConfig]?.lightBg} ${phaseConfig[currentPhase as keyof typeof phaseConfig]?.border} border`}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-gray-700">
+          <div className={`mb-4 p-3 rounded-lg ${phaseConfig[currentPhase as keyof typeof phaseConfig]?.lightBg} ${phaseConfig[currentPhase as keyof typeof phaseConfig]?.border} border`}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium text-gray-600">
                 Current Phase
               </span>
-              <Badge className={`${phaseConfig[currentPhase as keyof typeof phaseConfig]?.bgColor} text-white border-0`}>
+              <Badge className={`${phaseConfig[currentPhase as keyof typeof phaseConfig]?.bgColor} text-white border-0 text-xs px-2 py-0`}>
                 {phaseConfig[currentPhase as keyof typeof phaseConfig]?.label}
               </Badge>
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs text-gray-500">
               {phaseConfig[currentPhase as keyof typeof phaseConfig]?.description}
             </p>
           </div>
         )}
 
         {/* Navigation Groups */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           {Object.entries(phaseConfig).map(([phase, config]) => {
             const items = groupedItems[phase] || [];
             const isCurrentPhase = phase === currentPhase;
             
             return (
               <SidebarGroup key={phase}>
-                <SidebarGroupLabel className="px-0 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${config.bgColor}`} />
-                    <span>{config.label}</span>
-                  </div>
-                  {isCurrentPhase && !collapsed && (
-                    <ChevronRight className="w-3 h-3" />
-                  )}
-                </SidebarGroupLabel>
-                
-                <SidebarGroupContent>
-                  <SidebarMenu className="space-y-1">
-                    {items.map((item) => {
-                      const isActive = isItemActive(item.path);
-                      const Icon = item.icon;
-                      
-                      return (
-                        <SidebarMenuItem key={item.id}>
-                          <SidebarMenuButton
-                            onClick={() => navigate(item.path)}
-                            className={`
-                              w-full h-12 px-3 rounded-lg transition-all duration-200 font-medium
-                              ${isActive 
-                                ? `${config.bgColor} text-white shadow-sm` 
-                                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                              }
-                              ${collapsed ? 'justify-center' : 'justify-start'}
-                            `}
-                          >
-                            <Icon className={`w-5 h-5 ${collapsed ? '' : 'mr-3'} ${isActive ? 'text-white' : config.color}`} />
-                            {!collapsed && (
-                              <span className="text-sm">{item.label}</span>
-                            )}
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      );
-                    })}
-                  </SidebarMenu>
-                </SidebarGroupContent>
+                <SidebarGroupLabel className="px-0 py-1 text-xs font-medium uppercase tracking-wide text-gray-500 flex items-center justify-between">
+                   <div className="flex items-center space-x-1.5">
+                     <div className={`w-1.5 h-1.5 rounded-full ${config.bgColor}`} />
+                     <span>{config.label}</span>
+                   </div>
+                   {isCurrentPhase && !collapsed && (
+                     <ChevronRight className="w-3 h-3" />
+                   )}
+                 </SidebarGroupLabel>
+                 
+                 <SidebarGroupContent>
+                   <SidebarMenu className="space-y-0.5">
+                     {items.map((item) => {
+                       const isActive = isItemActive(item.path);
+                       const Icon = item.icon;
+                       
+                       return (
+                         <SidebarMenuItem key={item.id}>
+                           <SidebarMenuButton
+                             onClick={() => navigate(item.path)}
+                             className={`
+                               w-full h-9 px-2.5 rounded-md transition-all duration-200 font-medium
+                               ${isActive 
+                                 ? `${config.bgColor} text-white shadow-sm` 
+                                 : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                               }
+                               ${collapsed ? 'justify-center' : 'justify-start'}
+                             `}
+                           >
+                             <Icon className={`w-4 h-4 ${collapsed ? '' : 'mr-2.5'} ${isActive ? 'text-white' : config.color}`} />
+                             {!collapsed && (
+                               <span className="text-sm">{item.label}</span>
+                             )}
+                           </SidebarMenuButton>
+                         </SidebarMenuItem>
+                       );
+                     })}
+                   </SidebarMenu>
+                 </SidebarGroupContent>
               </SidebarGroup>
             );
           })}
@@ -307,9 +307,9 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
 
         {/* Admin Section */}
         {isAdmin && (
-          <div className="mt-8 pt-6 border-t">
+          <div className="mt-4 pt-3 border-t">
             <SidebarGroup>
-              <SidebarGroupLabel className="px-0 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <SidebarGroupLabel className="px-0 py-1 text-xs font-medium uppercase tracking-wide text-gray-500">
                 Administration
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -317,9 +317,9 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => navigate('/admin')}
-                      className="w-full h-12 px-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium"
+                      className="w-full h-9 px-2.5 rounded-md text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium"
                     >
-                      <Shield className="w-5 h-5 mr-3 text-gray-500" />
+                      <Shield className="w-4 h-4 mr-2.5 text-gray-500" />
                       {!collapsed && <span className="text-sm">Admin Portal</span>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -330,18 +330,18 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t">
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3">
-            <Avatar className="w-10 h-10">
+      <SidebarFooter className="p-3 border-t">
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Avatar className="w-8 h-8">
               <AvatarImage src={user?.user_metadata?.avatar_url} />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+              <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
                 {getUserInitials()}
               </AvatarFallback>
             </Avatar>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">
+                <p className="text-sm font-medium text-gray-900 truncate">
                   {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
                 </p>
                 <p className="text-xs text-gray-500">
@@ -355,10 +355,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
             onClick={handleSignOut}
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-50 h-10"
+            className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-50 h-8 px-2"
           >
             <LogOut className="w-4 h-4" />
-            {!collapsed && <span className="ml-3 text-sm">Sign Out</span>}
+            {!collapsed && <span className="ml-2 text-sm">Sign Out</span>}
           </Button>
         </div>
       </SidebarFooter>
