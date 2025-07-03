@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -151,6 +151,7 @@ const priorityConfig = {
 
 export const SmartGuidance: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [dismissedItems, setDismissedItems] = useState<string[]>([]);
   
   const currentGuidance = guidanceData[location.pathname] || [];
@@ -217,9 +218,7 @@ export const SmartGuidance: React.FC = () => {
                   className="bg-white/80 hover:bg-white border-white/50"
                   onClick={() => {
                     if (item.action?.path) {
-                      // Use client-side navigation instead of full page reload
-                      window.history.pushState({}, '', item.action.path);
-                      window.dispatchEvent(new PopStateEvent('popstate'));
+                      navigate(item.action.path);
                     } else if (item.action?.onClick) {
                       item.action.onClick();
                     }

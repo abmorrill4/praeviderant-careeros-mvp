@@ -249,7 +249,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={() => {
-                    console.log('🔧 Admin navigation clicked - using navigate function');
+                    console.log('🔧 Admin navigation clicked - using React Router navigate');
                     navigate('/admin');
                   }}
                   className="w-full h-8 px-2 rounded-md text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium"

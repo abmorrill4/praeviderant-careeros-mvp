@@ -38,22 +38,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Handle post-authentication redirect only for auth page (without setTimeout)
-        if (event === 'SIGNED_IN' && session?.user) {
-          const currentPath = window.location.pathname;
-          console.log('🔄 Current path during auth redirect check:', currentPath);
-          // Only redirect from auth page to prevent conflicts with Index page logic
-          if (currentPath === '/auth') {
-            console.log('🔄 Redirecting from auth page to profile timeline');
-            // Use setTimeout to ensure auth state is fully set before navigation
-            setTimeout(() => {
-              window.history.pushState({}, '', '/profile-timeline');
-              window.dispatchEvent(new PopStateEvent('popstate'));
-            }, 100);
-          } else {
-            console.log('🔄 Not redirecting, staying on current path:', currentPath);
-          }
-        }
+        // Note: Navigation is handled by individual pages/components using React Router
+        // Don't add redirect logic here to avoid conflicts with React Router
       }
     );
 
