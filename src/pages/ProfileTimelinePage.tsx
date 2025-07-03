@@ -44,10 +44,10 @@ const ProfileTimelinePage: React.FC = () => {
     );
   }
 
-  // Redirect to auth if no user
+  // Redirect to home if no user
   if (!user) {
-    console.log('ProfileTimelinePage: No user, redirecting to auth');
-    return <Navigate to="/auth" replace />;
+    console.log('ProfileTimelinePage: No user, redirecting to home');
+    return <Navigate to="/" replace />;
   }
 
   console.log('ProfileTimelinePage: Rendering for user:', user.email, 'activeSection:', activeSection);

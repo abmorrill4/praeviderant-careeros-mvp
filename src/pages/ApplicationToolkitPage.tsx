@@ -21,9 +21,9 @@ const ApplicationToolkitPage: React.FC = () => {
     );
   }
 
-  // Redirect to auth if no user
+  // Redirect to home if no user
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (

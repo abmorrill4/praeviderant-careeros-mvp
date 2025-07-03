@@ -141,7 +141,7 @@ export default function DebugAnalysisPage() {
                 {errorType === 'auth' && (
                   <div className="mt-3">
                     <Button 
-                      onClick={() => navigate('/auth')} 
+                      onClick={() => navigate('/')} 
                       variant="outline"
                       size="sm"
                     >

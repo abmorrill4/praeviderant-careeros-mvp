@@ -12,9 +12,9 @@ const AdminPortal: React.FC = () => {
   const { user } = useAuth();
   const { isAdmin, loading, error } = useAdminCheck();
 
-  // Redirect to auth if not logged in
+  // Redirect to home if not logged in
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // Show loading state while checking admin status

@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
 import ProfileTimelinePage from "./pages/ProfileTimelinePage";
 import ProfileOptimizationPage from "./pages/ProfileOptimizationPage";
 import ProfileManagementPage from "./pages/ProfileManagementPage";
@@ -30,7 +29,6 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
               <Route path="/profile-timeline" element={<ProfileTimelinePage />} />
               <Route path="/profile-optimization" element={<ProfileOptimizationPage />} />
               <Route path="/profile-management" element={<ProfileManagementPage />} />
