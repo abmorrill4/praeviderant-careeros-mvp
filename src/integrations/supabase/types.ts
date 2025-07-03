@@ -483,6 +483,45 @@ export type Database = {
           },
         ]
       }
+      generated_resumes: {
+        Row: {
+          content: Json
+          created_at: string
+          format_settings: Json | null
+          id: string
+          job_description: string
+          metadata: Json
+          personalization: Json | null
+          style_settings: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          format_settings?: Json | null
+          id?: string
+          job_description: string
+          metadata?: Json
+          personalization?: Json | null
+          style_settings?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          format_settings?: Json | null
+          id?: string
+          job_description?: string
+          metadata?: Json
+          personalization?: Json | null
+          style_settings?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       interview_contexts: {
         Row: {
           confidence_score: number | null
