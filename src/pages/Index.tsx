@@ -9,6 +9,8 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  console.log('Index component rendering:', { user: user?.email, loading, pathname: location.pathname });
+
   useEffect(() => {
     console.log('Index: user state changed', { user: user?.email, loading, currentPath: location.pathname });
     
@@ -44,15 +46,20 @@ const Index = () => {
     );
   }
 
-  const handleAuthSuccess = () => {
-    // The AuthContext will handle the redirect to /profile-timeline
-    console.log('Auth success - redirect will be handled by AuthContext');
-  };
-
+  // Simplified test return to see if the issue is with the HeroSection
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 transition-colors duration-300">
-      <div className="container mx-auto px-4">
-        <HeroSection onAuthSuccess={handleAuthSuccess} />
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold text-center mb-8">Welcome to Praeviderant</h1>
+        <p className="text-center text-lg mb-8">This is a test to see if the Index page renders</p>
+        <div className="text-center">
+          <button 
+            onClick={() => navigate('/auth')}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Go to Auth
+          </button>
+        </div>
       </div>
     </div>
   );
