@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, Briefcase, GraduationCap, Star, Settings, LogOut, TrendingUp, MessageCircle, Shield } from 'lucide-react';
+import { Settings, LogOut, TrendingUp, MessageCircle, Shield, Briefcase } from 'lucide-react';
 import type { TimelineSection } from '@/pages/ProfileTimelinePage';
 
 interface ProfileSidebarProps {
@@ -14,12 +14,7 @@ interface ProfileSidebarProps {
   onSectionChange: (section: TimelineSection) => void;
 }
 
-const navigationItems = [
-  { id: 'overview' as const, label: 'Overview', icon: User },
-  { id: 'experience' as const, label: 'Experience', icon: Briefcase },
-  { id: 'education' as const, label: 'Education', icon: GraduationCap },
-  { id: 'skills' as const, label: 'Skills', icon: Star },
-];
+// Profile subsections are now handled by ProfileTimeline tabs
 
 export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
   activeSection,
@@ -98,44 +93,8 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
 
       {/* Main Navigation Menu */}
       <nav className="flex-1">
-        <div className="space-y-1 mb-4">
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Profile
-          </h3>
-          {navigationItems.map((item) => {
-            // Only show active state if we're on the timeline page AND this section is active
-            const isActive = isOnTimelinePage && activeSection === item.id;
-            const Icon = item.icon;
-            
-            return (
-              <Button
-                key={item.id}
-                variant="ghost"
-                onClick={() => {
-                  if (isOnTimelinePage) {
-                    // If we're already on the timeline page, just change the section
-                    onSectionChange(item.id);
-                  } else {
-                    // If we're on a different page, navigate with the section as a URL parameter
-                    navigate(`/profile-timeline?section=${item.id}`);
-                  }
-                }}
-                className={`w-full justify-start h-10 px-3 ${
-                  isActive
-                    ? 'bg-purple-600 text-white hover:bg-purple-700'
-                    : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
-                } transition-all duration-200`}
-              >
-                <Icon className="w-4 h-4 mr-2" />
-                <span className="font-medium text-sm">{item.label}</span>
-              </Button>
-            );
-          })}
-        </div>
 
-        <Separator className="mb-4" />
-
-        {/* Profile Management Section */}
+        {/* Tools & Features Section */}
         <div className="space-y-1 mb-4">
           <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
             Tools & Optimization
