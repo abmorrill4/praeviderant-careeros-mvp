@@ -217,7 +217,9 @@ export const SmartGuidance: React.FC = () => {
                   className="bg-white/80 hover:bg-white border-white/50"
                   onClick={() => {
                     if (item.action?.path) {
-                      window.location.href = item.action.path;
+                      // Use client-side navigation instead of full page reload
+                      window.history.pushState({}, '', item.action.path);
+                      window.dispatchEvent(new PopStateEvent('popstate'));
                     } else if (item.action?.onClick) {
                       item.action.onClick();
                     }

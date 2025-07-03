@@ -93,11 +93,14 @@ export const useAuthOptimized = (): AuthState & AuthActions => {
           setTimeout(() => {
             checkProfileCompleteness();
             
-            // Redirect logic
+            // Redirect logic using client-side navigation
             const currentPath = window.location.pathname;
             if (currentPath !== '/admin' && (currentPath === '/' || currentPath === '/auth')) {
               console.log('🔄 Redirecting to profile timeline');
-              window.location.href = '/profile-timeline';
+              setTimeout(() => {
+                window.history.pushState({}, '', '/profile-timeline');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }, 100);
             }
           }, 100);
         }

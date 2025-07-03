@@ -45,7 +45,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Only redirect from auth page to prevent conflicts with Index page logic
           if (currentPath === '/auth') {
             console.log('🔄 Redirecting from auth page to profile timeline');
-            window.location.href = '/profile-timeline';
+            // Use setTimeout to ensure auth state is fully set before navigation
+            setTimeout(() => {
+              window.history.pushState({}, '', '/profile-timeline');
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }, 100);
           } else {
             console.log('🔄 Not redirecting, staying on current path:', currentPath);
           }
