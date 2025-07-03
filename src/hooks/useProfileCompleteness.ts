@@ -104,10 +104,10 @@ export const useProfileCompleteness = () => {
   useEffect(() => {
     setState(prev => ({
       ...prev,
-      hasExperience: workExperience.data.length > 0,
-      hasEducation: education.data.length > 0,
-      hasSkills: skills.data.length > 0,
-      hasResumeData: workExperience.data.length > 0 || education.data.length > 0 || skills.data.length > 0,
+      hasExperience: (workExperience.data || []).length > 0,
+      hasEducation: (education.data || []).length > 0,
+      hasSkills: (skills.data || []).length > 0,
+      hasResumeData: (workExperience.data || []).length > 0 || (education.data || []).length > 0 || (skills.data || []).length > 0,
     }));
   }, [workExperience.data, education.data, skills.data]);
 
