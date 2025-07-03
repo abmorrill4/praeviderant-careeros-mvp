@@ -14,6 +14,8 @@ import ProfileManagementPage from "./pages/ProfileManagementPage";
 import InterviewPage from "./pages/InterviewPage";
 import ApplicationToolkitPage from "./pages/ApplicationToolkitPage";
 import AdminPortal from "./pages/AdminPortal";
+import DebugAnalysisPage from "./pages/DebugAnalysisPage";
+import ProcessingPage from "./pages/ProcessingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +37,8 @@ const App = () => (
               <Route path="/interview" element={<InterviewPage />} />
               <Route path="/application-toolkit" element={<ApplicationToolkitPage />} />
               <Route path="/admin" element={<AdminPortal />} />
+              <Route path="/debug" element={<DebugAnalysisPage />} />
+              <Route path="/processing/:id" element={<ProcessingPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

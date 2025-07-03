@@ -100,7 +100,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
       <nav className="flex-1">
         <div className="space-y-1 mb-4">
           <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Profile Sections
+            Profile
           </h3>
           {navigationItems.map((item) => {
             // Only show active state if we're on the timeline page AND this section is active
