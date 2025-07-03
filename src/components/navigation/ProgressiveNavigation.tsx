@@ -53,12 +53,12 @@ const navigationItems: NavItem[] = [
   // Build Phase - Foundation Creation
   {
     id: 'profile-timeline',
-    label: 'Profile Timeline',
+    label: 'Career Timeline',
     icon: User,
     path: '/profile-timeline',
     phase: 'build',
     description: 'Build your complete career foundation',
-    badge: 'Foundation'
+    badge: 'Core'
   },
   {
     id: 'interview',
@@ -66,39 +66,39 @@ const navigationItems: NavItem[] = [
     icon: MessageCircle,
     path: '/interview',
     phase: 'build',
-    description: 'Capture your story through conversation',
-    badge: 'Story'
+    description: 'Extract insights through conversation',
+    badge: 'Insights'
   },
   
   // Optimize Phase - Enhancement & Refinement
   {
     id: 'profile-optimization',
-    label: 'Profile Optimization',
+    label: 'Optimization',
     icon: TrendingUp,
     path: '/profile-optimization',
     phase: 'optimize',
-    description: 'Enhance and refine your profile',
-    badge: 'Polish'
+    description: 'Enhance profile effectiveness',
+    badge: 'Analysis'
   },
   {
     id: 'profile-management',
-    label: 'Profile Management',
+    label: 'Data Management',
     icon: Settings,
     path: '/profile-management',
     phase: 'optimize',
-    description: 'Manage and organize your data',
-    badge: 'Organize'
+    description: 'Organize and refine your data',
+    badge: 'Control'
   },
   
   // Apply Phase - Application & Execution
   {
     id: 'application-toolkit',
-    label: 'Application Toolkit',
+    label: 'Applications',
     icon: FileText,
     path: '/application-toolkit',
     phase: 'apply',
-    description: 'Generate tailored applications',
-    badge: 'Generate'
+    description: 'Generate targeted applications',
+    badge: 'Deploy'
   }
 ];
 

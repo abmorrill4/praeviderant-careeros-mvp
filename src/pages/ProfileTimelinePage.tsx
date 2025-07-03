@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { ProgressiveNavigation } from '@/components/navigation/ProgressiveNavigation';
+import { CleanNavigation } from '@/components/navigation/CleanNavigation';
 import { BreadcrumbNavigation } from '@/components/navigation/BreadcrumbNavigation';
 import { ProfileTimeline } from '@/components/profile/ProfileTimeline';
 
@@ -53,13 +53,13 @@ const ProfileTimelinePage: React.FC = () => {
   console.log('ProfileTimelinePage: Rendering for user:', user.email, 'activeSection:', activeSection);
 
   return (
-    <ProgressiveNavigation>
+    <CleanNavigation>
       <BreadcrumbNavigation />
       <ProfileTimeline 
         activeSection={activeSection}
         onSectionChange={setActiveSection}
       />
-    </ProgressiveNavigation>
+    </CleanNavigation>
   );
 };
 
