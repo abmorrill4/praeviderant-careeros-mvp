@@ -94,7 +94,7 @@ export const useAdminCheck = () => {
     };
 
     checkAdminStatus();
-  }, [user?.id, authLoading, isAdmin]); // Only depend on user ID, not the entire user object
+  }, [user?.id, authLoading]); // Only depend on user ID and auth loading status
 
   return { isAdmin, loading: loading || authLoading, error };
 };
