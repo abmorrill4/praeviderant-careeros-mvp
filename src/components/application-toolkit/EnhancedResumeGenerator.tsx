@@ -23,7 +23,8 @@ import type {
   ResumePersonalization, 
   ResumeFormat, 
   ResumeStyle,
-  GeneratedResume 
+  GeneratedResume,
+  ExtractedJobData 
 } from '@/types/resume-generation';
 
 interface EnhancedResumeGeneratorProps {
@@ -33,13 +34,26 @@ interface EnhancedResumeGeneratorProps {
 export const EnhancedResumeGenerator: React.FC<EnhancedResumeGeneratorProps> = ({
   onResumeGenerated
 }) => {
-  const { generateResume, exportResume, analyzeJobMatch, isGenerating, isExporting, error, progress } = useResumeGeneration();
+  const { 
+    generateResume, 
+    extractJobFromUrl, 
+    exportResume, 
+    analyzeJobMatch, 
+    isGenerating, 
+    isExtracting, 
+    isExporting, 
+    error, 
+    progress 
+  } = useResumeGeneration();
   
   // Form state
+  const [inputMode, setInputMode] = useState<'manual' | 'url'>('manual');
+  const [jobUrl, setJobUrl] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [targetRole, setTargetRole] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [customObjective, setCustomObjective] = useState('');
+  const [extractedJob, setExtractedJob] = useState<ExtractedJobData | null>(null);
   
   // Personalization state
   const [personalization, setPersonalization] = useState<ResumePersonalization>({
@@ -65,17 +79,36 @@ export const EnhancedResumeGenerator: React.FC<EnhancedResumeGeneratorProps> = (
   // Generated resume state
   const [generatedResume, setGeneratedResume] = useState<GeneratedResume | null>(null);
 
+  const handleExtractFromUrl = async () => {
+    if (!jobUrl.trim()) {
+      return;
+    }
+
+    const extracted = await extractJobFromUrl(jobUrl);
+    if (extracted) {
+      setExtractedJob(extracted);
+      setJobDescription(extracted.description);
+      setTargetRole(extracted.title);
+      setCompanyName(extracted.company);
+      setInputMode('manual'); // Switch to manual mode to show extracted data
+    }
+  };
+
   const handleGenerate = async () => {
-    if (!jobDescription.trim()) {
+    const description = inputMode === 'url' && extractedJob 
+      ? extractedJob.description 
+      : jobDescription;
+      
+    if (!description.trim()) {
       return;
     }
 
     const request = {
-      jobDescription,
+      jobDescription: description,
       personalizations: {
         ...personalization,
-        targetRole: targetRole || undefined,
-        companyName: companyName || undefined,
+        targetRole: targetRole || extractedJob?.title || undefined,
+        companyName: companyName || extractedJob?.company || undefined,
         customObjective: customObjective || undefined,
       },
       format,
@@ -125,55 +158,119 @@ export const EnhancedResumeGenerator: React.FC<EnhancedResumeGeneratorProps> = (
         </CardHeader>
       </Card>
 
-      {/* Job Description Input */}
+      {/* Job Input Section */}
       <Card className="bg-career-panel border-career-text/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-career-text">
             <Target className="w-5 h-5" />
-            Job Description
+            Job Information
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="job-description" className="text-career-text">
-              Paste the job description here *
-            </Label>
-            <Textarea
-              id="job-description"
-              placeholder="Paste the complete job description..."
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              className="min-h-[200px] mt-2"
-              required
-            />
+          {/* Input Mode Toggle */}
+          <div className="flex gap-2">
+            <Button
+              variant={inputMode === 'manual' ? 'default' : 'outline'}
+              onClick={() => setInputMode('manual')}
+              className="flex-1"
+            >
+              Manual Entry
+            </Button>
+            <Button
+              variant={inputMode === 'url' ? 'default' : 'outline'}
+              onClick={() => setInputMode('url')}
+              className="flex-1"
+            >
+              Extract from URL
+            </Button>
           </div>
+
+          {inputMode === 'url' ? (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="job-url" className="text-career-text">
+                  Job Posting URL *
+                </Label>
+                <Input
+                  id="job-url"
+                  type="url"
+                  placeholder="https://example.com/job-posting"
+                  value={jobUrl}
+                  onChange={(e) => setJobUrl(e.target.value)}
+                  className="mt-2"
+                  required
+                />
+              </div>
+              
+              <Button
+                onClick={handleExtractFromUrl}
+                disabled={!jobUrl.trim() || isExtracting}
+                className="w-full"
+              >
+                {isExtracting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Extracting Job Details...
+                  </>
+                ) : (
+                  'Extract Job Details'
+                )}
+              </Button>
+
+              {extractedJob && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h4 className="font-semibold text-green-800">Extracted Job Details:</h4>
+                  <p className="text-green-700">
+                    <strong>{extractedJob.title}</strong> at <strong>{extractedJob.company}</strong>
+                  </p>
+                  {extractedJob.location && (
+                    <p className="text-green-600">Location: {extractedJob.location}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <Label htmlFor="job-description" className="text-career-text">
+                Paste the job description here *
+              </Label>
+              <Textarea
+                id="job-description"
+                placeholder="Paste the complete job description..."
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                className="min-h-[200px] mt-2"
+                required
+              />
+            </div>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="target-role" className="text-career-text">
-                Target Role (Optional)
-              </Label>
-              <Input
-                id="target-role"
-                placeholder="e.g., Senior Software Engineer"
-                value={targetRole}
-                onChange={(e) => setTargetRole(e.target.value)}
-                className="mt-2"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="company-name" className="text-career-text">
-                Company Name (Optional)
-              </Label>
-              <Input
-                id="company-name"
-                placeholder="e.g., Google"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                className="mt-2"
-              />
-            </div>
+              <div>
+                <Label htmlFor="target-role" className="text-career-text">
+                  Target Role (Optional)
+                </Label>
+                <Input
+                  id="target-role"
+                  placeholder="e.g., Senior Software Engineer"
+                  value={targetRole || extractedJob?.title || ''}
+                  onChange={(e) => setTargetRole(e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="company-name" className="text-career-text">
+                  Company Name (Optional)
+                </Label>
+                <Input
+                  id="company-name"
+                  placeholder="e.g., Google"
+                  value={companyName || extractedJob?.company || ''}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="mt-2"
+                />
+              </div>
           </div>
         </CardContent>
       </Card>
@@ -245,6 +342,23 @@ export const EnhancedResumeGenerator: React.FC<EnhancedResumeGeneratorProps> = (
         </CardContent>
       </Card>
 
+      {/* Extraction Progress */}
+      {isExtracting && (
+        <Card className="bg-career-panel border-career-text/20">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-career-accent" />
+                <span className="text-career-text">Extracting job details from URL...</span>
+              </div>
+              <div className="text-sm text-career-text-muted">
+                AI is analyzing the job posting to extract key information
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Generation Progress */}
       {isGenerating && (
         <Card className="bg-career-panel border-career-text/20">
@@ -279,7 +393,12 @@ export const EnhancedResumeGenerator: React.FC<EnhancedResumeGeneratorProps> = (
       <div className="flex justify-center">
         <Button
           onClick={handleGenerate}
-          disabled={!jobDescription.trim() || isGenerating}
+          disabled={
+            (inputMode === 'manual' && !jobDescription.trim()) || 
+            (inputMode === 'url' && !extractedJob) ||
+            isGenerating || 
+            isExtracting
+          }
           className="bg-career-accent hover:bg-career-accent/80 text-white px-8 py-3 text-lg"
           size="lg"
         >
@@ -287,6 +406,11 @@ export const EnhancedResumeGenerator: React.FC<EnhancedResumeGeneratorProps> = (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
               Generating...
+            </>
+          ) : isExtracting ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Extracting...
             </>
           ) : (
             <>

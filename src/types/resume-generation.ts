@@ -2,10 +2,46 @@
 
 export interface ResumeGenerationRequest {
   userId: string;
-  jobDescription: string;
+  jobDescription?: string;
+  jobUrl?: string;
   personalizations?: ResumePersonalization;
   format?: ResumeFormat;
   style?: ResumeStyle;
+}
+
+// URL Job Extraction Types
+export interface JobExtractionRequest {
+  url: string;
+  userId: string;
+}
+
+export interface ExtractedJobData {
+  title: string;
+  company: string;
+  location?: string;
+  description: string;
+  requirements: string[];
+  responsibilities: string[];
+  qualifications: string[];
+  skills: string[];
+  salary?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+    period?: 'hourly' | 'monthly' | 'yearly';
+  };
+  benefits?: string[];
+  workType?: 'remote' | 'hybrid' | 'onsite';
+  experienceLevel?: 'entry' | 'mid' | 'senior' | 'executive';
+  industry?: string;
+  extractedAt: string;
+}
+
+export interface JobExtractionResult {
+  success: boolean;
+  data?: ExtractedJobData;
+  error?: string;
+  confidence: number;
 }
 
 export interface ResumePersonalization {

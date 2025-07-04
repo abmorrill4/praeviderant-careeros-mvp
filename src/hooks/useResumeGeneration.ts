@@ -7,14 +7,19 @@ import type {
   GeneratedResume, 
   ExportResult,
   ResumeFormat,
-  GenerationAnalytics
+  GenerationAnalytics,
+  JobExtractionRequest,
+  JobExtractionResult,
+  ExtractedJobData
 } from '@/types/resume-generation';
 
 interface UseResumeGenerationReturn {
   generateResume: (request: Omit<ResumeGenerationRequest, 'userId'>) => Promise<GeneratedResume | null>;
+  extractJobFromUrl: (url: string) => Promise<ExtractedJobData | null>;
   exportResume: (resumeId: string, format: ResumeFormat) => Promise<ExportResult | null>;
   analyzeJobMatch: (resumeId: string) => Promise<GenerationAnalytics | null>;
   isGenerating: boolean;
+  isExtracting: boolean;
   isExporting: boolean;
   isAnalyzing: boolean;
   error: string | null;
@@ -26,6 +31,7 @@ export const useResumeGeneration = (): UseResumeGenerationReturn => {
   const { toast } = useToast();
   
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +97,60 @@ export const useResumeGeneration = (): UseResumeGenerationReturn => {
     } finally {
       setIsGenerating(false);
       setProgress(0);
+    }
+  }, [user?.id, toast]);
+
+  const extractJobFromUrl = useCallback(async (url: string): Promise<ExtractedJobData | null> => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      return null;
+    }
+
+    setIsExtracting(true);
+    setError(null);
+
+    try {
+      console.log('Extracting job from URL:', url);
+
+      const { data, error: functionError } = await supabase.functions.invoke(
+        'extract-job-from-url',
+        {
+          body: {
+            url,
+            userId: user.id,
+          },
+        }
+      );
+
+      if (functionError) {
+        throw new Error(functionError.message || 'Job extraction failed');
+      }
+
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Failed to extract job information');
+      }
+
+      toast({
+        title: "Job Extracted Successfully",
+        description: `Found job: ${data.data.title} at ${data.data.company}`,
+      });
+
+      return data.data;
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to extract job from URL';
+      console.error('Job extraction error:', err);
+      setError(errorMessage);
+      
+      toast({
+        title: "Extraction Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      return null;
+    } finally {
+      setIsExtracting(false);
     }
   }, [user?.id, toast]);
 
@@ -205,9 +265,11 @@ export const useResumeGeneration = (): UseResumeGenerationReturn => {
 
   return {
     generateResume,
+    extractJobFromUrl,
     exportResume,
     analyzeJobMatch,
     isGenerating,
+    isExtracting,
     isExporting,
     isAnalyzing,
     error,
